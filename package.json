@@ -1,0 +1,223 @@
+{
+	"name": "jianghu-studio",
+	"displayName": "江湖Studio",
+	"description": "jianghu studio for vscode",
+	"publisher": "xueyuan921",
+	"title": "jianghu",
+	"version": "0.1.6",
+	"icon": "images/logo.png",
+	"engines": {
+		"vscode": "^1.67.0"
+	},
+	"categories": [
+		"Other"
+	],
+	"activationEvents": [
+		"*"
+	],
+	"bugs": {
+		"url": "https://github.com/jianghujs/jianghu-studio/issues",
+		"email": "xueyuan921@163.com"
+	},
+	"homepage": "https://github.com/jianghujs/jianghu-studio/README.md",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/jianghujs/jianghu-studio.git"
+	},
+	"main": "./out/extension.js",
+	"contributes": {
+		"configuration": {
+			"title": "Code插件配置",
+			"properties": {
+				"database-jianghu.databaseList": {}
+			}
+		},
+		"viewsWelcome": [
+			{
+				"view": "constructionPlan",
+				"contents": "No node dependencies found [learn more](https://openjianghu.org/).\n[Add Databases](command:constructionPlan.pageAdd)"
+			}
+		],
+		"commands": [
+			{
+				"command": "extension.setting.showIndexPage",
+				"title": "欢迎页"
+			},
+			{
+				"command": "constructionPlan.pagePlanEdit",
+				"title": "pagePlanEdit Info View"
+			},
+			{
+				"command": "constructionPlan.page",
+				"title": "page Info View"
+			},
+			{
+				"command": "constructionPlan.refreshDb",
+				"title": "Refresh",
+				"icon": {
+					"light": "images/light/refresh.svg",
+					"dark": "images/dark/refresh.svg"
+				}
+			},
+			{
+				"command": "constructionPlan.templateAdd",
+				"title": "Add Template",
+				"icon": {
+					"light": "images/light/template.svg",
+					"dark": "images/dark/template.svg"
+				}
+			},
+			{
+				"command": "constructionAdvanced.userManagement",
+				"title": ""
+			},
+			{
+				"command": "constructionAdvanced.recordHistoryManagement",
+				"title": ""
+			},
+			{
+				"command": "constructionAdvanced.userGroupRoleManagement",
+				"title": ""
+			},
+			{
+				"command": "constructionPlan.pageAdd",
+				"title": "Add Page",
+				"icon": {
+					"light": "images/light/add.svg",
+					"dark": "images/dark/add.svg"
+				}
+			},
+			{
+				"command": "constructionPlan.pageEdit",
+				"title": "Edit",
+				"icon": {
+					"light": "images/light/edit.svg",
+					"dark": "images/dark/edit.svg"
+				}
+			},
+			{
+				"command": "constructionPlanView.copySample",
+				"title": "Copy code sample",
+				"icon": {
+					"light": "images/light/copy.svg",
+					"dark": "images/dark/copy.svg"
+				}
+			},
+			{
+				"command": "constructionPlanView.replaceSample",
+				"title": "replace code sample",
+				"icon": {
+					"light": "images/light/find-replace-line.svg",
+					"dark": "images/dark/find-replace-line.svg"
+				}
+			}
+		],
+		"menus": {
+			"view/title": [
+				{
+					"command": "constructionPlan.refreshDb",
+					"when": "view == constructionPlan",
+					"group": "navigation"
+				}
+			],
+			"view/item/context": [
+				{
+					"command": "constructionPlan.templateAdd",
+					"when": "view == constructionPlan && viewItem == databaseItem",
+					"group": "inline"
+				},
+				{
+					"command": "constructionPlan.pageAdd",
+					"when": "view == constructionPlan && viewItem == databaseItem",
+					"group": "inline@2"
+				},
+				{
+					"command": "constructionPlan.pageEdit",
+					"when": "view == constructionPlan && viewItem == pageItem",
+					"group": "inline"
+				},
+				{
+					"command": "constructionPlanView.copySample",
+					"when": "view == constructionPlanView && viewItem == viewList",
+					"group": "inline"
+				},
+				{
+					"command": "constructionPlanView.replaceSample",
+					"when": "view == constructionPlanView && viewItem == uiActionItem",
+					"group": "inline"
+				}
+			]
+		},
+		"viewsContainers": {
+			"activitybar": [
+				{
+					"id": "jianghu-studio",
+					"title": "江湖Studio",
+					"icon": "images/tool-light.svg"
+				}
+			]
+		},
+		"views": {
+			"jianghu-studio": [
+				{
+					"id": "constructionPlan",
+					"name": "施工方案",
+					"icon": "images/tool-light.svg",
+					"contextualTitle": "Construction Plan"
+				},
+				{
+					"id": "constructionAdvanced",
+					"name": "系统配置",
+					"icon": "images/tool-light.svg",
+					"contextualTitle": "Advanced"
+				}
+			],
+			"explorer": [
+				{
+					"id": "constructionPlanView",
+					"name": "施工方案查看",
+					"contextualTitle": "Package Explorer"
+				}
+			]
+		}
+	},
+	"scripts": {
+		"vscode:prepublish": "yarn run compile",
+		"compile": "tsc -p ./",
+		"watch": "tsc -watch -p ./",
+		"pretest": "yarn run compile && yarn run lint",
+		"lint": "eslint src --ext ts",
+		"test": "node ./out/test/runTest.js"
+	},
+	"devDependencies": {
+		"@types/glob": "^7.2.0",
+		"@types/lodash": "^4.14.182",
+		"@types/mocha": "^9.1.0",
+		"@types/node": "14.x",
+		"@types/nunjucks": "^3.2.1",
+		"@types/vscode": "^1.67.0",
+		"@typescript-eslint/eslint-plugin": "^5.26.0",
+		"@typescript-eslint/parser": "^5.26.0",
+		"@vscode/test-electron": "^2.1.2",
+		"eslint": "^8.9.0",
+		"eslint-config-prettier": "^8.5.0",
+		"eslint-plugin-import": "^2.26.0",
+		"eslint-plugin-prettier": "^4.0.0",
+		"glob": "^7.2.0",
+		"mocha": "^9.2.1",
+		"prettier": "^2.6.2",
+		"typescript": "^4.5.5"
+	},
+	"dependencies": {
+		"ajv": "^8.11.0",
+		"ajv-formats": "^2.1.1",
+		"dayjs": "^1.11.2",
+		"knex": "^2.1.0",
+		"lodash": "^4.17.21",
+		"md5-node": "^1.0.1",
+		"mysql": "^2.18.1",
+		"nanoid": "^3.3.1",
+		"nunjucks": "^3.2.3",
+		"ts-md5": "^1.2.11"
+	}
+}

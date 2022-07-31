@@ -1,0 +1,262 @@
+<script type="text/x-template" id="pageItemTable">
+  <div class="cl-dept-tree">
+    <table class="compute-table-probtop" cellpadding="0" cellspacing="0">
+      <tr>
+        <th></th>
+        <th v-for="(header, i) in headers[type]" :key="i">{{ header.label }}</th>
+      </tr>
+      <tr v-for="(item, index) in tableData">
+        <td>
+          <v-icon small aria-hidden="false" @click="lineDel({ index })"
+            color="red">
+            mdi-delete</v-icon>
+        </td>
+        <td v-for="(column, i) in headers[type]" :key="i"
+          @click="inputFocus({ item, column, index, type })"
+          :class="{'td-validate': error[index] && error[index].includes(column.value)}"
+          :style="{ width: ['resourceHook', 'resourceData', 'uiActionConfig'].includes(column.value) ? 'auto' : '' }">
+          <pre class="json-view" v-if="jsonDetail && column.component === 'input' && column.dataType === 'json'">{{detailJson(item[column.value])}}</pre>
+          <input v-else-if="column.component === 'input'"
+            v-model="item[column.value]" :type="column.type"
+            :class="column.value === 'pageId' ? 'disabled' : ''"
+            :disabled="column.value === 'pageId' || column.dataType === 'json'" 
+            :placeholder="column.value === 'pageId' ? page : ''"
+            style="cursor: text;"/>
+
+          <select v-if="column.component === 'select'" v-model="item[column.value]">
+            <option value=""></option>
+            <option v-for="(op, i) in column.options" :key="i" :value="op.value">{{ op.label }}
+            </option>
+          </select>
+        </td>
+      </tr>
+      <tr v-if="tableData.length === 0">
+        <td colspan="7" style="text-align: center; padding: 20px">
+          <img src="../../../images/empty.png" alt="" style="width: 120px">
+          <div><span style="color: #999">暂无更多内容</span></div>
+        </td>
+      </tr>
+    </table>
+    <v-dialog v-model="dialog">
+
+    </v-dialog>
+  </div>
+</script>
+
+<script>
+  Vue.component("pageItemTable", {
+    template: "#pageItemTable",
+    mixins: [window.jianghuUiActionMixins || {}],
+    data: () => {
+      return {
+        headers: {
+          resource: [
+            { label: 'PageId', value: 'pageId', component: 'input', type: 'text' },
+            { label: 'ActionId', value: 'actionId', component: 'input', type: 'text' },
+            { label: 'Desc', value: 'desc', component: 'input', type: 'text' },
+            {
+              label: 'ResourceType', value: 'resourceType', component: 'select', options: [
+                { label: 'sql', value: 'sql' },
+                { label: 'service', value: 'service' },
+              ]
+            },
+            { label: 'ResourceHook', value: 'resourceHook', component: 'input', type: 'text', dataType: 'json' },
+            { label: 'ResourceData', value: 'resourceData', component: 'input', type: 'text', dataType: 'json' },
+          ],
+          ui: [
+            { label: 'PageId', value: 'pageId', component: 'input', type: 'text' },
+            { label: 'UiActionId', value: 'uiActionId', component: 'input', type: 'text' },
+            { label: 'Desc', value: 'desc', component: 'input', type: 'text' },
+            { 
+              label: 'UiActionType', value: 'uiActionType', component: 'select', options: [
+                { label: 'ui', value: 'ui' },
+              ]
+            },
+            { label: 'Function', value: 'uiActionConfig', component: 'input', type: 'text', dataType: 'json' },
+          ],
+          testCase: [
+            { label: 'PageId', value: 'pageId', component: 'input', type: 'text' },
+            { label: 'TestId', value: 'testId', component: 'input', type: 'text' },
+            { label: 'TestName', value: 'testName', component: 'input', type: 'text' },
+            { label: 'TestOpeartion', value: 'testOpeartion', component: 'input', type: 'text' },
+          ],
+        },
+        defaultJson: {},
+        codemirrorOptions: {
+          mode: 'application/json',
+          theme: 'material-darker',
+          indentUnit: 4,
+          smartIndent: false,
+          tabSize: 4,
+          indentWithTabs: true,
+          readOnly: true,
+          height: '400px'
+        },
+        dialog: false,
+      }
+    },
+    props: {
+      tableData: {
+        type: Array,
+        default: () => {
+          return []
+        }
+      },
+      type: {
+        type: String,
+        default: ''
+      },
+      page: {
+        type: String,
+        default: ''
+      },
+      jsonDetail: {
+        type: Boolean,
+        default: false
+      },
+      error: {
+        type: Object,
+        default: () => {
+          return {}
+        }
+      }
+    },
+    watch: {
+      tableData: {
+        handler: function (a) {
+        },
+        deep: true
+      },
+      error: {
+        handler: function (a) {
+        },
+        deep: true
+      }
+    },
+    computed: {
+    },
+    methods: {
+      inputFocus({ item, column, index, type }) {
+        if (column.component === 'input' && column.dataType && column.dataType === 'json') {
+          // console.log(item[column.value]);
+          // this.defaultJson = JSON.parse(item[column.value]);
+          // this.dialog = true;
+          this.$emit('edit-json', { json: JSON.parse(item[column.value] || '{}'), key: column.value, index, type });
+        }
+      },
+      lineDel({ index }) {
+        this.tableData.splice(index, 1);
+      },
+      detailJson(str) {
+        if (str) {
+          return JSON.stringify(JSON.parse(str), null, 4);
+        }
+        return ''
+      }
+    }
+  });
+</script>
+
+<style scoped>
+  .compute-table-probtop {
+    width: 100%;
+    border: 1px solid #DCDFE6;
+  }
+
+  .compute-table-probtop tr th {
+    background-color: unset;
+  }
+
+  div.cl-dept-tree table.compute-table-probtop tr td,
+  div.cl-dept-tree table.compute-table-probtop tr th {
+    text-align: center;
+    border-left: none !important;
+    border-top: none;
+    border-right: 1px solid #E4E7ED;
+    border-bottom: 1px solid #E4E7ED;
+    box-sizing: border-box;
+    line-height: 1rem;
+    padding: 3px;
+    font-size: 12px;
+    color: #5a5e66;
+  }
+
+  .compute-table-probtop tr td:last-child {
+    border-right: none !important;
+  }
+
+  .compute-table-probtop tr:last-child td {
+    border-bottom: none !important;
+  }
+
+  .compute-table-probtop tr td:nth-child(1) {
+    width: 40px;
+    min-width: 40px;
+    max-width: 40px !important;
+  }
+
+  .compute-table-probtop tr td:nth-child(2) {
+    width: 150px;
+    min-width: 150px;
+  }
+
+  .compute-table-probtop tr td:nth-child(3) {
+    width: 180px;
+    min-width: 180px;
+  }
+
+  .compute-table-probtop tr td:nth-child(4) {
+    width: 180px;
+    min-width: 180px;
+  }
+
+  .compute-table-probtop tr td:nth-child(5) {
+    width: 110px;
+    min-width: 110px;
+  }
+
+  .compute-table-probtop tr td:nth-child(6) {
+    width: 250px;
+  }
+
+  .compute-table-probtop tr:nth-child(1) td:nth-child(3) {
+    border-bottom: none !important;
+  }
+
+  .compute-table-probtop th {
+    text-align: center;
+    box-sizing: border-box;
+    line-height: 2rem;
+    background-color: rgb(242, 246, 252);
+  }
+
+  .cl-dept-tree input,
+  .cl-dept-tree select {
+    width: 100%;
+    border: 1px solid #E4E7ED;
+    border-radius: 4px;
+    line-height: 22px;
+    padding: 0 7px;
+    color: #333;
+  }
+
+  .cl-dept-tree input.disabled {
+    color: #999;
+    background-color: #eee;
+  }
+
+  .cl-dept-tree input:focus,
+  .cl-dept-tree select:focus {
+    border: 1px solid #999;
+    outline: none;
+  }
+  .json-view {
+    height: auto;
+    text-align: left;
+    font-size: 14px;
+    font-family: Segoe WPC,Segoe UI,Microsoft YaHei,sans-serif;
+  }
+  .td-validate {
+    background-color: rgb(255, 227, 227);
+  }
+</style>

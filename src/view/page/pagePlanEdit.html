@@ -1,0 +1,547 @@
+{% extends 'template/jhsTemplate.html'%}content-resource
+{% block css %}
+
+<link href="../lib/jsoneditor/jsoneditor.css" rel="stylesheet">
+<script src="../lib/jsoneditor/jsoneditor.js"></script>
+{% endblock %}
+{% block vue_template %}
+<v-app>
+<div class="ui-resource-container">
+  <div style="padding: 0; height: 100%;width: 100%;">
+    <div class="content-resource" style="background: #ffffff;padding: 0 10px 10px 10px; position: relative">
+      <v-row style="margin: 0;">
+        <v-col style="padding: 5px 0;">
+          <h2 class="block-title">Resource</h2>&nbsp;&nbsp;
+          <v-menu
+            small
+            key="add"
+            offset-y
+          >
+            <template v-slot:activator="{ attrs, on }">
+              <v-btn
+                small
+                color="deep-purple accent-4"
+                class="white--text"
+                v-bind="attrs"
+                v-on="on"
+              >
+                <v-icon dark>
+                  mdi-plus
+                </v-icon>
+              </v-btn>
+            </template>
+
+            <v-list dense>
+              <v-list-item
+                v-for="(item, index) in resourceSampleListFilter"
+                :key="index"
+                link
+              >
+                <v-list-item-title v-text="item.text" @click="addResourceLine({item})"></v-list-item-title>
+              </v-list-item>
+            </v-list>
+          </v-menu>
+          <v-btn small depressed @click="getResourceList" :loading="resource.loading"
+            style="background-color: var(--vscode-button-background); color: var(--vscode-button-foreground); margin: 0 auto">
+            刷新
+          </v-btn>
+          <v-btn-toggle v-model="resourceJsonView" tile color="deep-purple accent-3" group v-if="resource.list.length > 0">
+            <v-btn small :value="true">
+              JSON预览
+            </v-btn>
+          </v-btn-toggle>
+        </v-col>
+        <v-spacer></v-spacer>
+        <v-col
+          style="padding: 5px 0;display: flex;flex-direction: row;align-items: center;justify-content: flex-end;    flex-grow: unset;">
+          <v-btn small depressed @click="saveResource" :loading="resource.saving"
+            style="background-color: var(--vscode-button-background); color: var(--vscode-button-foreground); margin: 0 auto">
+            保存Resource
+          </v-btn>
+        </v-col>
+        </v-row>
+      <page-item-table class="pageItemTable" :table-data="resource.list" type="resource" :page="pageId"
+        :json-detail="resourceJsonView" @edit-json="editJson" :error="resource.error">
+      </page-item-table>
+      <v-overlay :absulate="true" :value="resource.loading" style="position: absolute;">
+        <v-progress-circular indeterminate size="32"></v-progress-circular>
+      </v-overlay>
+    </div>
+    <div class="content-ui" style="background: #ffffff;padding: 10px; margin-top: 10px; position: relative; ">
+      <v-row style="margin: 0;">
+        <v-col style="padding: 5px 0;">
+          <h2 class="block-title">UiAction</h2>&nbsp;&nbsp;
+          <v-btn small depressed @click="addUiLine">
+            <v-icon dark>
+              mdi-plus
+            </v-icon>
+          </v-btn>
+          <v-btn small depressed @click="getUiList" :loading="ui.loading"
+            style="background-color: var(--vscode-button-background); color: var(--vscode-button-foreground); margin: 0 auto">
+            刷新
+          </v-btn>
+          <v-btn-toggle v-model="uiJsonView" tile color="deep-purple accent-3" group v-if="ui.list.length > 0">
+            <v-btn small :value="true">
+              JSON预览
+            </v-btn>
+          </v-btn-toggle>
+        </v-col>
+        <v-spacer></v-spacer>
+        <v-col
+          style="padding: 5px 0;display: flex;flex-direction: row;align-items: center;justify-content: flex-end;    flex-grow: unset;">
+          <v-btn small depressed @click="saveUi" :loading="ui.saving"
+            style="background-color: var(--vscode-button-background); color: var(--vscode-button-foreground); margin: 0 auto">
+            保存uiAction
+          </v-btn>
+        </v-col>
+      </v-row>
+      <page-item-table class="pageItemTable" :json-detail="uiJsonView" :table-data="ui.list" type="ui" :page="pageId"
+        @edit-json="editJson" :error="ui.error">
+      </page-item-table>
+      <v-overlay :absulate="true" light :value="ui.loading" style="position: absolute;">
+        <v-progress-circular indeterminate size="32"></v-progress-circular>
+      </v-overlay>
+      </div>
+      <div class="content-text-case" style="background: #ffffff;padding: 10px; margin-top: 10px; position: relative; ">
+        <v-row style="margin: 0;">
+          <v-col style="padding: 5px 0;">
+            <h2 class="block-title">TestCase</h2>&nbsp;&nbsp;
+            <v-btn small depressed @click="addTestCaseLine">
+              <v-icon dark>
+                mdi-plus
+              </v-icon>
+            </v-btn>
+            <v-btn small depressed @click="getTestCaseList" :loading="testCase.loading"
+              style="background-color: var(--vscode-button-background); color: var(--vscode-button-foreground); margin: 0 auto">
+              刷新
+            </v-btn>
+          </v-col>
+          <v-spacer></v-spacer>
+          <v-col
+            style="padding: 5px 0;display: flex;flex-direction: row;align-items: center;justify-content: flex-end;    flex-grow: unset;">
+            <v-btn small depressed @click="saveTestCase" :loading="testCase.saving"
+              style="background-color: var(--vscode-button-background); color: var(--vscode-button-foreground); margin: 0 auto">
+              保存TestCase
+            </v-btn>
+          </v-col>
+        </v-row>
+        <page-item-table class="pageItemTable" :json-detail="uiJsonView" :table-data="testCase.list" type="testCase"
+          :page="pageId"
+          @edit-json="editJson" :error="testCase.error">
+        </page-item-table>
+        <v-overlay :absulate="true" light :value="testCase.loading" style="position: absolute;">
+          <v-progress-circular indeterminate size="32"></v-progress-circular>
+        </v-overlay>
+      </div>
+  </div>
+
+  <v-navigation-drawer v-model="editJsonDialog" absolute left width="450" temporary>
+<vue-json-editor v-model="jsonObj.json" :type="jsonObj.type" :show-btns="true" :mode="'code'" lang="zh"
+  :title="getJsonEditTitle()"
+  @json-change="onJsonChange"
+      @json-save="onJsonSave" @has-error="onError"></vue-json-editor>
+      <div v-for="(item, index) in sampleJson[jsonObj.type]" :key="index">
+        <v-subheader>{{item.label}}</v-subheader>
+        <div
+          style="margin: 0 16px; border: 1px solid #dadada; border-radius: 5px; padding: 4px 8px; position: relative; background-color: #f7f7f7;">
+          <v-icon large color="blue darken-2" small style="position: absolute; right: 8px; top: 8px"
+            @click="copyCode(item.json)">
+            mdi-content-copy
+          </v-icon>
+          <pre>{{ JSON.stringify(item.json, null, 2) }}</pre>
+        </div>
+      </div>
+  </v-navigation-drawer>
+</div>
+</v-app>
+
+{% endblock %} {% block vue_body %}
+{% include 'component/pageItemTable.html' %}
+{% include 'component/vueJsonEditor.html' %}
+
+<!-- <script src="../lib/jquery/jquery.min.js"></script> -->
+<script type="module">
+  // const counter = document.getElementById('app-template');
+  // // Check if we have an old state to restore from
+  // const previousState = window.client.getState();
+  // let count = previousState ? previousState.count : 0;
+  // counter.textContent = count;
+
+  // setTimeout(() => {
+  //   counter.textContent = count++;
+  //   // Update the saved state
+  //   console.log('设置状态')
+  //   window.client.setState({ count });
+  // }, 100);
+  new Vue({
+    el: '#app',
+    template: "#app-template",
+    vuetify: new Vuetify(),
+    data: () => {
+      const resourceTableSample = { table: "table_name", operation: "select|insert|update|delete" };
+      const resourceServiceSample = { service: "serviceName", serviceFunction: "functionName" };
+      const resourceHookSample = { before: [], after: [ { "service": "serviceName", "serviceFunction": "functionName" } ] };
+      const uiActionConfigSample = {
+              label: "Ui Function Sample",
+              json: {
+                before: [
+                  {
+                    "function": "functionName"
+                  }
+                ],
+                main: [
+                  {
+                    "function": "functionName"
+                  }
+                ],
+                after: [
+                  {
+                    "function": "functionName"
+                  }
+                ]
+              }
+            };
+      return {
+        resourceJsonView: false,
+        uiJsonView: false,
+        isFormValid: true,
+        pageIndex: 3,
+        pageList: [],
+        resource: {
+          list: [],
+          loading: false,
+          saving: false,
+          validate: ['actionId', 'desc', 'resourceType', 'resourceData'],
+          error: {}
+        },
+        ui: {
+          list: [],
+          loading: false,
+          saving: false,
+          validate: ['uiActionId', 'desc', 'uiActionType', 'uiActionConfig'],
+          error: {}
+        },
+        testCase: {
+          list: [],
+          loading: false,
+          saving: false,
+          validate: ['testId', 'testName', 'testOpeartion'],
+          error: {}
+        },
+        pageId: "<$ pageId $>",
+        database: "<$ database $>",
+        jsonObj: {
+          key: '',
+          json: {},
+          index: 0,
+          type: ''
+        },
+        editJsonDialog: false,
+        editor: null,
+        sampleJson: {
+          resource: [
+            {
+              label: "ResourceData Sql Sample",
+              json: resourceTableSample
+            },
+            {
+              label: "ResourceData Service Sample",
+              json: resourceServiceSample
+            },
+            {
+              label: "ResourceHook Sample",
+              json: resourceHookSample
+            }
+          ],
+          ui: [ uiActionConfigSample ],
+        },
+        resourceSampleList: [
+          {text: '查询', value: 'refreshTableData', data: {
+            pageId: "<$ pageId $>", actionId: 'refreshTableData', desc: '✅查询-查询列表', resourceType: 'sql', resourceData: { table: "table_name", operation: "select" }
+          }},
+          {text: '新增', value: 'insertItem', data: {
+            pageId: "<$ pageId $>", actionId: 'insertItem', desc: '✅新增-添加数据', resourceType: 'sql', resourceData: { table: "table_name", operation: "insert" }
+          }},
+          {text: '编辑', value: 'updateItem', data: {
+            pageId: "<$ pageId $>", actionId: 'updateItem', desc: '✅编辑-添加数据', resourceType: 'sql', resourceData: { table: "table_name", operation: "update" }
+          }},
+          {text: '删除', value: 'deleteItem', data: {
+            pageId: "<$ pageId $>", actionId: 'deleteItem', desc: '✅删除-删除数据', resourceType: 'sql', resourceData: { table: "table_name", operation: "delete" }
+          }},
+          {text: '空白', value: '', data: {
+            pageId: "<$ pageId $>",
+            actionId: '',
+            desc: '',
+            resourceType: 'sql',
+            resourceHook: null,
+            resourceData: null,
+          } }
+        ]
+        
+      };
+    },
+    computed: {
+      resourceSampleListFilter() {
+        return this.resourceSampleList.filter(e => !e.value || !this.resource.list.find(c => e.value === c.actionId));
+      }
+    },
+    mounted() {
+    },
+    watch: {
+      pageId() {
+        this.initRightTable();
+      },
+      database() {
+        this.initRightTable();
+      }
+    },
+    async created() {
+      console.log('created', this.pageId)
+      this.initRightTable();
+    },
+    methods: {
+      async initRightTable() {
+        this.getResourceList();
+        this.getUiList();
+        this.getTestCaseList();
+      },
+      async getResourceList() {
+        this.resource.loading = true;
+        const { data: { appData: { resultData: { rows } } } } = await window.constructionPlanAxios({
+          data: {
+            appData: {
+              pageId: "pagePlanEdit",
+              actionId: "getResourceList",
+              where: { pageId: this.pageId },
+            },
+          },
+        });
+        this.resource.list = rows || [];
+        this.resource.error = {};
+        setTimeout(() => {
+          this.resource.loading = false;
+        }, 300)
+      },
+      async getTestCaseList() {
+        this.testCase.loading = true;
+        const { data: { appData: { resultData: { rows } } } } = await window.constructionPlanAxios({
+          data: {
+            appData: {
+              pageId: "pagePlanEdit",
+              actionId: "getTestCaseList",
+              where: { pageId: this.pageId },
+
+            },
+          },
+        });
+        this.testCase.list = rows || [];
+        this.testCase.error = {};
+        setTimeout(() => {
+          this.testCase.loading = false;
+        }, 300)
+      },
+      async addResourceLine({item}) {
+        const { actionId, data } = item;
+        if (data.resourceData) {
+          data.resourceData = JSON.stringify((data.resourceData || '{}'), null);
+        }
+        this.resource.list.push(data)
+      },
+      addUiLine() {
+        this.ui.list.push({
+          pageId: this.pageId,
+          uiActionId: '',
+          uiActionType: 'ui',
+          desc: '',
+          uiActionConfig: '',
+        })
+      },
+      addTestCaseLine() {
+        this.testCase.list.push({
+          pageId: this.pageId,
+          testId: '',
+          testName: '',
+          testOpeartion: '',
+        })
+      },
+      async getUiList() {
+        this.ui.loading = true;
+        const { data: { appData: { resultData: { rows } } } } = await window.constructionPlanAxios({
+          data: {
+            appData: {
+              pageId: "pagePlanEdit",
+              actionId: "getUiList",
+              where: { pageId: this.pageId },
+            },
+          },
+        });
+        this.ui.list = rows || [];
+        this.ui.error = {};
+        setTimeout(() => {
+          this.ui.loading = false;
+        }, 300)
+      },
+      editJson(obj) {
+        console.log(obj)
+        // create the editor
+        // this.editor = new JSONEditor(this.$el.querySelector(".jsoneditor-vue"), options, obj)
+        this.jsonObj = obj;
+        this.editJsonDialog = true;
+
+      },
+      async saveResource() {
+        if (!this.validateField(this.resource.validate, this.resource.list, 'resource')) return;
+        this.resource.saving = true;
+        await window.constructionPlanAxios({
+          data: {
+            appData: {
+              pageId: "pagePlanEdit",
+              actionId: "updateResourceList",
+              actionData: { data: this.resource.list, pageId: this.pageId }
+            },
+          },
+        });
+        this.resource.saving = false;
+        this.getResourceList()
+        setTimeout(() => {
+          this.resource.saving = false;
+        }, 300)
+      },
+      async saveUi() {
+        if (!this.validateField(this.ui.validate, this.ui.list, 'ui')) return;
+        this.ui.saving = true;
+        await window.constructionPlanAxios({
+          data: {
+            appData: {
+              pageId: "pagePlanEdit",
+              actionId: "updateUiList",
+              actionData: { data: this.ui.list, pageId: this.pageId }
+            },
+          },
+        });
+
+        this.getUiList()
+        setTimeout(() => {
+          this.ui.saving = false;
+        }, 300)
+      },
+      async saveTestCase() {
+        if (!this.validateField(this.testCase.validate, this.testCase.list, 'testCase')) return;
+        this.testCase.saving = true;
+        await window.constructionPlanAxios({
+          data: {
+            appData: {
+              pageId: "pagePlanEdit",
+              actionId: "updateTestCaseList",
+              actionData: { data: this.testCase.list, pageId: this.pageId }
+            },
+          },
+        });
+
+        this.getTestCaseList()
+        setTimeout(() => {
+          this.testCase.saving = false;
+        }, 300)
+      },
+      onJsonChange() {
+
+      },
+      onJsonSave(value) {
+        if (this.jsonObj.type === 'ui') {
+          this.ui.list[this.jsonObj.index][this.jsonObj.key] = JSON.stringify(value);
+        } else {
+          this.resource.list[this.jsonObj.index][this.jsonObj.key] = JSON.stringify(value);
+        }
+        this.editJsonDialog = false;
+      },
+      onError() {
+
+      },
+      validateField(fields, data, type) {
+        const error = {}
+        let res = true;
+        for (const [index, item] of data.entries()) {
+          for (const field of fields) {
+            if (!item[field]) {
+              error[index] = [...(error[index] || []), field];
+              if (res) {
+                res = false;
+              }
+            }
+          }
+        }
+        if (type === 'ui') {
+          this.ui.error = error;
+        } else if (type === 'resource') {
+          this.resource.error = error;
+        } else {
+          this.testCase.error = error;
+        }
+        return res;
+      },
+      getJsonEditTitle() {
+        if (!this.jsonObj.type || !this.editJsonDialog) return '';
+        let line;
+        let key;
+        if (this.jsonObj.type === 'ui') {
+          if (!this.ui.list.length) return ''
+          line = this.ui.list[this.jsonObj.index];
+          key = 'uiActionId';
+        } else if (this.jsonObj.type === 'resource') {
+          if (!this.resource.list.length) return ''
+          line = this.resource.list[this.jsonObj.index];
+          key = 'actionId';
+        } else if (this.jsonObj.type === 'testCase') {
+          if (!this.testCase.list.length) return ''
+          line = this.testCase.list[this.jsonObj.index];
+          key = 'testId';
+        }
+        return !line[key] && !line.desc ? '' : `${line[key]}: ${line.desc}`;
+      },
+      async copyCode(json) {
+        navigator.clipboard.writeText(JSON.stringify(json, null, 2));
+        await window.vtoast.success("已复制到剪切板");
+      }
+    }
+  })
+</script>
+
+<style>
+  .ui-resource-container {
+    display: flex;
+    flex-direction: row;
+    background: #f7f7f7;
+    padding: 10px;
+    height: 100vh;
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+
+  .ui-resource-container .v-subheader {
+    height: 38px;
+  }
+
+  .content-resource,
+  .content-ui {
+    overflow-x: auto;
+  }
+
+  .content-resource td,
+  .content-ui td {
+    height: auto !important;
+    padding: 3px !important;
+  }
+
+  .item-filter {
+    filter: blur(10rpx);
+    transition: scale(2);
+  }
+  .block-title {
+    display: inline-block;
+  }
+  .jsoneditor {
+    border-left: none;
+    border-right: none;
+  }
+</style>
+{% endblock %}

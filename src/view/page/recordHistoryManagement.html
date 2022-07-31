@@ -1,0 +1,260 @@
+{% extends 'template/jhsTemplate.html'%}
+
+{% block vue_template %}
+
+<v-app>
+  <v-main>
+
+    <v-container fluid class="fullScreen d-flex flex-column pa-xs-0 pa-20">
+      <v-row class="ma-0 pa-xs-4 align-center flex-none pt-0 "
+        :class="{'pa-4': !isMobile, 'pb-0': !isMobile, 'pa-2': isMobile}">
+
+        <v-spacer></v-spacer>
+
+        <v-col cols="12" xs="8" sm="4" md="4" xl="4" class="pa-xs-0 pa-xs-2 col-sm-8-flex pl-0">
+          <v-select hide-details class="cus-v-input mr-2" v-model="currentTable" :items="tableList" prefix="数据表:" dense dense
+            outlined>
+          </v-select>
+        </v-col>
+        <v-col cols="12" xs="8" sm="4" md="4" xl="4" class="pa-xs-0 pa-xs-2 col-sm-8-flex pl-0">
+          <v-select hide-details class="cus-v-input mr-2" v-model="currentHistoryDataType" :items="historyDataTypeList"
+            prefix="数据类型:" dense dense outlined></v-select>
+        </v-col>
+
+        <v-col cols="12" xs="8" sm="4" md="3" xl="3" class="pa-xs-0 pa-xs-2 col-sm-8-flex">
+          <v-text-field hide-details v-model="searchInput" label="表格过滤" class="cus-v-input" dense outlined></v-text-field>
+        </v-col>
+
+      </v-row>
+      <v-data-table fixed-header :headers="headers" :items="tableData" :search="searchInput"
+        :footer-props="{ itemsPerPageOptions: [20, 40, 60, 100, -1] }" :items-per-page="20" :loading="isTableLoading"
+        checkbox-color="success" mobile-breakpoint="0" class="elevation-0 mt-0 mb-xs-4 flex-fill d-flex flex-column">
+        <template v-slot:item.operationAt="{ item }">
+          {{ item.operationAt && dayjs(item.operationAt).format('YYYY-MM-DD HH:mm:ss') }}
+        </template>
+        <template v-slot:item.option="{ item }">
+          <v-btn small class="mr-2" color="success" :disabled="item.count === 0"
+            @click="doUiAction('viewRecordHistory', {item})">
+            <v-badge color="red" :content="item.count" :value="item.count">
+              查看数据版本
+            </v-badge>
+          </v-btn>
+        </template>
+      </v-data-table>
+
+      <v-navigation-drawer v-model="isEditDrawerShow" :permanent="isEditDrawerPermanent" absolute temporary right
+        touchless width="80%" hide-overlay class="elevation-24">
+        <v-container class="navDrawerContainer">
+          <v-row class="pa-2 py-0">
+            <v-data-table fixed-header checkbox-color="success" :headers="headers" :loading="isDrawerTableLoading"
+              :items="drawerTableData" item-key="classId" :dense="isMobile"
+              :footer-props="{ itemsPerPageOptions: [20, 40, 60, 100, -1] }" :items-per-page="-1" mobile-breakpoint="0"
+              class="elevation-0 pt-0 mb-xs-4 flex-fill d-flex flex-column show-select">
+              <template v-slot:item.operationAt="{ item }">
+                {{ item.operationAt && dayjs(item.operationAt).format('YYYY-MM-DD HH:mm:ss') }}
+              </template>
+              <template v-slot:item.option="{ item }">
+                <v-btn small class="mr-2" color="error" @click="doUiAction('restoreRecordByRecordHistory', {item})">还原数据
+                </v-btn>
+              </template>
+            </v-data-table>
+          </v-row>
+        </v-container>
+      </v-navigation-drawer>
+    </v-container>
+  </v-main>
+</v-app>
+
+{% endblock %}
+
+{% block vue_body %}
+{% include 'common/uiAction.html' %}
+
+<script type="module">
+  new Vue({
+    el: '#app',
+    template: '#app-template',
+    vuetify: new Vuetify(),
+    mixins: [window.jianghuUiActionMixins],
+    data: {
+      tab: null,
+      // 表格相关数据
+      isFormValid: true,
+      showLeftMenu: window.innerWidth > 600,
+      requireRules: [v => !!v || 'This is required'],
+      constantCollection: {
+      },
+      tableList: [
+        { "value": "_file", "text": "_file" },
+        { "value": "_user", "text": "_user" },
+      ],
+      currentTable: '_file',
+      historyDataTypeList: [
+        { "value": "onUse", "text": "使用中的数据" },
+        { "value": "deleted", "text": "已删除的数据" },
+      ],
+      currentHistoryDataType: 'onUse',
+      searchInput: null,
+      isTableLoading: false,
+      tableDataFromBackend: [],
+      defaultHeaders: [
+        { text: "数据ID", value: "id", width: 120, class: 'fixed', cellClass: 'fixed' },
+        { text: "操作类型", value: "operation", width: 120 },
+        { text: "操作人", value: "operationByUser", width: 120 },
+        { text: "操作时间", value: "operationAt", width: 180 },
+      ],
+      headers: [],
+
+      isDrawerTableLoading: true,
+      isEditDrawerPermanent: false,
+      isEditDrawerShow: false,
+      database: '<$ database $>',
+      drawerTableData: [],
+    },
+    computed: {
+      isMobile() {
+        return window.innerWidth < 600;
+      },
+      tableData() {
+        return this.tableDataFromBackend;
+      },
+    },
+    watch: {
+      database() {
+        this.doUiAction('refreshTableData');
+      },
+      currentTable() {
+        this.doUiAction('refreshTableData')
+      },
+      currentHistoryDataType() {
+        this.doUiAction('refreshTableData')
+      }
+    },
+    async created() {
+      if (this.currentTable) {
+        this.doUiAction('refreshTableData')
+      }
+    },
+    mounted() { },
+    methods: {
+      async openTableLoading() {
+        this.isTableLoading = true;
+      },
+
+      /**
+       * 获取表格数据
+       */
+      async refreshTableData() {
+        if (this.currentHistoryDataType === 'onUse') {
+          const result = await window.constructionPlanAxios({
+            data: {
+              appData: {
+                pageId: 'recordHistoryManagement',
+                actionId: 'selectOnUseItemListByTable',
+                actionData: {
+                  table: this.currentTable
+                },
+              }
+            }
+          });
+          this.tableDataFromBackend = result.data.appData.resultData.rows;
+        }
+
+        if (this.currentHistoryDataType === 'deleted') {
+          const result = await window.constructionPlanAxios({
+            data: {
+              appData: {
+                pageId: 'recordHistoryManagement',
+                actionId: 'selectDeletedItemListByTable',
+                actionData: {
+                  table: this.currentTable
+                }
+              }
+            }
+          });
+          this.tableDataFromBackend = result.data.appData.resultData.rows;
+        }
+      },
+
+      async closeTableLoading() {
+        this.isTableLoading = false;
+      },
+
+      computeHeader() {
+        if (this.tableDataFromBackend.length > 0) {
+          const headers = this.defaultHeaders.slice();
+          const recordData = this.tableDataFromBackend[0];
+          for (const key in recordData) {
+            if (['id', 'count', 'recordHistoryId', 'operation', 'operationByUserId', 'operationByUser', 'operationAt'].indexOf(key) > -1) {
+              continue;
+            }
+            headers.push({ text: key, value: key, width: 120, cellClass: 'record-cell' });
+          }
+          headers.push({ text: '操作', value: 'option', align: 'center', sortable: false, width: 150, class: 'fixed', cellClass: 'fixed' });
+          this.headers = headers;
+        }
+      },
+
+      // viewRecordHistory
+      async doViewRecordHistory({ item }) {
+        const { id } = item;
+        this.drawerTableData = [];
+        this.isEditDrawerShow = true;
+        this.isDrawerTableLoading = true;
+        const result = await window.constructionPlanAxios({
+          data: {
+            appData: {
+              pageId: 'recordHistoryManagement',
+              actionId: 'selectItemList',
+              where: {
+                recordId: id,
+                table: this.currentTable
+              },
+              orderBy: [{ column: 'id', order: 'desc' }]
+            }
+          }
+        });
+        const rows = result.data.appData.resultData.rows.map(row => {
+          const { recordContent, id: recordHistoryId } = row;
+          let record = {};
+          try {
+            record = JSON.parse(recordContent);
+          } catch (err) {
+            console.error('[JSON pare error]', err);
+          }
+          record.recordHistoryId = recordHistoryId;
+          return record;
+        })
+        this.drawerTableData = rows;
+        this.isDrawerTableLoading = false;
+      },
+
+      // restoreRecordByRecordHistory
+      async doRestoreRecordByRecordHistory({ item }) {
+        const { recordHistoryId, id } = item;
+        window.vtoast.loading(`${this.currentTable}【${id}】数据还原`);
+        await window.constructionPlanAxios({
+          data: {
+            appData: {
+              pageId: 'recordHistoryManagement',
+              actionId: 'restoreRecordByRecordHistory',
+              actionData: {
+                recordHistoryId
+              }
+            }
+          }
+        });
+        window.vtoast.success(`${this.currentTable}【${id}】数据还原成功`);
+      },
+      dayjs: dayjs,
+    }
+  })
+</script>
+
+<style>
+  .record-cell {
+    background: #F6F6F6 !important;
+  }
+</style>
+
+{% endblock %}

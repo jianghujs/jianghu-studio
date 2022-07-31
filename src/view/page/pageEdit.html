@@ -1,0 +1,247 @@
+{% extends 'template/jhsTemplate.html'%}
+{% block vue_template %}
+<v-app>
+
+    <v-main style="padding: 100px;">
+        <v-subheader>
+            <h2>{{pageId ? '编辑：' + pageId : '新增'}}</h2>
+        </v-subheader>
+
+        <v-container fluid>
+            <v-form ref="form" v-model="valid" lazy-validation>
+                <v-text-field small v-model="form.pageId" :counter="50" :rules="required" label="PageId" required>
+                </v-text-field>
+
+                <v-text-field small v-model="form.pageName" :rules="required" label="pageName" required></v-text-field>
+
+                <v-select small v-model="form.pageType" :items="pageTypeItems" :rules="required" label="PageType"
+                    required>
+                </v-select>
+
+                <v-text-field small v-model="form.sort" label="Sort" required></v-text-field>
+
+                <v-btn :disabled="!valid" color="success" class="mr-4" @click="save">
+                    保存
+                </v-btn>
+                <v-btn color="error" class="mr-4" @click="del">
+                    删除
+                </v-btn>
+                </v-form>
+                </v-container>
+                </v-main>
+                </v-app>
+
+{% endblock %} {% block vue_body %}
+
+<script>
+
+    new Vue({
+        el: '#app',
+        template: "#app-template",
+        vuetify: new Vuetify(),
+        data: function () {
+            return {
+                valid: true,
+                projectName: '加载中',
+                form: {
+                    pageId: '',
+                    pageName: '',
+                    pageType: 'showInMenu',
+                    sort: 0
+                },
+                pageId: "<$ pageId $>",
+                pageTypeItems: [
+                    'common',
+                    'showInMenu',
+                    'dynamicInMenu',
+                ],
+                loading: false,
+                required: [
+                    v => !!v || 'Field is required',
+                ],
+            }
+        },
+        mounted() {
+        },
+        created() {
+            this.getPageInfo()
+        },
+        watch: {
+            pageId(val) {
+                if (val) {
+                    this.getPageInfo();
+                } else {
+                    this.resetForm()
+                }
+            }
+        },
+        methods: {
+            async del() {
+                if (await window.confirmDialog({ title: '删除', content: '确定删除吗？' })) {
+                    await window.constructionPlanAxios({
+                        data: {
+                            appData: {
+                                pageId: "pageEdit",
+                                actionId: "deleteItem",
+                                where: { id: this.form.id, pageId: this.pageId }
+                            },
+                        },
+                    });
+                }
+
+            },
+            async save() {
+                if (!this.$refs.form.validate()) {
+                    this.error('请输入必填项');
+                    return
+                }
+                this.loading = true
+                const where = {};
+                if (this.pageId) {
+                    where.pageId = this.pageId;
+                }
+                console.log(this.form)
+                await window.constructionPlanAxios({
+                    data: {
+                        appData: {
+                            pageId: "pageEdit",
+                            actionId: this.pageId ? "updateItem" : "insertItem",
+                            where,
+                            actionData: this.form
+                        },
+                    },
+                });
+                if (!this.pageId) {
+                    this.pageId = this.form.pageId;
+                }
+                this.getPageInfo()
+            },
+            async getPageInfo() {
+                if (!this.pageId) {
+                    this.resetForm()
+                    return
+                }
+                this.loading = true
+                const { data: { appData: { resultData: { rows } } } } = await window.constructionPlanAxios({
+                    data: {
+                        appData: {
+                            pageId: "pageEdit",
+                            actionId: "selectItem",
+                            where: { pageId: this.pageId },
+                        },
+                    },
+                });
+                if (rows.length) {
+                    this.resetForm(rows[0])
+                }
+
+                setTimeout(() => {
+                    this.loading = false
+                }, 300)
+            },
+            validateForm() {
+                for (const key in this.form) {
+                    if (!this.form[key] && !['sort'].includes(key)) {
+                        return false;
+                    }
+                }
+                return true;
+            },
+            resetForm(data = {}) {
+                this.form = {
+                    id: data.id,
+                    pageId: data.pageId || '',
+                    pageName: data.pageName || '',
+                    pageType: data.pageType || 'showInMenu',
+                    sort: data.sort || 0
+                }
+            }
+        }
+    });
+</script>
+<style>
+    html,
+    body,
+    #app {
+        height: 100%;
+    }
+
+    ::-webkit-scrollbar {
+        width: 10px;
+        height: 10px
+    }
+
+    ::-webkit-scrollbar-track {
+        border-radius: 10px;
+        background-color: #d8dce5
+    }
+
+    ::-webkit-scrollbar-thumb {
+        border-radius: 5px;
+        background-color: #adadad
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+        background-color: #929292
+    }
+
+    ::-webkit-scrollbar-thumb:active {
+        background-color: #666363
+    }
+
+    ::-webkit-scrollbar-corner {
+        background-color: #535353
+    }
+
+    ::-webkit-scrollbar-resizer {
+        background-color: #ff6e00
+    }
+
+    .page-title {
+        margin-bottom: 20px;
+    }
+
+    .control-label {
+        font-weight: normal;
+    }
+
+    .btn-primary {
+        background-color: #1890ff;
+        border-color: #1890ff;
+        outline: none;
+    }
+
+    .btn-primary:focus,
+    .btn-primary:hover {
+        background-color: #40a9ff;
+        border-color: #40a9ff;
+        outline: none;
+    }
+
+    .btn-primary.active,
+    .btn-primary:active {
+        background-color: #096dd9;
+        border-color: #096dd9;
+        color: #fff;
+        outline: none;
+    }
+
+    /* 浅色主题 */
+    .body.vscode-light {
+        background: white;
+        color: black;
+    }
+
+    /* 深色主题 */
+    body.vscode-dark {
+        background: #252526;
+        color: white;
+    }
+
+    /* 高对比度主题 */
+    body.vscode-high-contrast {
+        background: white;
+        color: red;
+    }
+</style>
+{% endblock %}
