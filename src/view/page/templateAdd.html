@@ -1,73 +1,47 @@
 {% extends 'template/jhsTemplate.html'%}
 {% block vue_template %}
-<v-app>
-
-    <v-main>
-        <v-subheader>
-            <h2>Template 模板仓库</h2>
-        </v-subheader>
-        <v-row class="justify-center">
-            <v-col v-for="(item, index) in template" cols="12" sm="6" md="4" lg="3" xl="3">
-                <div class="position-relative">
-                    <v-card class="v-sheet">
-                        <v-carousel v-model="model" style="height: 200px;">
-                            <v-carousel-item v-for="(color, i) in colors" :key="color">
-                                <v-sheet :color="color" height="100%" tile>
-                                    <v-row class="fill-height" align="center" justify="center">
-                                        <div class="text-h2">
-                                            Slide {{ i + 1 }}
-                                        </div>
-                                    </v-row>
-                                </v-sheet>
-                            </v-carousel-item>
-                        </v-carousel>
-
-                        <v-card-title>
-                            {{item.title}}
-                        </v-card-title>
-
-                        <v-card-subtitle>
-                            {{item.desc}}
-                        </v-card-subtitle>
-
-                        <v-card-actions>
-                            <v-btn color="orange lighten-2" text @click="addTemlate(item)">
-                                一键安装
-                            </v-btn>
-
-                            <v-spacer></v-spacer>
-
-                            <!-- <v-btn icon @click="show = !show">
-                                <v-icon>{{ show ? 'mdi-chevron-up' : 'mdi-chevron-down' }}</v-icon>
-                            </v-btn> -->
-                        </v-card-actions>
-
-                        <v-expand-transition>
-                            <div v-show="show">
-                                <v-divider></v-divider>
-
-                                <v-card-text>
-                                    I'm a thing. But, like most politicians, he promised more than he could deliver.
-                                    You
-                                    won't have
-                                    time for sleeping, soldier, not with all the bed making you'll be doing. Then
-                                    we'll
-                                    go
-                                    with that
-                                    data file! Hey, you add a one and two zeros to that or we walk! You're going to
-                                    do
-                                    his
-                                    laundry?
-                                    I've got to find a way to escape.
-                                </v-card-text>
-                            </div>
-                        </v-expand-transition>
-                    </v-card>
-                </div>
-            </v-col>
-        </v-row>
-    </v-main>
-</v-app>
+<jh-layout-v3>
+    <template slot="breadcrumbsTitle">
+      jinghu-init Project
+    </template>
+    
+    <v-row class="mt-2">
+        <v-col v-for="(item, index) in projectList" cols="12" sm="6" md="4" lg="3" xl="3" class="pa-2">
+            <v-card>
+                <v-list-item>
+                    <v-list-item-content>
+                      <v-list-item-title class="mb-2">{{item.title}}</v-list-item-title>
+                      <v-list-item-subtitle>{{item.desc}}</v-list-item-subtitle>
+                    </v-list-item-content>
+                    <v-list-item-action>
+                        <v-btn color="success" text @click="addTemlate(item)">
+                            一键安装
+                        </v-btn>
+                    </v-list-item-action>
+                  </v-list-item>
+                </v-card>
+        </v-col>
+    </v-row>
+    <div class="appTitle pt-5" style="font-size: 18px; font-weight: bold">jinghu-init Page</div>
+      <v-row class="mt-2">
+        <v-col v-for="(item, index) in pageList" cols="12" sm="6" md="4" lg="3" xl="3" class="pa-2">
+            
+            <v-card>
+                <v-list-item>
+                    <v-list-item-content>
+                      <v-list-item-title class="mb-2">{{item.title}}</v-list-item-title>
+                      <v-list-item-subtitle>{{item.desc}}</v-list-item-subtitle>
+                    </v-list-item-content>
+                    <v-list-item-action>
+                        <v-btn color="success" text @click="addTemlate(item)">
+                            一键安装
+                        </v-btn>
+                    </v-list-item-action>
+                  </v-list-item>
+                </v-card>
+        </v-col>
+    </v-row>
+</jh-layout-v3>
 
 {% endblock %} {% block vue_body %}
 
@@ -88,9 +62,20 @@
                     'red',
                     'orange',
                 ],
-                template: [
-                    { title: '3table', desc: 'tablea、tableb、和关系表', value: 'crud-3-table' },
-                    { title: 'crud', desc: '根据数据表生成curd界面', value: 'crud' },
+                projectList: [
+                    { title: 'multi', desc: '多应用demo', type: 'project', value: 'multi' },
+                    { title: 'xiaoapp', desc: 'xiaoapp', value: 'crud' },
+                    { title: 'xiaoapp-in-multi', desc: 'xiaoapp-in-multi', type: 'project', value: 'xiaoapp-in-multi' },
+                    { title: '1table', desc: '单页面crud page集合', type: 'project', value: '1table' },
+                    { title: '3table', desc: '3table project demo', type: 'project', value: '3table' },
+                    { title: '1table-enterprise', desc: '多应用crud page集合', type: 'project', value: '1table-enterprise' },
+                    { title: 'enterprise', desc: '多应用demo', type: 'project', value: 'enterprise' },
+                ],
+                pageList: [
+                    { title: 'crud', desc: '单页面增删改查', value: 'crud-3-table' },
+                    { title: '2table-crud', desc: '页面A、页面B, 一/多对多关系', value: '2table' },
+                    { title: '3table-crud', desc: '页面A、页面B、页面AB', value: '3table' },
+                    { title: 'test-page', desc: '测试页面', value: 'test-page' }
                 ]
             }
         },

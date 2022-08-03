@@ -2,9 +2,9 @@
 	"name": "jianghu-studio",
 	"displayName": "江湖Studio",
 	"description": "jianghu studio for vscode",
-	"publisher": "xueyuan921",
+	"publisher": "jianghujs",
 	"title": "jianghu",
-	"version": "0.1.7",
+	"version": "0.1.1",
 	"icon": "images/logo.png",
 	"engines": {
 		"vscode": "^1.67.0"
@@ -19,7 +19,7 @@
 		"url": "https://github.com/jianghujs/jianghu-studio/issues",
 		"email": "xueyuan921@163.com"
 	},
-	"homepage": "https://github.com/jianghujs/jianghu-studio/README.md",
+	"homepage": "https://github.com/jianghujs/jianghu-studio/blob/main/README.md",
 	"repository": {
 		"type": "git",
 		"url": "https://github.com/jianghujs/jianghu-studio.git"

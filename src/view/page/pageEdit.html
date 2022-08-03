@@ -1,35 +1,33 @@
 {% extends 'template/jhsTemplate.html'%}
 {% block vue_template %}
-<v-app>
+<jh-layout-v3>
+    <template slot="breadcrumbsTitle">页面Page-{{pageId ? '编辑：' + pageId : '新增'}}
+    </template>
+    <div>
+    <v-card class="pa-4 mt-2">
+        <v-form ref="form" v-model="valid" lazy-validation>
+            <v-text-field class="cus-v-input" v-model="form.pageId" :counter="50" :rules="required" label="PageId" dense outlined>
+            </v-text-field>
 
-    <v-main style="padding: 100px;">
-        <v-subheader>
-            <h2>{{pageId ? '编辑：' + pageId : '新增'}}</h2>
-        </v-subheader>
+            <v-text-field class="cus-v-input" v-model="form.pageName" :rules="required" label="pageName" dense outlined></v-text-field>
 
-        <v-container fluid>
-            <v-form ref="form" v-model="valid" lazy-validation>
-                <v-text-field small v-model="form.pageId" :counter="50" :rules="required" label="PageId" required>
-                </v-text-field>
+            <v-select v-model="form.pageType" :items="pageTypeItems" :rules="required" label="PageType" dense outlined
+                required>
+            </v-select>
 
-                <v-text-field small v-model="form.pageName" :rules="required" label="pageName" required></v-text-field>
+            <v-text-field v-model="form.sort" label="Sort" outlined required></v-text-field>
 
-                <v-select small v-model="form.pageType" :items="pageTypeItems" :rules="required" label="PageType"
-                    required>
-                </v-select>
-
-                <v-text-field small v-model="form.sort" label="Sort" required></v-text-field>
-
-                <v-btn :disabled="!valid" color="success" class="mr-4" @click="save">
-                    保存
-                </v-btn>
-                <v-btn color="error" class="mr-4" @click="del">
-                    删除
-                </v-btn>
-                </v-form>
-                </v-container>
-                </v-main>
-                </v-app>
+            <v-btn :disabled="!valid" color="success" class="mr-4" @click="save">
+                保存
+            </v-btn>
+            <v-btn color="error" class="mr-4" @click="del">
+                删除
+            </v-btn>
+            </v-form>
+    </v-card>
+        
+    </div>
+</jh-layout-v3>
 
 {% endblock %} {% block vue_body %}
 

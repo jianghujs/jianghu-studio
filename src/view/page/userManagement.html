@@ -1,15 +1,15 @@
 {% extends 'template/jhsTemplate.html'%}
-
 {% block vue_template %}
-
-<v-app>
-  <!-- 页面主要内容 -->
-    <v-container fluid class="fullScreen d-flex flex-column pa-xs-0 pa-20">
-    <v-row class="ma-0 pa-xs-4 align-center flex-none pt-0 "
+<jh-layout-v3>
+    <template slot="breadcrumbsTitle">
+      用户管理
+    </template>
+    <v-card class="mt-2">
+        <v-row class="ma-0 pa-xs-4 align-center flex-none pt-0 "
       :class="{'pa-4': !isMobile, 'pb-0': !isMobile, 'pa-2': isMobile}">
 
       <v-col cols="12" xs="4" sm="4" md="4" xl="4" class="pl-0">
-        <v-btn color="success" small dark class="elevation-0 mr-2" @click="doUiAction('startCreateItem', null)">新增
+        <v-btn color="success" dark class="elevation-0 mr-2" @click="doUiAction('startCreateItem', null)">新增
         </v-btn>
         <span class="body-2">共{{ tableData.length }}条记录</span>
       </v-col>
@@ -46,7 +46,7 @@
         </v-btn>
       </template>
     </v-data-table>
-  </v-container>
+  </v-card>
 
   <!-- 编辑抽屉 -->
   <v-navigation-drawer v-model="isEditDrawerShow" absolute temporary right width="80%" hide-overlay
@@ -96,7 +96,7 @@
       </v-row>
     </v-form>
   </v-navigation-drawer>
-</v-app>
+</jh-layout-v3>
 
 {% endblock %}
 

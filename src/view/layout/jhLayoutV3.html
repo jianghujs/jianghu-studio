@@ -1,0 +1,212 @@
+<template id="jhLayout-v3">
+  <v-app id="inspire" mobile-breakpoint="sm">
+    <div v-if="layoutLoading" class="text-center mt-10">
+      <v-progress-circular
+          :size="70"
+          :width="7"
+          color="success"
+          indeterminate
+      ></v-progress-circular>
+    </div>
+    <template v-else>
+      <v-main class="d-flex flex-column" style="background-color: #f5f8fa;">
+        <div class="d-flex px-8">
+          <div>
+            <div class="appTitle pt-5" style="font-size: 18px; font-weight: bold"><slot name='breadcrumbsTitle'>{{breadcrumbs[1].fullText}}</slot></div>
+            <slot name='breadcrumbsDesc'></slot>
+          </div>
+          <div style="flex: 1" class="pt-2 outSideMain">
+            <slot name='serverSearch'></slot>
+          </div>
+        </div>
+        <div style="flex: 1" class="px-8" >
+          <slot></slot>
+        </div>
+      </v-main>
+    </template>
+  </v-app>
+</template>
+<!--jhLayout.html start-->
+<script>
+Vue.component("jh-layout-v3", {
+  vuetify: new Vuetify(),
+  name: 'jh-layout-v3',
+  props: {
+    fullScreen: {
+      type: Boolean,
+      default: false
+    }
+  },
+
+  data: () => ({
+    // 是否与登录
+    layoutLoading: false,
+
+    selectedItem: -1,
+    selectItemTitle: '',
+    drawer: null,
+
+    appDirectoryLink: '<$ ctx.app.config.appDirectoryLink $>',
+    appType: '<$ ctx.app.config.appType $>',
+    appTitle: '<$ ctx.app.config.appTitle $>',
+
+    userInfo: {
+      user: {}
+    },
+    breadcrumbs: [
+      {
+        text: '首页',
+        fullText: '首页',
+        disabled: true,
+      },
+      {
+        text: '首页',
+        fullText: '首页',
+        disabled: true,
+        href: ''
+      },
+    ],
+
+    // 用户菜单
+    inMenuList: [],
+    inAvatarMenuList: [],
+    profileMenus: [],
+    tabsMaxWidth: 'calc(100vw - 373px)'
+  }),
+
+  watch: {},
+
+  computed: {
+    isMobile() {
+      return window.innerWidth < 600;
+    }
+  },
+
+  async created() {
+  },
+
+  methods: {
+    // 动态计算菜单栏目的最大宽度，按照实际的标题宽度计算
+    getTabsMaxWidth() {
+      this.$nextTick(() => {
+        if(this.$refs.toolbarTitle) {
+          this.tabsMaxWidth = 'calc(100vw - ' + (this.$refs.toolbarTitle.offsetWidth + 269) + 'px)';
+        }
+      })
+    },
+    // 跳转链接
+    jump(url, queryParams) {
+      if (queryParams) {
+        const queryStrings = Object.keys(queryParams)
+            .map(k => encodeURIComponent(k) + '=' + encodeURIComponent(queryParams[k]))
+            .join('&');
+        window.location.href = url + '?' + queryStrings;
+      } else {
+        window.location.href = url;
+      }
+    },
+    // 定位当前页面在属于哪个菜单
+    locateCurrentMenuItem() {
+      // 遍历菜单 path 进行匹配
+      const index = _.findIndex(this.inMenuList, {path: location.pathname});
+      if (index > -1) {
+        // 设置标题、菜单选中
+        this.selectedItem = index + (this.isMobile ? 1 : 0);
+        this.selectItemTitle = this.inMenuList[index].title;
+        document.title = this.appTitle + (this.selectItemTitle ? " - " + this.selectItemTitle : "")
+      }
+    },
+    // 获取用户信息
+    async getLoginUserInfo() {
+      const userInfo = await window.jianghuAxios({
+        data: {
+          appData: {
+            pageId: 'allPage',
+            actionId: 'userInfo',
+            actionData: {},
+          }
+        }
+      }).then(response => {
+        return response.data.appData.resultData;
+      })
+      this.userInfo = userInfo;
+      this.$emit('layoutData', { userInfo: this.userInfo })
+      this.layoutLoading = false;
+    },
+    computedMenuList() {
+      const urlPathList = window.location.pathname.split('/');
+      const currentPageId = urlPathList && urlPathList[urlPathList.length - 1];
+      const appType = '<$ ctx.app.config.appType $>';
+      const urlParams = new URLSearchParams(location.search);
+      let title = urlParams.get('title');
+
+      // 处理过长的 title
+      if (title && title.length > 10) {
+        title = `${title.slice(0, 5)}...${title.slice(title.length - 4, title.length)}`
+      }
+      // || (_.includes(['dynamicInMenu', 'avatarInMenu'], page.pageType) && currentPageId === page.pageId)
+      this.inMenuList = _
+          .chain(this.userInfo.allowPageList)
+          .filter(page => page.pageType === 'showInMenu' || (_.includes(['dynamicInMenu', 'avatarInMenu'], page.pageType) && currentPageId === page.pageId))
+          .map((page) => {
+            if(currentPageId === page.pageId) {
+              this.breadcrumbs[1].text = page.pageName.split('-')[0];
+              this.breadcrumbs[1].fullText = page.pageName;
+              this.breadcrumbs[1].href = `/${window.appInfo.appId}/page/${page.pageId}`;
+            }
+            return {
+              path: `/${window.appInfo.appId}/page/${page.pageId}`,
+              title: page.pageName.split('-')[0],
+              sort: parseInt(page.sort)
+            };
+          })
+          .orderBy(['sort'], ['asc'])
+          .value();
+
+      if (appType === 'multiApp' && this.appDirectoryLink) {
+        console.log(this.appDirectoryLink)
+        this.inMenuList.unshift({ path: this.appDirectoryLink, title: '回到目录' });
+      }
+
+      this.inAvatarMenuList = _
+          .chain(this.userInfo.allowPageList)
+          .filter(['pageType', 'showInAvatarMenu'])
+          .map((page) => {
+            return {
+              path: `/${window.appInfo.appId}/page/${page.pageId}`,
+              title: page.pageName,
+              sort: parseInt(page.sort)
+            };
+          })
+          .orderBy(['sort'], ['asc'])
+          .value();
+    },
+    // 登出
+    async logout() {
+      try {
+        await window.jianghuAxios({
+          data: {
+            appData: {
+              pageId: 'allPage',
+              actionId: 'logout'
+            }
+          }
+        })
+        vtoast.success('注销成功');
+        localStorage.removeItem(`${window.appInfo.appId}_authToken`);
+        setTimeout(() => {
+          location.href = `/${window.appInfo.appId}/page/login`;
+        }, 700);
+      } catch (error) {
+        vtoast.fail(error.errorReason);
+        localStorage.removeItem(`${window.appInfo.appId}_authToken`);
+        setTimeout(() => {
+          location.href = `/${window.appInfo.appId}/page/login`;
+        }, 700);
+      }
+    }
+  },
+  template: '#jhLayout-v3',
+})
+</script>
+<!--jhLayout.html end-->

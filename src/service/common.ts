@@ -39,13 +39,14 @@ export default class CommonService extends BaseService {
     const {
       database: { dir },
     } = ctx.app;
-    const { value }: any = ctx.request.body.appData.actionData;
+    const { value, type }: any = ctx.request.body.appData.actionData;
     if (!value) {
       return;
     }
     const terminalA = this.getTerminal(dir as string);
     // terminalA.show(true);
-    terminalA.sendText(`jianghu-init ${value as string}`); // 输入命令
+    const cwd = type === "project" ? `jianghu-init project --type=${value as string}` : "jianghu-init";
+    terminalA.sendText(cwd); // 输入命令
   }
   public getTerminal(dir: string) {
     if (this.terminalTerminal) {

@@ -1,23 +1,22 @@
 {% extends 'template/jhsTemplate.html'%}
-
 {% block vue_template %}
-
-<v-app>
-  <v-main>
-
-    <v-container fluid class="fullScreen d-flex flex-column pa-xs-0 pa-20">
-      <v-row class="ma-0 pa-xs-4 align-center flex-none pt-0 "
+<jh-layout-v3>
+    <template slot="breadcrumbsTitle">
+      数据历史查看
+    </template>
+    <v-card class="pa-1 mt-2">
+      <v-row class="ma-0 pa-xs-4 align-center flex-none pt-0 pl-0 pr-0"
         :class="{'pa-4': !isMobile, 'pb-0': !isMobile, 'pa-2': isMobile}">
 
         <v-spacer></v-spacer>
 
-        <v-col cols="12" xs="8" sm="4" md="4" xl="4" class="pa-xs-0 pa-xs-2 col-sm-8-flex pl-0">
-          <v-select hide-details class="cus-v-input mr-2" v-model="currentTable" :items="tableList" prefix="数据表:" dense dense
+        <v-col cols="12" xs="8" sm="4" md="3" xl="3" class="pa-xs-0 pa-xs-2 col-sm-8-flex pl-0">
+          <v-select hide-details class="cus-v-input" v-model="currentTable" :items="tableList" prefix="数据表:" dense dense
             outlined>
           </v-select>
         </v-col>
-        <v-col cols="12" xs="8" sm="4" md="4" xl="4" class="pa-xs-0 pa-xs-2 col-sm-8-flex pl-0">
-          <v-select hide-details class="cus-v-input mr-2" v-model="currentHistoryDataType" :items="historyDataTypeList"
+        <v-col cols="12" xs="8" sm="4" md="3" xl="3" class="pa-xs-0 pa-xs-2 col-sm-8-flex pl-0">
+          <v-select hide-details class="cus-v-input" v-model="currentHistoryDataType" :items="historyDataTypeList"
             prefix="数据类型:" dense dense outlined></v-select>
         </v-col>
 
@@ -33,7 +32,7 @@
           {{ item.operationAt && dayjs(item.operationAt).format('YYYY-MM-DD HH:mm:ss') }}
         </template>
         <template v-slot:item.option="{ item }">
-          <v-btn small class="mr-2" color="success" :disabled="item.count === 0"
+          <v-btn small color="success" :disabled="item.count === 0"
             @click="doUiAction('viewRecordHistory', {item})">
             <v-badge color="red" :content="item.count" :value="item.count">
               查看数据版本
@@ -41,29 +40,34 @@
           </v-btn>
         </template>
       </v-data-table>
-
-      <v-navigation-drawer v-model="isEditDrawerShow" :permanent="isEditDrawerPermanent" absolute temporary right
-        touchless width="80%" hide-overlay class="elevation-24">
-        <v-container class="navDrawerContainer">
-          <v-row class="pa-2 py-0">
-            <v-data-table fixed-header checkbox-color="success" :headers="headers" :loading="isDrawerTableLoading"
-              :items="drawerTableData" item-key="classId" :dense="isMobile"
-              :footer-props="{ itemsPerPageOptions: [20, 40, 60, 100, -1] }" :items-per-page="-1" mobile-breakpoint="0"
-              class="elevation-0 pt-0 mb-xs-4 flex-fill d-flex flex-column show-select">
-              <template v-slot:item.operationAt="{ item }">
-                {{ item.operationAt && dayjs(item.operationAt).format('YYYY-MM-DD HH:mm:ss') }}
-              </template>
-              <template v-slot:item.option="{ item }">
-                <v-btn small class="mr-2" color="error" @click="doUiAction('restoreRecordByRecordHistory', {item})">还原数据
-                </v-btn>
-              </template>
-            </v-data-table>
-          </v-row>
-        </v-container>
-      </v-navigation-drawer>
-    </v-container>
-  </v-main>
-</v-app>
+    </v-card>
+    <v-navigation-drawer v-model="isEditDrawerShow" fixed temporary right
+      touchless width="80%" class="elevation-24">
+      <v-row>
+        <span class="title pa-6" :class="{'pl-12': !isMobile, 'pl-6': isMobile}">历史信息</span>
+        <v-spacer></v-spacer>
+        <v-btn class="mt-6 elevation-0" :class="{'mr-16': !isMobile, 'mr-8': isMobile}" fab x-small @click="isEditDrawerShow = false">
+          <v-icon dark>mdi-close</v-icon>
+        </v-btn>
+      </v-row>
+      <v-container class="navDrawerContainer">
+        <v-row class="pa-2 py-0">
+          <v-data-table fixed-header checkbox-color="success" :headers="headers" :loading="isDrawerTableLoading"
+            :items="drawerTableData" item-key="classId" :dense="isMobile"
+            :footer-props="{ itemsPerPageOptions: [20, 40, 60, 100, -1] }" :items-per-page="-1" mobile-breakpoint="0"
+            class="elevation-0 pt-0 mb-xs-4 flex-fill d-flex flex-column show-select">
+            <template v-slot:item.operationAt="{ item }">
+              {{ item.operationAt && dayjs(item.operationAt).format('YYYY-MM-DD HH:mm:ss') }}
+            </template>
+            <template v-slot:item.option="{ item }">
+              <v-btn small class="mr-2" color="error" @click="doUiAction('restoreRecordByRecordHistory', {item})">还原数据
+              </v-btn>
+            </template>
+          </v-data-table>
+        </v-row>
+      </v-container>
+    </v-navigation-drawer>
+</jh-layout-v3>
 
 {% endblock %}
 
