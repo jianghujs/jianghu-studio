@@ -1,0 +1,99 @@
+<!--drawerForm.html start-->
+<template id="drawer-form">
+  <v-row  :class="{'px-10': !isMobile, 'px-3': isMobile, 'pb-7': isMobile}">
+    <template v-for="(item, index) of sortedHeaders">
+      <template v-if="item.edit != false">
+        <v-col v-if="item.type !== 'textarea' && item.type !== 'searchMultiple'" cols="12" sm="12" md="4" :class="{'pa-0': isMobile, 'px-3': isMobile, 'pt-6': isMobile}">
+          <span class="inputLabel">{{item.text}}</span>
+
+          <!-- 下拉框 -->
+          <v-select v-if="item.type === 'select'" :disabled="item.disabled" class="cus-v-input mr-2" dense filled single-line clearable color="success"
+            v-model="editItem[item.value]" :items="constantCollection[item.value]" :label="item.text"
+            :rules="item.required && requireRules"></v-select>
+          <!-- 时间选择器 -->
+          <v-menu v-else-if="item.type === 'date'" class="cus-v-input mr-2" offset-y max-width="290">
+            <template v-slot:activator="{ on, attrs }">
+              <v-text-field class="cus-v-input mr-2" :rules="item.required && requireRules" dense filled single-line v-on="on"
+                :label="item.text" :value="editItem[item.value]"></v-text-field>
+            </template>
+            <v-date-picker color="success" elevation="20" v-model="editItem[item.value]"></v-date-picker>
+          </v-menu>
+          <!-- 单选搜索框 -->
+          <v-autocomplete v-else-if="item.type === 'searchOne'" :disabled="item.disabled" class="cus-v-input mr-2" dense filled single-line
+            v-model="editItem[item.value]" :items="constantCollection[item.value]" :filter="customFilter"
+            :label="item.text"></v-autocomplete>
+
+          <!-- 数字文本框 -->
+          <v-text-field v-else-if="item.type === 'number'" class="cus-v-input mr-2" :disabled="item.disabled" dense filled single-line color="success" :label="item.text"
+            type="number" v-model="editItem[item.value]" :rules="item.required && requireRules"></v-text-field>
+
+          <!-- 普通文本框 -->
+          <v-text-field v-else class="cus-v-input mr-2" :disabled="item.disabled" dense filled single-line color="success" :label="item.text"
+            v-model="editItem[item.value]" :rules="item.required && requireRules"></v-text-field>
+        </v-col>
+        <v-col v-else cols="12" sm="12" md="12" :class="{'pa-0': isMobile, 'px-3': isMobile, 'pt-6': isMobile}">
+          <span class="inputLabel">{{item.text}}</span>
+
+          <!-- 多行编辑器 -->
+          <v-textarea v-if="item.type === 'textarea'" :disabled="item.disabled" class="cus-v-input mr-2" dense filled single-line color="success"
+            :rules="item.required && requireRules" :label="item.text" v-model="editItem[item.value]"></v-textarea>
+          <!-- 多选搜索框 -->
+          <v-autocomplete v-else-if="item.type === 'searchMultiple'" class="cus-v-input mr-2"
+            v-model="editItem[item.value]" :items="constantCollection[item.value]" dense chips filled single-line
+            :disabled="item.disabled"
+            :label="item.text" multiple>
+            <template v-slot:selection="data">
+              <v-chip small dense v-bind="data.attrs" :input-value="data.selected" close @click="data.select"
+                @click:close="searchMultipleRemove(data.item, item.value)">
+                {{ data.item.text }}
+              </v-chip>
+            </template>
+          </v-autocomplete>
+        </v-col>
+      </template>
+    </template>
+  </v-row>
+</template>
+<script>
+  // type：字段类型[textarea: 多行文本框，select：下拉框，input：输入框，date：时间选择, searchMultiple: 多选，searchOne: 单选]
+  Vue.component("drawer-form", {
+    vuetify: new Vuetify(),
+    name: 'drawer-form',
+    data: () => ({
+      requireRules: [v => !!v || '此项为必填项'],
+    }),
+    props: {
+      headers: { type: Array, default: [] },
+      editItem: { type: Object, default: {} },
+      constantCollection: { type: Object, default: {} },
+    },
+    computed: {
+      isMobile() {
+        return window.innerWidth < 600;
+      },
+      sortedHeaders() {
+        return this.headers.slice().sort((a, b) => {
+          return (a.type === 'textarea') - (b.type === 'textarea')
+        });
+      }
+    },
+    watch: {
+    },
+    async created() {
+    },
+    methods: {
+      customFilter(item, queryText, itemText) {
+        const textOne = item.text.toLowerCase()
+        const textTwo = item.value.toLowerCase()
+        const searchText = queryText.toLowerCase()
+        return textOne.indexOf(searchText) > -1 ||
+          textTwo.indexOf(searchText) > -1
+      },
+      searchMultipleRemove(item, key) {
+        this.editItem[key] = this.editItem[key].filter(v => item.value != v);
+      }
+    },
+    template: '#drawer-form'
+  })
+</script>
+<!--drawerForm.html end-->
