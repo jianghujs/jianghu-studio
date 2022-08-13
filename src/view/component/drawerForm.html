@@ -1,9 +1,9 @@
 <!--drawerForm.html start-->
 <template id="drawer-form">
-  <v-row  :class="{'px-10': !isMobile, 'px-3': isMobile, 'pb-7': isMobile}">
+  <v-row  :class="{'px-10': !isMobile && hasRowPX, 'px-3': isMobile, 'pb-7': isMobile}">
     <template v-for="(item, index) of sortedHeaders">
       <template v-if="item.edit != false">
-        <v-col v-if="item.type !== 'textarea' && item.type !== 'searchMultiple'" cols="12" sm="12" md="4" :class="{'pa-0': isMobile, 'px-3': isMobile, 'pt-6': isMobile}">
+        <v-col v-if="item.type !== 'textarea' && item.type !== 'searchMultiple'" cols="12" sm="12" :md="cols" :class="{'pa-0': isMobile, 'px-3': isMobile, 'pt-6': isMobile}">
           <span class="inputLabel">{{item.text}}</span>
 
           <!-- 下拉框 -->
@@ -66,6 +66,8 @@
       headers: { type: Array, default: [] },
       editItem: { type: Object, default: {} },
       constantCollection: { type: Object, default: {} },
+      cols: { type: Number, default: 4 },
+      hasRowPX: { type: Boolean, default: true },
     },
     computed: {
       isMobile() {

@@ -1,47 +1,46 @@
 {% extends 'template/jhsTemplate.html'%}
 {% block vue_template %}
 <jh-layout-v3>
-    <template slot="breadcrumbsTitle">
-      用户管理
-    </template>
-    <v-card class="mt-3">
-        <v-row class="ma-0 pa-xs-4 align-center flex-none pt-0 pa-4 pb-0"
-      :class="{'pa-4': !isMobile, 'pb-0': !isMobile, 'pa-2': isMobile}">
-      <v-col cols="12" xs="4" sm="4" md="4" xl="4" class="pl-0">
-        <v-btn color="success" dark class="elevation-0 mr-2" @click="doUiAction('startCreateItem', null)">新增
-        </v-btn>
-        <span class="body-2">共{{ tableData.length }}条记录</span>
-      </v-col>
-      <v-spacer></v-spacer>
-      <v-col cols="12" xs="8" sm="4" md="3" xl="3" class="pa-xs-0 pa-xs-2 col-sm-8-flex">
-        <v-text-field hide-details color="success" v-model="searchInput" prefix="表格过滤：" class="cus-v-input" dense  filled single-line></v-text-field>
-      </v-col>
-    </v-row>
-    <v-data-table fixed-header :headers="headers" :items="tableData" :search="searchInput"
-      :footer-props="{ itemsPerPageOptions: [20, 40, 60, 100, -1] }" :items-per-page="20" :loading="isTableLoading"
-      checkbox-color="success" mobile-breakpoint="0" class="elevation-0 mt-0 mb-xs-4 flex-fill d-flex flex-column">
-      <template v-slot:item.userType="{ item }">
-        {{ getConstantCollectionItemText('userType', item.userType) }}
-      </template>
-      <template v-slot:item.userStatus="{ item }">
-        {{ getConstantCollectionItemText('userStatus', item.userStatus) }}
-      </template>
-      <template v-slot:item.action="{ item }">
-        <v-btn small class="mr-2" color="success" @click="doUiAction('startUpdateItem', {item})">修改</v-btn>
-        <v-btn small class="mr-2" color="primary" v-if="item.userStatus !== 'active'"
-          @click="doUiAction('activeUserStatus', {item})">
-          激活用户
-        </v-btn>
-        <v-btn small class="mr-2" color="error" v-if="item.userStatus === 'active'"
-          @click="doUiAction('bannedUserStatus', {item})">
-          禁用用户
-        </v-btn>
-        <v-btn small class="mr-2" v-if="item.userStatus === 'active'"
-          @click="doUiAction('startResetPassword', {item})">
-          修改密码
-        </v-btn>
-      </template>
-    </v-data-table>
+  <template slot="breadcrumbsTitle">
+    用户管理
+  </template>
+  <v-card class="mt-3">
+        <v-row class="ma-0 pa-xs-4 align-center flex-none pt-0 pa-4 pb-0">
+          <v-col cols="12" xs="4" sm="4" md="4" xl="4" class="pl-0">
+            <v-btn color="success" dark class="elevation-0 mr-2" @click="doUiAction('startCreateItem', null)">新增
+            </v-btn>
+            <span class="body-2">共{{ tableData.length }}条记录</span>
+          </v-col>
+          <v-spacer></v-spacer>
+          <v-col cols="12" xs="8" sm="4" md="3" xl="3" class="pa-xs-0 pa-xs-2 col-sm-8-flex">
+            <v-text-field hide-details color="success" v-model="searchInput" prefix="表格过滤：" class="cus-v-input" dense filled single-line></v-text-field>
+          </v-col>
+      </v-row>
+      <v-data-table fixed-header :headers="headers" :items="tableData" :search="searchInput"
+        :footer-props="{ itemsPerPageOptions: [20, 40, 60, 100, -1] }" :items-per-page="20" :loading="isTableLoading"
+        checkbox-color="success" mobile-breakpoint="0" class="elevation-0 mt-0 mb-xs-4 flex-fill d-flex flex-column">
+        <template v-slot:item.userType="{ item }">
+          {{ getConstantCollectionItemText('userType', item.userType) }}
+        </template>
+        <template v-slot:item.userStatus="{ item }">
+          {{ getConstantCollectionItemText('userStatus', item.userStatus) }}
+        </template>
+        <template v-slot:item.action="{ item }">
+          <v-btn small class="mr-2" color="success" @click="doUiAction('startUpdateItem', {item})">修改</v-btn>
+          <v-btn small class="mr-2" color="primary" v-if="item.userStatus !== 'active'"
+            @click="doUiAction('activeUserStatus', {item})">
+            激活用户
+          </v-btn>
+          <v-btn small class="mr-2" color="error" v-if="item.userStatus === 'active'"
+            @click="doUiAction('bannedUserStatus', {item})">
+            禁用用户
+          </v-btn>
+          <v-btn small class="mr-2" v-if="item.userStatus === 'active'"
+            @click="doUiAction('startResetPassword', {item})">
+            修改密码
+          </v-btn>
+        </template>
+      </v-data-table>
   </v-card>
 
   <!-- 编辑抽屉 -->

@@ -2,29 +2,26 @@
 {% block vue_template %}
 <jh-layout-v3>
     <template slot="breadcrumbsTitle">
-      数据历史查看
+      <div class="pt-4">数据历史</div>
     </template>
-    <v-card class="pa-1 mt-2">
-      <v-row class="ma-0 pa-xs-4 align-center flex-none pt-0 pl-0 pr-0"
-        :class="{'pa-4': !isMobile, 'pb-0': !isMobile, 'pa-2': isMobile}">
 
-        <v-spacer></v-spacer>
-
-        <v-col cols="12" xs="8" sm="4" md="3" xl="3" class="pa-xs-0 pa-xs-2 col-sm-8-flex pl-0">
-          <v-select hide-details class="cus-v-input" v-model="currentTable" :items="tableList" prefix="数据表:" dense dense
-            outlined>
+    <template slot="serverSearch">
+      <v-row class="ma-0 align-center" :class="{'pa-0': isMobile, 'pa-2': !isMobile}" style="justify-content: end">
+        <v-col cols="12" sm="12" xs="5" md="3" xl="2" class="pb-3" :class="{'px-0': isMobile, 'pt-0': isMobile}">
+          <v-select hide-details class="cus-v-input" v-model="currentTable" :items="tableList" prefix="数据表：" dense filled single-line>
           </v-select>
         </v-col>
-        <v-col cols="12" xs="8" sm="4" md="3" xl="3" class="pa-xs-0 pa-xs-2 col-sm-8-flex pl-0">
+        <v-col cols="12" sm="12" xs="5" md="3" xl="2" class="pb-3" :class="{'pt-0': isMobile}">
           <v-select hide-details class="cus-v-input" v-model="currentHistoryDataType" :items="historyDataTypeList"
-            prefix="数据类型:" dense dense outlined></v-select>
+          prefix="数据类型：" dense filled single-line></v-select>
         </v-col>
-
-        <v-col cols="12" xs="8" sm="4" md="3" xl="3" class="pa-xs-0 pa-xs-2 col-sm-8-flex">
-          <v-text-field hide-details v-model="searchInput" label="表格过滤" class="cus-v-input" dense outlined></v-text-field>
+        <v-col cols="12" sm="12" xs="5" md="4" xl="2" class="pb-3" :class="{'pt-0': isMobile}">
+          <v-text-field hide-details  color="success" v-model="searchInput"  prefix="表格过滤：" class="cus-v-input" dense filled single-line></v-text-field>
         </v-col>
-
       </v-row>
+    </template>
+
+    <v-card>
       <v-data-table fixed-header :headers="headers" :items="tableData" :search="searchInput"
         :footer-props="{ itemsPerPageOptions: [20, 40, 60, 100, -1] }" :items-per-page="20" :loading="isTableLoading"
         checkbox-color="success" mobile-breakpoint="0" class="elevation-0 mt-0 mb-xs-4 flex-fill d-flex flex-column">
@@ -41,17 +38,19 @@
         </template>
       </v-data-table>
     </v-card>
+
+    <v-overlay app :value="isEditDrawerShow"></v-overlay>
     <v-navigation-drawer v-model="isEditDrawerShow" fixed temporary right
       touchless width="80%" class="elevation-24">
-      <v-row>
+      <v-row class="pt-8">
         <span class="title pa-6" :class="{'pl-12': !isMobile, 'pl-6': isMobile}">历史信息</span>
         <v-spacer></v-spacer>
-        <v-btn class="mt-6 elevation-0" :class="{'mr-16': !isMobile, 'mr-8': isMobile}" fab x-small @click="isEditDrawerShow = false">
+        <v-btn class="mt-7 elevation-0" :class="{'mr-16': !isMobile, 'mr-8': isMobile}" fab x-small @click="isEditDrawerShow = false">
           <v-icon dark>mdi-close</v-icon>
         </v-btn>
       </v-row>
       <v-container class="navDrawerContainer">
-        <v-row class="pa-2 py-0">
+        <v-row class="px-10 py-3">
           <v-data-table fixed-header checkbox-color="success" :headers="headers" :loading="isDrawerTableLoading"
             :items="drawerTableData" item-key="classId" :dense="isMobile"
             :footer-props="{ itemsPerPageOptions: [20, 40, 60, 100, -1] }" :items-per-page="-1" mobile-breakpoint="0"
@@ -102,7 +101,7 @@
       isTableLoading: false,
       tableDataFromBackend: [],
       defaultHeaders: [
-        { text: "数据ID", value: "id", width: 120, class: 'fixed', cellClass: 'fixed' },
+        { text: "数据ID", value: "id", width: 120},
         { text: "操作类型", value: "operation", width: 120 },
         { text: "操作人", value: "operationByUser", width: 120 },
         { text: "操作时间", value: "operationAt", width: 180 },
@@ -192,7 +191,7 @@
             if (['id', 'count', 'recordHistoryId', 'operation', 'operationByUserId', 'operationByUser', 'operationAt'].indexOf(key) > -1) {
               continue;
             }
-            headers.push({ text: key, value: key, width: 120, cellClass: 'record-cell' });
+            headers.push({ text: key, value: key, width: 120});
           }
           headers.push({ text: '操作', value: 'option', align: 'center', sortable: false, width: 150, class: 'fixed', cellClass: 'fixed' });
           this.headers = headers;

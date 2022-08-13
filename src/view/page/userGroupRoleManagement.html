@@ -2,255 +2,179 @@
 
 {% block vue_template %}
 
-<v-app>
-  <v-main>
-    <v-navigation-drawer permanent absolute left width="250" v-model="showLeftMenu" hide-overlay>
-      <template v-slot:prepend>
-        <v-tabs color="success" v-model="pageTab">
-          <v-tab class="pa-0">用户</v-tab>
-          <v-tab class="pa-0">组织</v-tab>
-          <v-tab class="pa-0">角色</v-tab>
-        </v-tabs>
-        <v-btn depressed small block style="max-width: 180px; display: block; min-width: calc(100% - 24px)!important;"
-          @click="openFormDialog()" color="success ma-3 mb-0">
-          添加新{{tabItemTitle}}
-        </v-btn>
-        <v-col>
-          <v-text-field small label="搜索" dense color="success" class="cus-v-input" placeholder="搜索"
-            v-model="tabsSearchKeyword" prepend-inner-icon="mdi-text-search" outlined></v-text-field>
-        </v-col>
-      </template>
+<jh-layout-v3>
+    <template slot="breadcrumbsTitle">
+      用户权限
+    </template>
 
-      <v-divider></v-divider>
-
-      <v-list-item-group v-model="selectedItem" mandatory dense color="success">
-        <v-list-item v-for="item in tabData" :key="item.value">
-          <v-list-item-content>
-            <v-list-item-title>{{ item.text }}({{ item.value }})</v-list-item-title>
-          </v-list-item-content>
-        </v-list-item>
-      </v-list-item-group>
-    </v-navigation-drawer>
-
-    <!-- 页面主要内容 -->
-    <v-container class="fullScreen d-flex flex-column pa-xs-0 pa-0"
-      :style="{maxWidth: 'calc(100vw - ' + (showLeftMenu ? 500 : 0) + 'px)'}">
-
-      <v-row class="ma-0 pa-xs-4 align-center flex-none pt-0 ">
-
-        <v-col cols="12" xs="12" sm="8" md="8" xl="8" class="d-flex align-center">
-          <v-btn color="success" dark class="elevation-0 mr-4" @click="doUiAction('startCreateItem', null)">新增
+    <v-card style="background-color: #f5f8fa;" class="mt-3">
+      <v-navigation-drawer permanent absolute left width="220" v-model="showLeftMenu" hide-overlay>
+        <template v-slot:prepend>
+          <v-tabs color="success" v-model="pageTab" :show-arrows="false">
+            <v-tab>用户</v-tab>
+            <v-tab>组织</v-tab>
+            <v-tab>角色</v-tab>
+          </v-tabs>
+          <v-btn depressed block style="max-width: 180px; display: block; min-width: calc(100% - 24px)!important;"
+            @click="openFormDialog()" color="success ma-3 mb-0">
+            添加新{{tabItemTitle}}
           </v-btn>
-          <div style="border-radius: 4px; padding-top: 1px" class="pr-2 mr-4">
-            <v-switch class="d-inline-block ma-0 pa-0" v-model="showAllData" label="显示全部" color="success" inset
-              @change="doUiAction('refreshTableData')" hide-details></v-switch>
-          </div>
-          <v-divider vertical></v-divider>
-          <span class="body-2 ml-5">共{{ tableData.length }}条记录</span>
-        </v-col>
-
-        <v-spacer></v-spacer>
-
-        <v-col cols="12" xs="12" sm="4" md="4" xl="4" class="pa-xs-0 pa-xs-2 col-sm-8-flex">
-          <v-text-field small v-model="searchInput" hide-details label="表格过滤" class="cus-v-input" dense outlined></v-text-field>
-        </v-col>
-
-      </v-row>
-      <v-row class="flex-nowrap ma-0">
-        <v-col class="d-flex flex-column ma-0 pb-0">
-          <v-data-table fixed-header :headers="headers" :items="tableData" :search="searchInput"
-            :footer-props="{ itemsPerPageOptions: [20, 40, 60, 100, -1] }" :items-per-page="20"
-            :loading="isTableLoading" checkbox-color="success" mobile-breakpoint="0"
-            class="elevation-0 mt-0 mb-xs-4 flex-fill d-flex flex-column">
-
-            <template v-slot:item.roleId="{ item }">
-              {{ (constantCollection.userType.find(({value}) => value === item.roleId) ||
-              constantCollection.role.find(({value}) => value === item.roleId) || {}).text }}
-            </template>
-            <template v-slot:item.action="{ item }">
-              <v-btn :small="!isMobile" class="mr-2 success" @click="doUiAction('startUpdateItem', {item})">
-                修改
+          <v-col>
+            <v-text-field
+              dense
+              filled
+              single-line
+              hide-details="auto"
+              label="Search" v-model="tabsSearchKeyword" prepend-inner-icon="mdi-magnify"
+              color="success"></v-text-field>
+          </v-col>
+        </template>
+        <v-list-item-group v-model="selectedItem" mandatory dense color="success" class="px-3">
+          <v-list-item v-for="item in tabData" :key="item.value">
+            <v-list-item-content>
+              <v-list-item-title>{{ item.text }}({{ item.value }})</v-list-item-title>
+            </v-list-item-content>
+          </v-list-item>
+        </v-list-item-group>
+      </v-navigation-drawer>
+  
+      <!-- 页面主要内容 -->
+      <v-container class="fullScreen d-flex flex-column pa-xs-0 pa-0"
+        :style="{maxWidth: 'calc(100vw - ' + (showLeftMenu ? 530 : 0) + 'px)'}">
+        <v-card>
+          <v-row class="ma-0 pa-xs-4 align-center flex-none pt-0 ">
+            <v-col cols="12" xs="12" sm="4" md="4" xl="4" class="d-flex align-center">
+              <v-btn color="success" dark class="elevation-0 mr-4" @click="doUiAction('startCreateItem', null)">新增
               </v-btn>
-              <v-btn :small="!isMobile" class="mr-2 error" @click="doUiAction('deleteItem', {item})">
-                删除
-              </v-btn>
-            </template>
-          </v-data-table>
-        </v-col>
-        <!-- <v-col style="max-width: 270px; border-left: 1px solid #ccc;" v-if="!isMobile">
-          <v-list-item-title style="font-size: 1.25rem!important; font-weight: bold;" class="pb-3">{{tabItemTitle +
-            '信息'}}
-          </v-list-item-title>
-          <v-form v-model="isFormValidRight" ref="formRight" lazy-validation>
-            <v-list-item v-for="item of tabItemKeys" class="pl-0 pt-4 pr-0">
-              <v-select v-if="item.type === 'select'" class="cus-v-input mr-2" dense outlined item-value="value"
+              <span class="body-2">共{{ tableData.length }}条记录</span>
+            </v-col>
+            <v-col cols="12" xs="12" sm="8" md="8" xl="8" class="pa-xs-0 pa-xs-2 col-sm-8-flex d-flex align-center justify-end">
+              <v-switch class="d-inline-block ma-0 pa-0 mr-2" v-model="showAllData" label="显示全部" color="success" inset
+                @change="doUiAction('refreshTableData')" hide-details dense></v-switch>
+              <v-text-field v-model="searchInput" hide-details prefix="表格过滤：" class="cus-v-input" dense filled
+              single-line style="flex: initial;"></v-text-field>
+            </v-col>
+          </v-row>
+
+          <v-row class="flex-nowrap ma-0">
+            <v-col class="d-flex flex-column ma-0 pb-0">
+              <v-data-table :headers="headers" :items="tableData" :search="searchInput"
+                :footer-props="{ itemsPerPageOptions: [20, 40, 60, 100, -1] }" :items-per-page="20"
+                :loading="isTableLoading" checkbox-color="success" mobile-breakpoint="0"
+                class="elevation-0 mt-0 mb-xs-4 flex-fill d-flex flex-column">
+                <template v-slot:item.roleId="{ item }">
+                  {{ (constantCollection.userType.find(({value}) => value === item.roleId) ||
+                  constantCollection.role.find(({value}) => value === item.roleId) || {}).text }}
+                </template>
+                <template v-slot:item.action="{ item }">
+                  <v-btn :small="!isMobile" class="mr-2 success" @click="doUiAction('startUpdateItem', {item})">
+                    修改
+                  </v-btn>
+                  <v-btn :small="!isMobile" class="mr-2 error" @click="doUiAction('deleteItem', {item})">
+                    删除
+                  </v-btn>
+                </template>
+              </v-data-table>
+            </v-col>
+          </v-row>
+        </v-card>
+      </v-container>
+  
+      <v-navigation-drawer permanent absolute right width="220" v-model="showLeftMenu" class="pa-3" hide-overlay>
+        <v-list-item-title style="font-size: 15px !important;font-weight: bold;" class="pb-3">{{tabItemTitle +
+          '信息'}}
+        </v-list-item-title>
+        <v-form v-model="isFormValidRight" ref="formRight" lazy-validation>
+          <v-row dense>
+            <v-col cols="12" v-for="item of editFormFields">
+              <span class="inputLabel">{{item.text}}</span>
+
+              <v-select v-if="item.type === 'select'" class="cus-v-input"  dense filled single-line clearable item-value="value"
                 :label="item.text" v-model="activeItemInfo[item.value]"
                 :rules="item.require == false ? nullRules : requireRules" :items="constantCollection[item.value]">
               </v-select>
-              <v-textarea v-else-if="item.type === 'textarea'" class="cus-v-input mr-2" dense outlined
+              <v-textarea v-else-if="item.type === 'textarea'" class="cus-v-input"  dense filled single-line
                 :label="item.text" v-model="activeItemInfo[item.value]"
                 :rules="item.require == false ? nullRules : requireRules">
               </v-textarea>
-              <v-text-field v-else class="cus-v-input mr-2" dense outlined :label="item.text"
+              <v-text-field v-else class="cus-v-input"  dense filled single-line :label="item.text"
                 v-model="activeItemInfo[item.value]" :rules="item.require == false ? nullRules : requireRules">
               </v-text-field>
-            </v-list-item>
-            <v-row class="pa-5">
-              <v-spacer></v-spacer>
-              <v-btn color="error" small @click="doUiAction('deleteLeftItem')" class="mr-4">删除</v-btn>
-              <v-btn color="success" small @click="doUiAction('updateLeftItem')">修改</v-btn>
-            </v-row>
-          </v-form>
-        </v-col> -->
-      </v-row>
-    </v-container>
-
-    <v-navigation-drawer permanent absolute right width="250" v-model="showLeftMenu" class="pa-2" hide-overlay>
-      <v-list-item-title style="font-size: 1.25rem!important; font-weight: bold;" class="pb-3">{{tabItemTitle +
-        '信息'}}
-      </v-list-item-title>
-      <v-form v-model="isFormValidRight" ref="formRight" lazy-validation>
-        <v-list-item v-for="item of tabItemKeys" class="pl-0 pt-4 pr-0">
-          <v-select small v-if="item.type === 'select'" class="cus-v-input mr-2" dense outlined item-value="value"
-            :label="item.text" v-model="activeItemInfo[item.value]"
-            :rules="item.require == false ? nullRules : requireRules" :items="constantCollection[item.value]">
-          </v-select>
-          <v-textarea small v-else-if="item.type === 'textarea'" class="cus-v-input mr-2" dense outlined
-            :label="item.text" v-model="activeItemInfo[item.value]"
-            :rules="item.require == false ? nullRules : requireRules">
-          </v-textarea>
-          <v-text-field small v-else class="cus-v-input mr-2" dense outlined :label="item.text"
-            v-model="activeItemInfo[item.value]" :rules="item.require == false ? nullRules : requireRules">
-          </v-text-field>
-        </v-list-item>
-        <v-row class="pa-5">
-          <v-spacer></v-spacer>
-          <v-btn color="error" small @click="doUiAction('deleteLeftItem')" class="mr-4">删除</v-btn>
-          <v-btn color="success" small @click="doUiAction('updateLeftItem')">修改</v-btn>
-        </v-row>
-      </v-form>
-    </v-navigation-drawer>
+            </v-col>
+          </v-row>
+          <!-- <drawer-form :headers="editFormFields" :editItem="activeItemInfo" :constantCollection="constantCollection" :cols="12" :hasRowPX="false"></drawer-form> -->
+          <v-row class="pa-3 mt-0">
+            <v-spacer></v-spacer>
+            <v-btn color="error" small @click="doUiAction('deleteLeftItem')" class="mr-2">删除</v-btn>
+            <v-btn color="success" small @click="doUiAction('updateLeftItem')">修改</v-btn>
+          </v-row>
+        </v-form>
+      </v-navigation-drawer>
+    </v-card>
+  
     <!-- 编辑抽屉 -->
-    <v-navigation-drawer v-model="isEditDrawerShow" absolute temporary right width="80%"
+    <v-overlay app :value="isEditDrawerShow"></v-overlay>
+    <v-navigation-drawer v-model="isEditDrawerShow" fixed temporary right width="80%"
       class="elevation-24">
       <v-form v-model="isFormValid" ref="form" lazy-validation>
-        <v-row>
-          <span class="title pa-6">{{ currentClickButton.title }}信息</span>
+        <v-row class="pt-8">
+          <span class="title pa-6 pl-12">{{ currentClickButton.title }}信息</span>
           <v-spacer></v-spacer>
           <v-btn class="mt-7 mr-8 elevation-0" fab x-small @click="isEditDrawerShow = false">
             <v-icon dark>mdi-close</v-icon>
           </v-btn>
         </v-row>
-        <v-row class="pa-0 ma-0 pa-xs-4 pb-xs-4 flex-none">
-          <v-col cols="12" sm="12" md="4" xl="3" class="pa-xs-0 pb-xs-4 pb-3">
-            <v-select class="cus-v-input mr-2" dense outlined clearable label="UserID" :rules="requireRules"
-              v-model="editItem.userId" :items="constantCollection.user"></v-select>
-          </v-col>
-          <v-col cols="12" sm="12" md="4" xl="3" class="pa-xs-0 pb-xs-4 pb-3">
-            <v-select class="cus-v-input mr-2" dense outlined clearable label="GroupID" :rules="requireRules"
-              v-model="editItem.groupId" :items="constantCollection.group"></v-select>
-          </v-col>
-          <v-col cols="12" sm="12" md="4" xl="3" class="pa-xs-0 pb-xs-4 pb-3">
-            <v-select class="cus-v-input mr-2" dense outlined clearable label="RoleId" :rules="requireRules"
-              v-model="editItem.roleId" :items="constantCollection.role"></v-select>
-          </v-col>
-        </v-row>
-
-        <v-row class="justify-end pr-6">
-          <v-btn color="success" @click="doUiAction(dialogSaveInfoAction)" small
-            :style="{width: isMobile ? 'calc(100% - 45px)' : '200px'}" :class="{'mb-2': isMobile, 'mr-4': isMobile}">保存
+        <drawer-form :headers="tableFields" :editItem="editItem" :constantCollection="constantCollection"></drawer-form>
+        <v-row class="justify-end mx-0 mt-8 px-10">
+          <v-btn color="success" @click="doUiAction(dialogSaveInfoAction)">保存
           </v-btn>
-          <v-btn class="ml-2" @click="isEditDrawerShow = false" small
-            :style="{width: isMobile ? 'calc(100% - 45px)' : '200px'}" :class="{'mr-4': isMobile}">取消</v-btn>
+          <v-btn class="elevation-0 mr-2 ml-2" @click="isEditDrawerShow = false">取消</v-btn>
         </v-row>
       </v-form>
     </v-navigation-drawer>
 
     <v-dialog v-model="addItemDialog" width="800px">
-      <v-card class="pa-2 pb-4">
-        <v-card-title class="text-h5  lighten-2">
-          添加新{{tabItemTitle}}
-        </v-card-title>
+      <v-card>
+        <!-- header -->
+        <v-toolbar
+            flat
+            dense
+            dark
+            style="background-color: #fff;">
+          <div class="black--text ml-4" style="font-size: 16px;">添加{{tabItemTitle}}</div>
+          <v-spacer></v-spacer>
+          <v-toolbar-items>
+            <v-btn
+                text
+                @click="addItemDialog = false""
+            >
+              <v-icon class="black--text" style="font-size: 18px;">mdi-close</v-icon>
+            </v-btn>
+          </v-toolbar-items>
+        </v-toolbar>
+        <v-divider style="border-color: #eff2f5;opacity:0.8;"></v-divider>
 
-        <v-card-text>
+        <v-card-text class="pt-6 pb-8">
           <v-form v-model="isFormValidLeft" v-if="addItemDialog" ref="formLeft" lazy-validation>
-            <v-row class="pa-0 ma-0 pa-xs-4 pb-xs-4 flex-none" v-if="pageTab == 0">
-              <v-col cols="12" sm="12" md="6" class="pa-xs-0 pb-xs-4 pb-3">
-                <v-text-field class="cus-v-input mr-2" dense outlined label="用户ID" v-model="editItem.userId"
-                  :rules="requireRules"></v-text-field>
-              </v-col>
-              <v-col cols="12" sm="12" md="6" class="pa-xs-0 pb-xs-4 pb-3">
-                <v-text-field class="cus-v-input mr-2" dense outlined label="用户名" v-model="editItem.username"
-                  :rules="requireRules"></v-text-field>
-              </v-col>
-              <v-col cols="12" sm="12" md="6" class="pa-xs-0 pb-xs-4 pb-3">
-                <v-select class="cus-v-input mr-2" dense outlined clearable label="用户状态" v-model="editItem.userStatus"
-                  :items="constantCollection.userStatus"></v-select>
-              </v-col>
-              <v-col cols="12" sm="12" md="6" class="pa-xs-0 pb-xs-4 pb-3">
-                <v-select class="cus-v-input mr-2" dense outlined clearable label="用户类型" v-model="editItem.userType"
-                  :items="constantCollection.userType"></v-select>
-              </v-col>
-              <v-col v-if="currentClickButton.action === 'add'" cols="12" sm="12" md="6" class="pa-xs-0 pb-xs-4 pb-3">
-                <v-text-field class="cus-v-input mr-2" dense outlined label="初始密码" v-model="editItem.clearTextPassword"
-                  :rules="requireRules"></v-text-field>
-              </v-col>
-            </v-row>
-            <v-row class="pa-0 ma-0 pa-xs-4 pb-xs-4 flex-none" v-if="pageTab == 1">
-              <v-col cols="12" sm="12" md="6" class="pa-xs-0 pb-xs-4 pb-3">
-                <v-text-field class="cus-v-input mr-2" dense outlined label="组织ID" v-model="editItem.groupId"
-                  :rules="requireRules"></v-text-field>
-              </v-col>
-              <v-col cols="12" sm="12" md="6" class="pa-xs-0 pb-xs-4 pb-3">
-                <v-text-field class="cus-v-input mr-2" dense outlined label="组织名" v-model="editItem.groupName"
-                  :rules="requireRules"></v-text-field>
-              </v-col>
-              <v-col cols="12" sm="12" md="6" class="pa-xs-0 pb-xs-4 pb-3">
-                <v-text-field class="cus-v-input mr-2" dense outlined label="组织描述" v-model="editItem.groupDesc">
-                </v-text-field>
-              </v-col>
-              <v-col cols="12" sm="12" md="6" class="pa-xs-0 pb-xs-4 pb-3">
-                <v-text-field class="cus-v-input mr-2" dense outlined label="组织Logo" v-model="editItem.groupAvatar">
-                </v-text-field>
-              </v-col>
-              <v-col cols="12" sm="12" md="6" class="pa-xs-0 pb-xs-4 pb-3">
-                <v-text-field class="cus-v-input mr-2" dense outlined label="拓展字段" v-model="editItem.groupExtend">
-                </v-text-field>
-              </v-col>
-            </v-row>
-            <v-row class="pa-0 ma-0 pa-xs-4 pb-xs-4 flex-none" v-if="pageTab == 2">
-              <v-col cols="12" sm="12" md="6" class="pa-xs-0 pb-xs-4 pb-3">
-                <v-text-field class="cus-v-input mr-2" dense outlined label="角色ID" v-model="editItem.roleId"
-                  :rules="requireRules"></v-text-field>
-              </v-col>
-              <v-col cols="12" sm="12" md="6" class="pa-xs-0 pb-xs-4 pb-3">
-                <v-text-field class="cus-v-input mr-2" dense outlined label="角色名" v-model="editItem.roleName"
-                  :rules="requireRules"></v-text-field>
-              </v-col>
-              <v-col cols="12" sm="12" md="6" class="pa-xs-0 pb-xs-4 pb-3">
-                <v-text-field class="cus-v-input mr-2" dense outlined label="角色描述" v-model="editItem.roleDesc">
-                </v-text-field>
-              </v-col>
-            </v-row>
+            <drawer-form :headers="formFields" :editItem="editItem" :constantCollection="constantCollection" :cols="6"></drawer-form>
           </v-form>
         </v-card-text>
 
-        <v-divider></v-divider>
-
-        <v-card-actions>
-          <v-spacer></v-spacer>
-          <v-btn color="error" small @click="addItemDialog = false"> 取消</v-btn>
-          <v-btn color="success" small @click="doUiAction('createLeftItem')"> 保存</v-btn>
-        </v-card-actions>
+        <!-- footer -->
+        <v-divider style="border-color: #eff2f5;opacity:0.8;"></v-divider>
+        <v-card-text class="py-3 d-flex justify-end" style="color:#A1A5B7;">
+            <v-btn @click="addItemDialog = false"> 取消</v-btn>
+            <v-btn color="success" class="mr-2 ml-2" @click="doUiAction('createLeftItem')"> 保存</v-btn>
+        </v-card-text>
       </v-card>
     </v-dialog>
-  </v-main>
-</v-app>
+</jh-layout-v3>
 
 {% endblock %}
 
 {% block vue_body %}
 {% include 'common/uiAction.html' %}
+{% include 'component/drawerForm.html' %}
 
 <script type="module">
   new Vue({
@@ -286,31 +210,32 @@
       editItem: {},
       activeItemInfo: {},
       headers: [
-        { text: "用户Id", value: "userId", width: 100, class: 'fixed', cellClass: 'fixed' },
-        { text: "组织ID", value: "groupId", width: 120 },
-        { text: "角色ID", value: "roleId", width: 120 },
+        { text: "用户Id", value: "userId", width: 100, required: true },
+        { text: "组织ID", value: "groupId", width: 120, required: true },
+        { text: "角色ID", value: "roleId", width: 120, required: true },
         // { text: "操作人", value: "operationByUser", width: 120 },
-        { text: '操作', value: 'action', align: 'center', sortable: false, width: 160, class: 'fixed', cellClass: 'fixed' },
+        { text: '操作', value: 'action', align: 'center', sortable: false, edit: false, width: 160, class: 'fixed', cellClass: 'fixed' },
       ],
 
       userKeys: [
-        { text: "用户Id", value: "userId" },
-        { text: "用户名", value: "username" },
+        { text: "用户Id", value: "userId", required: true },
+        { text: "用户名", value: "username", required: true },
         { text: "用户账号状态", value: "userStatus", type: 'select' },
         { text: "用户类型", value: "userType", type: 'select' },
+        { text: "初始密码", value: "clearTextPassword", required: true },
       ],
 
       groupKeys: [
-        { text: "组织Id", value: "groupId" },
-        { text: "组织名", value: "groupName" },
+        { text: "组织Id", value: "groupId", required: true },
+        { text: "组织名", value: "groupName", required: true },
         { text: "组织描述", value: "groupDesc", require: false },
         { text: "组织Logo", value: "groupAvatar", require: false },
         { text: "拓展字段", value: "groupExtend", type: 'textarea', require: false },
       ],
       roleKeys: [
-        { text: "角色ID", value: "roleId" },
-        { text: "角色名", value: "roleName" },
-        { text: "角色描述", value: "roleDesc", require: false },
+        { text: "角色ID", value: "roleId", required: true },
+        { text: "角色名", value: "roleName", required: true },
+        { text: "角色描述", value: "roleDesc", type: 'textarea', require: false },
       ],
       currentClickButton: { title: '新增', action: 'add' },
       database: '<$ database $>',
@@ -348,6 +273,24 @@
       },
       tabItemKeys() {
         return [this.userKeys, this.groupKeys, this.roleKeys][this.pageTab];
+      },
+      // 编辑用表单字段
+      formFields() {
+        return this.tabItemKeys.filter(item => item.edit == null || item.edit == true)
+      },
+      editFormFields(){
+        const headers = this.tabItemKeys.filter(item => item.edit == null || item.edit == true)
+        return headers.filter(item => {
+          if(this.pageTab == 0){
+            return item.value !== 'clearTextPassword'
+          }else{
+            return item
+          }
+        })
+      },
+      // 编辑用表单字段
+      tableFields() {
+        return this.headers.filter(item => item.edit == null || item.edit == true)
       }
     },
     watch: {
@@ -632,6 +575,17 @@
     }
   })
 </script>
-
+<style scoped>
+  .v-navigation-drawer__border{
+    display: none;
+  }
+  .v-tab{
+    min-width: auto !important;
+    padding: 0 10px;
+  }
+  .v-tabs-bar__content{
+    justify-content: center;
+  }
+</style>
 
 {% endblock %}

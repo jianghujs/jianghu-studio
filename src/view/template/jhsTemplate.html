@@ -22,21 +22,20 @@
   {% include 'common/constructionPlanAxios.html' %}
   {% include 'common/globalCSSV3.html' %}
   <style>
-    :root{
-      --cPrimaryColor: <$ ctx.app.config.primaryColor $>;
-    }
     body {
       background-color: white;
       padding: 0;
     }
     body .v-application .primary {
-      background-color: var(--cPrimaryColor) !important;
-      border-color: var(--cPrimaryColor) !important;
+      background-color: #4caf50 !important;
+      border-color: #4caf50 !important;
     }
-
     body .v-application .primary--text {
-      color: var(--cPrimaryColor) !important;
-      caret-color: var(--cPrimaryColor) !important;
+      color: #4caf50 !important;
+      caret-color: #4caf50 !important;
+    }
+    body .v-select .v-text-field__prefix, body .v-select .v-input__icon--append i{
+      color: #a5a9ab !important;
     }
   </style>
 
