@@ -1,8 +1,8 @@
 <script type="text/x-template" id="vueJsonEditor">
   <div>
-    <div class="jsoneditor-btns" v-if="showBtns !== false">
+    <div v-if="showBtns !== false" class="pb-2 d-flex justify-space-between align-center">
       <div class="json-title">{{title}}</div>
-      <button class="json-save-btn" type="button" @click="onSave()" :disabled="error">{{ locale[lang].save }}</button>
+      <v-btn small depressed color="success" @click="onSave" :disabled="error">{{ locale[lang].save }}</v-btn>
     </div>
     <div class="jsoneditor-vue" :class="{'jsoneditor-vue-min': type === 'resource'}"></div>
   </div>
@@ -131,9 +131,8 @@
 
 <style scoped>
   .json-title {
-    font-size: 16px; 
+    font-size: 15px; 
     font-weight: bold;
-    max-width: 380px;
     white-space: nowrap;
     text-overflow: ellipsis;
     overflow: hidden;
@@ -155,13 +154,6 @@
     flex-grow: 1;
   }
 
-  .jsoneditor-btns {
-    display: flex;
-    flex-direction: row;
-    justify-content: space-between;
-    align-items: center;
-    padding: 5px;
-  }
   .jsoneditor-vue{
     height: calc(100vh - 45vh);
   }
@@ -171,24 +163,6 @@
 
   .jsoneditor-vue div.jsoneditor-tree {
     min-height: 350px;
-  }
-
-  .json-save-btn {
-    background-color: #20A0FF;
-    border: none;
-    color: #fff;
-    padding: 5px 10px;
-    border-radius: 5px;
-    cursor: pointer;
-  }
-
-  .json-save-btn:focus {
-    outline: none;
-  }
-
-  .json-save-btn[disabled] {
-    background-color: #a1d6ff;
-    cursor: not-allowed;
   }
 
   code {
