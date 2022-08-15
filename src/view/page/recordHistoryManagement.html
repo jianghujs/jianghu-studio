@@ -29,12 +29,12 @@
           {{ item.operationAt && dayjs(item.operationAt).format('YYYY-MM-DD HH:mm:ss') }}
         </template>
         <template v-slot:item.option="{ item }">
-          <v-btn small color="success" :disabled="item.count === 0"
-            @click="doUiAction('viewRecordHistory', {item})">
-            <v-badge color="red" :content="item.count" :value="item.count">
-              查看数据版本
-            </v-badge>
-          </v-btn>
+          <v-badge color="#E4E6EF" :content="item.count" :value="item.count" overlap>
+            <v-btn small color="success" :disabled="item.count === 0"
+              @click="doUiAction('viewRecordHistory', {item})">
+                查看数据版本
+            </v-btn>
+          </v-badge>
         </template>
       </v-data-table>
     </v-card>
@@ -257,6 +257,9 @@
 <style>
   .record-cell {
     background: #F6F6F6 !important;
+  }
+  .v-badge__badge{
+    color: black;
   }
 </style>
 
