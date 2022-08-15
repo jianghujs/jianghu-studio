@@ -59,7 +59,6 @@
       return {
         editor: null,
         error: false,
-        json: this.value,
         internalChange: false,
         expandedModes: ["tree", "view", "form"],
         locale: {
@@ -105,7 +104,7 @@
       this.editor = new JSONEditor(
         this.$el.querySelector(".jsoneditor-vue"),
         options,
-        this.json
+        this.value
       );
     },
     methods: {
@@ -119,7 +118,7 @@
       },
 
       onSave() {
-        this.$emit("json-save", this.json);
+        this.$emit("json-save", this.value);
       },
 
       async setEditor(value) {

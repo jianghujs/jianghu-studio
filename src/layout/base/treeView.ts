@@ -2,14 +2,14 @@
  * @Author: case 7795958+lipangpang251@user.noreply.gitee.com
  * @Date: 2022-06-11 19:30:28
  * @LastEditors: Please set LastEditors
- * @LastEditTime: 2022-08-02 09:23:27
+ * @LastEditTime: 2022-08-15 16:34:22
  * @FilePath: \framework\src\layout\base\treeView.ts
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
 import * as fs from "fs";
-import * as _ from "lodash";
+import * as json5 from "json5";
 import * as path from "path";
 import * as vscode from "vscode";
 import { Constants } from "../../common/constants";
@@ -98,15 +98,8 @@ export class BaseTreeView {
     const configArr: any = fs.readFileSync(configPath, "utf-8").match(patter);
     if (configArr && configArr.length) {
       // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-      let jsonStr = `{${configArr[0]}}`.replace(/(?:\s*['"]*)?([a-zA-Z0-9]+)(?:['"]*\s*)?:/g, '"$1":');
-      // 兼容最后一行有逗号------默认只支持5行
-      if (jsonStr.split(",").length > 5) {
-        const jsonArr = jsonStr.split("");
-        jsonArr[jsonStr.lastIndexOf(",")] = "";
-        jsonStr = jsonArr.join("");
-      }
-      jsonStr = _.replace(jsonStr, /'/g, '"');
-      return JSON.parse(jsonStr).connection;
+      const jsonStr = `{${configArr[0]}}`.replace(/(?:\s*['"]*)?([a-zA-Z0-9]+)(?:['"]*\s*)?:/g, '"$1":').replace(/'/g, '"');
+      return json5.parse(jsonStr).connection;
     }
   }
 }
