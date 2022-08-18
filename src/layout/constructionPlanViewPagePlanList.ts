@@ -89,8 +89,6 @@ export class ConstructionPlanViewPagePlanList extends BaseTreeView implements vs
     if (!dbList || !dbList.length) {
       return [];
     }
-    console.log("test", vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length > 0 ? vscode.workspace.workspaceFolders[0].uri.fsPath : "");
-    console.log("test", activeEditor.document.uri);
     const currDatabase = dbList.find((e: { dir: string }) => activeEditor.document.uri.fsPath.includes(e.dir + "\\") || activeEditor.document.uri.fsPath.includes(e.dir + "/"));
     if (!currDatabase) {
       return [];
