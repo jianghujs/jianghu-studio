@@ -47,7 +47,7 @@ async function updateDiagnostics(activeEditor: vscode.TextEditor, collection: vs
       const startPos = activeEditor.document.positionAt(match.index);
       // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       const endPos = activeEditor.document.positionAt(parseInt(match.index, 10) + parseInt(match[0].length, 10));
-      if (!uiExists && !/doUiAction\s?\(\w+,\s?\w+\)\s?{/gm.test(text)) {
+      if (!uiExists && !/doUiAction(\s+)?\(\w+,\s?\w+\)(\s+)?{/gm.test(text)) {
         range.push({
           code: "",
           message: "Missing uiActionId, please add it",
