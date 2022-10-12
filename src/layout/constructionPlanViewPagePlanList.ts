@@ -93,10 +93,6 @@ export class ConstructionPlanViewPagePlanList extends BaseTreeView implements vs
     if (!currDatabase) {
       return [];
     }
-    const isPage = path.join(activeEditor.document.uri.fsPath).includes("\\page\\") || path.join(activeEditor.document.uri.fsPath).includes("/page/");
-    if (!isPage) {
-      return [];
-    }
     const pageId = basename.split(".")[0];
     const arr = [];
     for (const name of ["Resource", "UiAction"]) {
