@@ -170,6 +170,12 @@
 					"name": "系统配置",
 					"icon": "images/tool-light.svg",
 					"contextualTitle": "Advanced"
+				},
+				{
+					"id": "constructionTest",
+					"name": "测试",
+					"icon": "images/tool-light.svg",
+					"contextualTitle": "Test"
 				}
 			],
 			"explorer": [

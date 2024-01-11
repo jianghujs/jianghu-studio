@@ -25,6 +25,9 @@ export function activate(context: vscode.ExtensionContext) {
   new TestWebview(core).active(context);
   htmlDiagnostic.activate(context, core);
 
+  // 打开首页
+  void vscode.commands.executeCommand("extension.setting.showIndexPage", { pageId: "index", currDatabase: null, pageName: "首页" });
+
   vscode.window.registerTreeDataProvider("constructionPlanView", new ConstructionPlanViewPagePlanList(core));
   vscode.window.registerTreeDataProvider("constructionPlan", new ConstructionPlanPageList(core));
   vscode.window.registerTreeDataProvider("constructionAdvanced", new ConstructionAdvancedPageList(core));

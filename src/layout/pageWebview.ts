@@ -93,9 +93,9 @@ export default abstract class PageWebview {
       database: Knex.MySqlConnectionConfig;
     }
   ): void {
-    panel.title = `${pageName}@${database.database || ""}`;
+    panel.title = `${pageName}@${database?.database || ""}`;
     const uiActionList = this.core.tableManager.getUiActionList(pageId);
     panel.webview.html = "";
-    panel.webview.html = PathUtil.generatePage(context, page, { pageId: pageId || "", uiActionList, database: database.database });
+    panel.webview.html = PathUtil.generatePage(context, page, { pageId: pageId || "", uiActionList, database: database?.database });
   }
 }
