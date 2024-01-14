@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 import _ = require("lodash");
 // eslint-disable-next-line import/no-internal-modules
-import { Md5 } from "ts-md5/dist/md5";
+import { Md5 } from "ts-md5";
 import { BizError, ErrorInfo, TableEnum } from "../common/constants";
 import { IdGenerateUtil } from "../util/idGenerateUtil";
 import BaseService from "./base";

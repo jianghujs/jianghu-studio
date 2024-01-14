@@ -20,6 +20,7 @@ import { EntryItem } from "../tree/entryItem";
 // 树的内容组织管理
 export class BaseTreeView {
   public core: constructionPlanCore;
+  public appList: any[];
   public configList: any[];
   public workspaceRoot: string;
 
@@ -27,6 +28,7 @@ export class BaseTreeView {
     this.core = core;
     this.workspaceRoot = vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length > 0 ? vscode.workspace.workspaceFolders[0].uri.fsPath : "";
     this.configList = [];
+    this.appList = [];
   }
 
   // eslint-disable-next-line @typescript-eslint/member-ordering
@@ -34,6 +36,18 @@ export class BaseTreeView {
 
   public getTreeItem(element: EntryItem): vscode.TreeItem | Thenable<vscode.TreeItem> {
     return element;
+  }
+  /**
+   * 提取工作目录下的项目
+   */
+  public getAppList() {
+    this.findProjectConfig(this.workspaceRoot);
+    void vscode.workspace.getConfiguration(Constants.CONFIG_PREFIX).update("appList", { list: this.appList }, true);
+    const arr = [];
+    for (const item of this.appList) {
+      arr.push(new EntryItem({ label: item.appTitle, appTitle: item.appTitle, appId: item.appId, type: "app" }, vscode.TreeItemCollapsibleState.Collapsed));
+    }
+    return arr;
   }
   /**
    * 查找项目数据库列表
@@ -44,7 +58,7 @@ export class BaseTreeView {
     void vscode.workspace.getConfiguration(Constants.CONFIG_PREFIX).update("databaseList", { list: this.configList }, true);
     const arr = [];
     for (const item of this.configList) {
-      arr.push(new EntryItem({ label: item.database, value: "", currDatabase: item, type: "database" }, vscode.TreeItemCollapsibleState.Collapsed));
+      arr.push(new EntryItem({ label: item.database, value: "", currDatabase: item, type: "database", command: "webviewHandler.openAppHomePage" }, vscode.TreeItemCollapsibleState.Collapsed));
     }
     return arr;
   }
@@ -73,6 +87,30 @@ export class BaseTreeView {
     }
   }
   /**
+   * 递归查找[jhconfig]文件，读取 config.default.js
+   * @param dir
+   * @returns
+   */
+  private findProjectConfig(dir: string) {
+    const configPath = path.join(dir, "config/config.default.js");
+    const packageJsonPath = path.join(dir, "package.json");
+    if (this.pathExists(packageJsonPath) && this.pathExists(configPath)) {
+      if (!fs.readFileSync(packageJsonPath, "utf-8").includes("@jianghujs/jianghu")) {
+        return;
+      }
+      this.appList.push({ ...this.getConfigJson(configPath), dir });
+    } else {
+      const dirArray = fs.readdirSync(dir);
+      for (const item of dirArray) {
+        // 跳过无必要的深层文件夹
+        if (!PathUtil.isDir(path.join(dir, item)) || ["app", "logs", "node_modules", "run", "sql", "typings", "upload"].includes(item)) {
+          continue;
+        }
+        this.findProjectConfig(path.join(dir, item));
+      }
+    }
+  }
+  /**
    * 判断path
    * @param p
    * @returns
@@ -85,6 +123,24 @@ export class BaseTreeView {
     }
 
     return true;
+  }
+
+  /**
+   * 获取config.default
+   * @param configPath
+   * @returns
+   */
+  private getConfigJson(configPath: string) {
+    const appIdPatter = /const appId = '([^']*)';/;
+    console.log(configPath);
+    const configContent = fs.readFileSync(configPath, "utf-8");
+    const appIdMatch: any = configContent.match(appIdPatter);
+    console.log(appIdMatch[1]);
+    const appTitleMatch = configContent.match(/appTitle: '([^']*)',/);
+    return {
+      appId: appIdMatch && appIdMatch[1],
+      appTitle: appTitleMatch && appTitleMatch[1],
+    };
   }
 
   /**

@@ -6,7 +6,7 @@ import Logger from "./logger";
 import nunjucks = require("nunjucks");
 
 export class PathUtil {
-  public static generatePage(context: vscode.ExtensionContext, page: string, locals: object = {}): string {
+  public static generatePage(context: vscode.ExtensionContext, panel: vscode.WebviewPanel, page: string, locals: object = {}): string {
     const pagePath = this.getExtensionFileAbsolutePath(context, `src/view/page/${page}.html`);
     const rootPath = this.getExtensionFileAbsolutePath(context, "src/view");
     Logger.info("pagePath", pagePath);
@@ -27,15 +27,12 @@ export class PathUtil {
     let html = env.render(pagePath, locals);
 
     // vscode不支持直接加载本地资源，需要替换成其专有路径格式，这里只是简单的将样式和JS的路径替换
-    html = html.replace(
-      /(<link.+?href="|<script.+?src="|<img.+?src="|<v-img.+?src=")(.+?)"/g,
-      (m: any, $1: any, $2: any) =>
-        // eslint-disable-next-line @typescript-eslint/restrict-plus-operands
-        $1 +
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-        vscode.Uri.file(path.resolve(dirPath, $2)).with({ scheme: "vscode-resource" }).toString() +
-        '"'
-    );
+    html = html.replace(/(<link.+?href="|<script.+?src="|<img.+?src=")(.+?)"/g, (m, $1, $2) => {
+      const absLocalPath = path.resolve(dirPath, $2);
+      const webviewUri = panel.webview.asWebviewUri(vscode.Uri.file(absLocalPath));
+      const replaceHref = $1 + webviewUri.toString() + '"';
+      return replaceHref;
+    });
     return html;
   }
   /**

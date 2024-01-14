@@ -14,6 +14,7 @@ import TestWebview from "./layout/pageWebview";
 import * as uiAnnotation from "./layout/uiAnnotation";
 import { CommonUtil } from "./util/commonUtil";
 import Logger from "./util/logger";
+import { AppProvider } from "./layout/appProvider";
 
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
@@ -25,12 +26,44 @@ export function activate(context: vscode.ExtensionContext) {
   new TestWebview(core).active(context);
   htmlDiagnostic.activate(context, core);
 
-  // 打开首页
-  void vscode.commands.executeCommand("extension.setting.showIndexPage", { pageId: "index", currDatabase: null, pageName: "首页" });
+  // // 打开首页
+  // void vscode.commands.executeCommand("extension.setting.showIndexPage", { pageId: "index", currDatabase: null, pageName: "首页" });
 
-  vscode.window.registerTreeDataProvider("constructionPlanView", new ConstructionPlanViewPagePlanList(core));
-  vscode.window.registerTreeDataProvider("constructionPlan", new ConstructionPlanPageList(core));
-  vscode.window.registerTreeDataProvider("constructionAdvanced", new ConstructionAdvancedPageList(core));
+  // 应用管理左侧树菜单构建
+  vscode.window.registerTreeDataProvider("appProvider", new AppProvider(core));
+
+  // 2.0 命令配置
+  // 创建首页
+  context.subscriptions.push(
+    vscode.commands.registerCommand("appProvider.projectCreate", args => {
+      void vscode.commands.executeCommand("webviewHandler.openAppCreatePage", { pageId: "appCreate", currDatabase: null, pageName: "创建应用", args });
+    })
+  );
+  // 刷新应用列表
+  context.subscriptions.push(
+    vscode.commands.registerCommand("appProvider.refreshAppList", () => {
+      vscode.window.registerTreeDataProvider("appProvider", new AppProvider(core));
+    })
+  );
+  // 打开应用首页
+  context.subscriptions.push(
+    vscode.commands.registerCommand("appProvider.appHome", args => {
+      void vscode.commands.executeCommand("webviewHandler.openAppHomePage", { pageId: "appCreate", currDatabase: null, pageName: "应用首页", args });
+    })
+  );
+  // 新增页面
+  context.subscriptions.push(
+    vscode.commands.registerCommand("appProvider.pageAdd", args => {
+      void vscode.commands.executeCommand("webviewHandler.openPageCreatePage", { pageId: "pageAdd", currDatabase: null, pageName: "新增页面", args });
+    })
+  );
+
+  // 1.0代码
+
+  // vscode.window.registerTreeDataProvider("constructionPlanView", new ConstructionPlanViewPagePlanList(core));
+  // vscode.window.registerTreeDataProvider("constructionPlan", new ConstructionPlanPageList(core));
+  // vscode.window.registerTreeDataProvider("constructionAdvanced", new ConstructionAdvancedPageList(core));
+
 
   context.subscriptions.push(
     vscode.commands.registerCommand("constructionPlan.refreshDb", () => {

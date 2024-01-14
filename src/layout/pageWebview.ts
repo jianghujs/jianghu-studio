@@ -3,6 +3,7 @@ import * as vscode from "vscode";
 import constructionPlanCore from "../core";
 import pageList from "../table/_page";
 import { PathUtil } from "../util/pathUtil";
+import { EntryItem } from "./tree/entryItem";
 
 export default abstract class PageWebview {
   public static currentPanel: vscode.WebviewPanel | PageWebview | undefined;
@@ -23,7 +24,7 @@ export default abstract class PageWebview {
         // 注册参数
         vscode.commands.registerCommand(pageData.command, uri => {
           this.uri = uri;
-          const { pageId, currDatabase: database, pageName } = this.uri;
+          const { pageId, currDatabase: database, pageName, args } = this.uri;
           const column = vscode.window.activeTextEditor ? vscode.window.activeTextEditor.viewColumn : undefined;
           const panelExist = this.core.webviewManager.getPanel(pageData.page);
           if (panelExist) {
@@ -32,6 +33,7 @@ export default abstract class PageWebview {
               pageName,
               database,
               page: pageData.page,
+              projectInfo: args,
             });
             panelExist.reveal(column);
             return;
@@ -52,6 +54,7 @@ export default abstract class PageWebview {
             pageName,
             database,
             page: pageData.page,
+            projectInfo: args,
           });
 
           panel.onDidDispose(() => this.dispose(pageData.page), null, this.disposables);
@@ -86,16 +89,18 @@ export default abstract class PageWebview {
       pageName,
       database,
       page,
+      projectInfo,
     }: {
       pageId: string;
       pageName: string;
       page: string;
       database: Knex.MySqlConnectionConfig;
+      projectInfo: EntryItem;
     }
   ): void {
-    panel.title = `${pageName}@${database?.database || ""}`;
+    panel.title = `${pageName}${(projectInfo && `@${projectInfo.appTitle}`) || ""}`;
     const uiActionList = this.core.tableManager.getUiActionList(pageId);
     panel.webview.html = "";
-    panel.webview.html = PathUtil.generatePage(context, page, { pageId: pageId || "", uiActionList, database: database?.database });
+    panel.webview.html = PathUtil.generatePage(context, panel, page, { pageId: pageId || "", uiActionList, database: database?.database });
   }
 }

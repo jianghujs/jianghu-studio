@@ -25,6 +25,7 @@ export default class constructionPlanCore {
   }
 
   public async handleMessage({ body, uri }: any) {
+    console.log(body, uri);
     const { currDatabase: database } = uri;
     const {
       appData: { pageId, actionId },

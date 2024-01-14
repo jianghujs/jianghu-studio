@@ -29,19 +29,64 @@
 		"configuration": {
 			"title": "Code插件配置",
 			"properties": {
-				"database-jianghu.databaseList": {}
+				"database-jianghu.databaseList": {},
+				"database-jianghu.appList": {}
 			}
 		},
 		"viewsWelcome": [
 			{
-				"view": "constructionPlan",
-				"contents": "No node dependencies found [learn more](https://openjianghu.org/).\n[Add Databases](command:constructionPlan.pageAdd)"
+				"view": "appProvider",
+				"contents": "No node dependencies found [learn more](https://openjianghu.org/).\n[Create Project](command:appProvider.projectCreate)"
 			}
 		],
 		"commands": [
 			{
 				"command": "extension.setting.showIndexPage",
 				"title": "欢迎页"
+			},
+			{
+				"command": "appProvider.projectCreate",
+				"title": "创建新应用",
+				"icon": {
+					"light": "images/light/add.svg",
+					"dark": "images/dark/add.svg"
+				}
+			},
+			{
+				"command": "appProvider.refreshAppList",
+				"title": "刷新应用列表",
+				"icon": {
+					"light": "images/light/refresh.svg",
+					"dark": "images/dark/refresh.svg"
+				}
+			},
+			{
+				"command": "appProvider.appHome",
+				"title": "应用首页",
+				"icon": {
+					"light": "images/light/home.svg",
+					"dark": "images/dark/home.svg"
+				}
+			},
+			{
+				"command": "appProvider.pageAdd",
+				"title": "新增页面",
+				"icon": {
+					"light": "images/light/add-page.svg",
+					"dark": "images/dark/add-page.svg"
+				}
+			},
+			{
+				"command": "webviewHandler.openAppCreatePage",
+				"title": "打开应用创建页面"
+			},
+			{
+				"command": "webviewHandler.openAppHomePage",
+				"title": "打开应用首页"
+			},
+			{
+				"command": "webviewHandler.openPageCreatePage",
+				"title": "新增页面"
 			},
 			{
 				"command": "constructionPlan.pagePlanEdit",
@@ -80,14 +125,6 @@
 				"title": ""
 			},
 			{
-				"command": "constructionPlan.pageAdd",
-				"title": "Add Page",
-				"icon": {
-					"light": "images/light/add.svg",
-					"dark": "images/dark/add.svg"
-				}
-			},
-			{
 				"command": "constructionPlan.pageEdit",
 				"title": "Edit",
 				"icon": {
@@ -115,12 +152,27 @@
 		"menus": {
 			"view/title": [
 				{
-					"command": "constructionPlan.refreshDb",
-					"when": "view == constructionPlan",
+					"command": "appProvider.projectCreate",
+					"when": "view == appProvider",
+					"group": "navigation"
+				},
+				{
+					"command": "appProvider.refreshAppList",
+					"when": "view == appProvider",
 					"group": "navigation"
 				}
 			],
 			"view/item/context": [
+				{
+					"command": "appProvider.appHome",
+					"when": "view == appProvider && viewItem == appItem",
+					"group": "inline"
+				},
+				{
+					"command": "appProvider.pageAdd",
+					"when": "view == appProvider && viewItem == appItem",
+					"group": "inline"
+				},
 				{
 					"command": "constructionPlan.templateAdd",
 					"when": "view == constructionPlan && viewItem == databaseItem",
@@ -160,22 +212,16 @@
 		"views": {
 			"jianghu-studio": [
 				{
-					"id": "constructionPlan",
-					"name": "施工方案",
+					"id": "appProvider",
+					"name": "应用管理",
 					"icon": "images/tool-light.svg",
-					"contextualTitle": "Construction Plan"
+					"contextualTitle": "Project Manager"
 				},
 				{
 					"id": "constructionAdvanced",
 					"name": "系统配置",
 					"icon": "images/tool-light.svg",
 					"contextualTitle": "Advanced"
-				},
-				{
-					"id": "constructionTest",
-					"name": "测试",
-					"icon": "images/tool-light.svg",
-					"contextualTitle": "Test"
 				}
 			],
 			"explorer": [

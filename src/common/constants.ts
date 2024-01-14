@@ -1,3 +1,94 @@
+export const ConstantsValue = {
+  appMenus: [
+    { label: "施工方案", value: "appPlan" },
+    {
+      label: "route管理",
+      value: "routeManager",
+      children: [
+        { label: "系统route查看", value: "systemRoute" },
+        { label: "自定义route管理", value: "customRoute" },
+      ],
+    },
+    {
+      label: "layout管理",
+      value: "layoutManager",
+      children: [
+        { label: "js引入管理", value: "jsManager" },
+        { label: "css引入管理", value: "cssManager" },
+        { label: "font引入管理", value: "fontManager" },
+        { label: "代码编辑", value: "codeEdit" },
+      ],
+    },
+    {
+      label: "页面管理",
+      value: "pageManager",
+      menus: [
+        { label: "数据表管理", value: "pageDatabase" },
+        { label: "页面布局管理", value: "pageDesign" },
+        { label: "页面服务管理", value: "pageService" },
+        { label: "页面权限配置", value: "pageAuthRole" },
+        { label: "页面检查", value: "pageChack" },
+      ],
+    },
+    {
+      label: "UI组件管理",
+      value: "componentManager",
+      children: [
+        { label: "系统组件查看", value: "systemComponent" },
+        { label: "自定义组件管理", value: "customComponent" },
+      ],
+    },
+    {
+      label: "服务管理",
+      value: "backendManager",
+      children: [
+        {
+          label: "service管理",
+          value: "serviceManager",
+        },
+        {
+          label: "中间件配置",
+          value: "middlewareManager",
+          children: [
+            { label: "框架级middleware查看", value: "sysMiddlewareManager" },
+            { label: "自定义middleware管理", value: "customMiddlewareManager" },
+          ],
+        },
+        { label: "controller管理", value: "controllerManager" },
+        { label: "常量配置", value: "constantsManager" },
+      ],
+    },
+    {
+      label: "应用配置",
+      value: "appSetting",
+      children: [
+        { label: "package管理", value: "packageManager" },
+        { label: "config管理", value: "configManager" },
+        {
+          label: "配置数据表",
+          value: "sysTableManager",
+          children: [
+            { label: "_page表", value: "pageTable" },
+            { label: "_constants表", value: "constantsTable" },
+            { label: "_resource表", value: "resourceTable" },
+          ],
+        },
+        {
+          label: "权限管理",
+          value: "authRoleManager",
+          children: [
+            { label: "用户管理", value: "userManager" },
+            { label: "用户群组角色", value: "userGroupRoleManager" },
+            { label: "页面权限管理", value: "userGroupRolePageManager" },
+            { label: "resource权限管理", value: "userGroupRoleResourceManager" },
+          ],
+        },
+        { label: "登录信息", value: "userSessionManager" },
+      ],
+    },
+  ],
+};
+
 export enum Confirm {
   YES = "YES",
   NO = "NO",
@@ -14,7 +105,6 @@ export enum TableName {
   resource = "_resource",
   ui = "_ui",
 }
-
 export enum TableEnum {
   // ========================江湖表============================
   _cache = "_cache",
