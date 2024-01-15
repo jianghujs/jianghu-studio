@@ -4,4 +4,6 @@ dist
 *.vsix
 /package-lock.json
 yarn.lock
+yarn-error.lock
 node_modules/
+.idea
