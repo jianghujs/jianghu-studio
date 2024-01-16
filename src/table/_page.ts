@@ -15,6 +15,11 @@ export default [
     title: "项目首页",
   },
   {
+    command: "webviewHandler.openAppPageManagerPage",
+    page: "appPageManager",
+    title: "页面管理",
+  },
+  {
     command: "webviewHandler.openPageCreatePage",
     page: "pageEdit",
     title: "",

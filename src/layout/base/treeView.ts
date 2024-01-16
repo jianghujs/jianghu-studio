@@ -12,23 +12,25 @@ import * as fs from "fs";
 import * as json5 from "json5";
 import * as path from "path";
 import * as vscode from "vscode";
-import { Constants } from "../../common/constants";
-import constructionPlanCore from "../../core";
+import { Constants, ConstantsValue } from "../../common/constants";
+import AppCore from "../../core";
 import { PathUtil } from "../../util/pathUtil";
 import { EntryItem } from "../tree/entryItem";
 
 // 树的内容组织管理
 export class BaseTreeView {
-  public core: constructionPlanCore;
+  public core: AppCore;
   public appList: any[];
   public configList: any[];
   public workspaceRoot: string;
+  public context: vscode.ExtensionContext;
 
-  constructor(core: constructionPlanCore) {
+  constructor(context: vscode.ExtensionContext, core: AppCore) {
     this.core = core;
     this.workspaceRoot = vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length > 0 ? vscode.workspace.workspaceFolders[0].uri.fsPath : "";
     this.configList = [];
     this.appList = [];
+    this.context = context;
   }
 
   // eslint-disable-next-line @typescript-eslint/member-ordering
@@ -43,11 +45,6 @@ export class BaseTreeView {
   public getAppList() {
     this.findProjectConfig(this.workspaceRoot);
     void vscode.workspace.getConfiguration(Constants.CONFIG_PREFIX).update("appList", { list: this.appList }, true);
-    const arr = [];
-    for (const item of this.appList) {
-      arr.push(new EntryItem({ label: item.appTitle, appTitle: item.appTitle, appId: item.appId, type: "app" }, vscode.TreeItemCollapsibleState.Collapsed));
-    }
-    return arr;
   }
   /**
    * 查找项目数据库列表

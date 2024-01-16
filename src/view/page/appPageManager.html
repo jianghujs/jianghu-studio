@@ -1,0 +1,206 @@
+{% block htmlHead %}
+<style>
+  /* css */
+</style>
+{% endblock %}
+
+{% extends 'template/jhsTemplate.html'%}
+{% block vueTemplate %}
+
+<script type="text/html" id="app-template">
+  <div>
+    <v-app mobile-breakpoint="sm">
+      <v-main class="mt-5">
+        <!-- 头部内容 >>>>>>>>>>>>> -->
+        <div class="jh-page-second-bar px-8">
+          <v-row class="align-center" dense>
+            <v-col cols="12" xs="12" sm="12" md="4" xl="3">
+              <div class="py-4 font-weight-bold d-flex align-center" style="font-size: 30px;">【{{appId}}】页面管理</div>
+            </v-col>
+            <v-spacer></v-spacer>
+            <v-btn color="success" @click="pageAdd">添加页面</v-btn>
+          </v-row>
+        </div>
+        <!-- <<<<<<<<<<<<< 头部内容 -->
+
+        <!-- 页面内容 >>>>>>>>>>>>> -->
+        <div class="jh-page-body-container px-8">
+          <v-card class="rounded-lg pa-4 pt-6">
+            <v-data-table fixed-header :headers="headers" :items="pageList" :search="searchInput"
+              :footer-props="{ itemsPerPageOptions: [20, 40, 60, 100, -1] }" :items-per-page="20" :loading="isTableLoading"
+              checkbox-color="success" mobile-breakpoint="0" class="elevation-0 mt-0 mb-xs-4 flex-fill d-flex flex-column">
+              <template v-slot:item.action="{ item }">
+                <span role="button" class="success--text font-weight-medium font-size-2 mr-2" @click="startUpdateItem(item)"><v-icon size="16" class="success--text">mdi-note-edit-outline</v-icon>修改</span>
+                <span role="button" class="success--text font-weight-medium font-size-2 mr-2" @click="startViewItem(item)"><v-icon size="16" class="success--text">mdi-eye-outline</v-icon>预览</span>
+                <span role="button" class="success--text font-weight-medium font-size-2 mr-2"><v-icon size="16" class="success--text">mdi-pencil-ruler</v-icon>设计</span>
+                <span role="button" class="success--text font-weight-medium font-size-2 mr-2"><v-icon size="16" class="success--text">mdi-delete-empty-outline</v-icon>删除</span>
+              </template>
+            </v-data-table>
+          </v-card>
+        </div>
+        <!-- <<<<<<<<<<<<< 页面内容 -->
+        <!-- 抽屉 >>>>>>>>>>>>> --> 
+        <v-navigation-drawer v-if="isFormDrawerShown" v-model="isFormDrawerShown" :permanent="isFormDrawerShown" fixed temporary right width="80%" class="elevation-24">
+          <v-form ref="pageForm" lazy-validation>
+            <!-- 抽屉标题 -->
+            <v-row no-gutters>
+              <span class="text-h7 font-weight-bold pa-4">修改页面信息</span>
+            </v-row>
+            <v-divider class="jh-divider"></v-divider>
+            <v-row class="mt-0 px-4">
+              <v-col cols="12" sm="12" md="4" v-for="item of formFeilds">
+                <span class="jh-input-label d-flex"><span>{{item.text}}</span><v-spacer></v-spacer><span style="font-size: 12px; color: #999999; transform: scale(0.8);" v-if="item.tips">tips: {{item.tips}}</span></span> 
+                <v-select v-if="item.type === 'select'" class="jh-v-input mr-2" dense filled single-line v-model="pageForm[item.value]" :rules="item.rule" :items="constantObj[item.value]"></v-select>
+                <v-text-field v-else class="jh-v-input" dense single-line filled v-model="pageForm[item.value]" :rules="item.rule"></v-text-field>
+              </v-col>
+            </v-row>
+            <!-- 抽屉操作按钮 -->
+            <v-row class="justify-end mx-0 my-8 px-4">
+                <v-btn color="success" @click="saveForm" small>保存</v-btn>
+                <v-btn class="elevation-0 ml-2" @click="isFormDrawerShown = false" small>取消</v-btn>
+            </v-row>
+          </v-form>
+          <!-- 抽屉关闭按钮 -->
+          <v-btn elevation="0" color="success" fab absolute top left small tile class="drawer-close-float-btn" @click="isFormDrawerShown = false">
+            <v-icon>mdi-close</v-icon>
+          </v-btn>
+        </v-navigation-drawer>
+        <!-- <<<<<<<<<<<<< 抽屉 -->
+      </v-main>
+    </v-app>
+
+    <jh-toast />
+    <jh-mask />
+    <jh-confirm-dialog />
+  </div>
+</script>
+<div id="app"></div>
+{% endblock %}
+{% include 'common/jianghuJs/fixedTableHeightV4.html' %}
+
+{% block vueScript %}
+
+<script>
+  new Vue({
+    el: '#app',
+    template: '#app-template',
+    vuetify: new Vuetify(),
+    data: () => ({
+      workspaceFolders: "<$ workspaceFolders $>",
+      pageId: "<$ pageId $>",
+      appId: "<$ appId $>",
+      rules: {
+        required: value => !!value || 'Required.',
+      },
+      pageList: [],
+      searchInput: null,
+      isTableLoading: true,
+      constantObj: {
+        pageType: [
+          { text: '顶部菜单 [showInMenu]', value: 'showInMenu' },
+          { text: '隐藏菜单 [dynamicInMenu]', value: 'dynamicInMenu' },
+        ],
+      },
+      headers: [
+        { text: "pageId", tips: "页面文件名", value: "pageId", width: 120, required: true },
+        { text: "pageFile", tips: "页面文件名，不写则默认pageId", value: "pageFile", width: 140 },
+        { text: "pageName", tips: "菜单中显示的名称", value: "pageName", width: 120, required: true },
+        { text: "pageType", tips: "菜单的显示方式", value: "pageType", width: 120, type: 'select' },
+        { text: "sort", tips: "菜单中的显示排序", value: "sort", width: 120 },
+        { text: "操作人", value: "operationByUser", width: 120, edit: false },
+        { text: "操作时间", value: "operationAt", width: 250, edit: false },
+        { text: '操作', value: 'action', align: 'center', edit: false, sortable: false, width: 300, class: 'fixed', cellClass: 'fixed' },
+      ],
+      isFormDrawerShown: false,
+      pageForm: {},
+    }),
+    computed: {
+      formFeilds() {
+        return this.headers.filter(item => item.edit !== false).map(item => ({ ...item, rule: item.required ? [this.rules.required] : [] }));
+      },
+    },
+    watch: {
+
+    },
+
+    created() {
+      this.doUiAction("getPageList");
+    },
+    mounted() {
+    },
+    methods: {
+      async doUiAction(uiActionId, uiActionData) {
+        switch (uiActionId) {
+          case 'getPageList':
+            await this.getPageList();
+            break;
+          default:
+            console.error("[doUiAction] uiActionId not find", { uiActionId });
+            break;
+        }
+      },
+      async pageAdd(event) {
+
+      },
+      async saveForm() {
+        if (!(await this.$refs.pageForm.validate())) {
+          window.vtoast.fail("数据不准确");
+          return;
+        }
+        const { id, ...data } = this.pageForm;
+        await window.appAxios({
+          data: {
+            appData: {
+              pageId: "pageManager",
+              actionId: "updateItem",
+              actionData: data,
+              where: { id },
+            },
+          },
+        });
+        this.pageForm = {};
+        this.isFormDrawerShown = false;
+        this.isTableLoading = true;
+        await this.getPageList();
+        this.isTableLoading = false;
+      },
+      startViewItem(item) {
+        // 预览页面
+        window.appAxios({
+          packageType: "viewPageRequest",
+          data: {
+            appData: {
+              pageFile: item.pageId,
+              appId: this.appId,
+              workspaceFolders: this.workspaceFolders,
+            },
+          },
+        });
+      },
+      startUpdateItem(item) {
+        this.pageForm = { ...item };
+        this.isFormDrawerShown = true;
+      },
+      async getPageList() {
+        this.isTableLoading = true;
+        const { data: { appData: { resultData: { rows } } } } = await window.appAxios({
+          data: {
+            appData: {
+              pageId: "pageManager",
+              actionId: "selectList",
+            },
+          },
+        });
+        console.log('getPageList', rows);
+        this.pageList = rows;
+        this.isTableLoading = false;
+      },
+    }
+  })
+</script>
+
+<style scoped>
+  .v-input .v-label {
+    line-height: 1.45;
+  }
+</style>{% endblock %}

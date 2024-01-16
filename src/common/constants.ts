@@ -1,89 +1,111 @@
 export const ConstantsValue = {
+  // value 要确保和 _page中的pageId一致
   appMenus: [
-    { label: "施工方案", value: "appPlan" },
+    { label: "施工方案", value: "appPlan", type: "menu", command: "webviewHandler.openAppPlanPage" },
     {
       label: "route管理",
       value: "routeManager",
-      children: [
-        { label: "系统route查看", value: "systemRoute" },
-        { label: "自定义route管理", value: "customRoute" },
+      type: "menu",
+      menuList: [
+        { label: "系统route查看", value: "systemRoute", type: "menu" },
+        { label: "自定义route管理", value: "customRoute", type: "menu" },
       ],
     },
     {
       label: "layout管理",
       value: "layoutManager",
-      children: [
-        { label: "js引入管理", value: "jsManager" },
-        { label: "css引入管理", value: "cssManager" },
-        { label: "font引入管理", value: "fontManager" },
-        { label: "代码编辑", value: "codeEdit" },
+      type: "menu",
+      menuList: [
+        { label: "js引入管理", value: "jsManager", type: "menu" },
+        { label: "css引入管理", value: "cssManager", type: "menu" },
+        { label: "font引入管理", value: "fontManager", type: "menu" },
+        { label: "代码编辑", value: "codeEdit", type: "menu" },
       ],
     },
     {
       label: "页面管理",
-      value: "pageManager",
-      menus: [
-        { label: "数据表管理", value: "pageDatabase" },
-        { label: "页面布局管理", value: "pageDesign" },
-        { label: "页面服务管理", value: "pageService" },
-        { label: "页面权限配置", value: "pageAuthRole" },
-        { label: "页面检查", value: "pageChack" },
+      value: "appPageManager",
+      type: "menu",
+      command: "webviewHandler.openAppPageManagerPage",
+      itemMenuList: [
+        { label: "数据表管理", value: "pageDatabase", type: "menu" },
+        { label: "页面布局管理", value: "pageDesign", type: "menu" },
+        { label: "页面服务管理", value: "pageService", type: "menu" },
+        { label: "页面权限配置", value: "pageAuthRole", type: "menu" },
+        { label: "页面检查", value: "pageChack", type: "menu" },
       ],
     },
     {
       label: "UI组件管理",
       value: "componentManager",
-      children: [
-        { label: "系统组件查看", value: "systemComponent" },
-        { label: "自定义组件管理", value: "customComponent" },
+      type: "menu",
+      menuList: [
+        { label: "系统组件查看", value: "systemComponent", type: "menu" },
+        { label: "自定义组件管理", value: "customComponent", type: "menu" },
       ],
     },
     {
       label: "服务管理",
       value: "backendManager",
-      children: [
+      type: "menu",
+      menuList: [
         {
           label: "service管理",
           value: "serviceManager",
+          type: "service",
+          itemMenuList: [],
         },
         {
           label: "中间件配置",
           value: "middlewareManager",
-          children: [
-            { label: "框架级middleware查看", value: "sysMiddlewareManager" },
-            { label: "自定义middleware管理", value: "customMiddlewareManager" },
+          type: "menu",
+          menuList: [
+            { label: "框架级middleware查看", value: "sysMiddlewareManager", type: "menu" },
+            {
+              label: "自定义middleware管理",
+              value: "customMiddlewareManager",
+              type: "menu",
+            },
           ],
         },
-        { label: "controller管理", value: "controllerManager" },
-        { label: "常量配置", value: "constantsManager" },
+        {
+          label: "controller管理",
+          value: "controllerManager",
+          type: "controller",
+          itemMenuList: [],
+        },
+        { label: "常量配置", value: "constantsManager", type: "menu" },
       ],
     },
     {
       label: "应用配置",
       value: "appSetting",
-      children: [
-        { label: "package管理", value: "packageManager" },
-        { label: "config管理", value: "configManager" },
+      type: "menu",
+      menuList: [
+        { label: "package管理", value: "packageManager", type: "menu" },
+        { label: "config管理", value: "configManager", type: "menu" },
         {
           label: "配置数据表",
           value: "sysTableManager",
-          children: [
-            { label: "_page表", value: "pageTable" },
-            { label: "_constants表", value: "constantsTable" },
-            { label: "_resource表", value: "resourceTable" },
+          type: "menu",
+          menuList: [
+            { label: "_page表", value: "pageTable", type: "menu" },
+            { label: "_constants表", value: "constantsTable", type: "menu" },
+            { label: "_resource表", value: "resourceTable", type: "menu" },
           ],
         },
         {
           label: "权限管理",
           value: "authRoleManager",
-          children: [
-            { label: "用户管理", value: "userManager" },
-            { label: "用户群组角色", value: "userGroupRoleManager" },
-            { label: "页面权限管理", value: "userGroupRolePageManager" },
-            { label: "resource权限管理", value: "userGroupRoleResourceManager" },
+          type: "menu",
+          menuList: [
+            { label: "用户管理", value: "userManager", type: "menu" },
+            { label: "用户群组角色", value: "userGroupRoleManager", type: "menu" },
+            { label: "页面权限管理", value: "userGroupRolePageManager", type: "menu" },
+            { label: "resource权限管理", value: "userGroupRoleResourceManager", type: "menu" },
           ],
         },
-        { label: "登录信息", value: "userSessionManager" },
+        { label: "登录信息", value: "userSessionManager", type: "menu" },
       ],
     },
   ],

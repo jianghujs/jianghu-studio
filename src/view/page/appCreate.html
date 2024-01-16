@@ -10,14 +10,12 @@
 <script type="text/html" id="app-template">
   <div>
     <v-app mobile-breakpoint="sm">
-      <jh-menu />
-      <v-main class="mt-13">
+      <v-main class="mt-5">
         <!-- 头部内容 >>>>>>>>>>>>> -->
         <div class="jh-page-second-bar px-8">
           <v-row class="align-center" dense>
             <v-col cols="12" xs="12" sm="12" md="4" xl="3">
-              <div class="py-4 text-body-1 font-weight-bold d-flex align-center">创建应用
-              </div>
+              <div class="py-4 font-weight-bold d-flex align-center" style="font-size: 30px;">创建应用</div>
             </v-col>
           </v-row>
         </div>
@@ -25,8 +23,114 @@
 
         <!-- 页面内容 >>>>>>>>>>>>> -->
         <div class="jh-page-body-container px-8">
-          <v-card class="rounded-lg">
-            aaa
+          <v-card class="rounded-lg pa-4 pt-6">
+            
+            <v-form ref="form">
+              <v-row>
+                <v-col>
+                  <v-text-field
+                    v-model="appId"
+                    label="输入应用ID；英文字母开头，5-10个字母+数字"
+                    prepend-icon="mdi-lightbulb"
+                    outlined
+                    clearable
+                    :rules="[rules.required, rules.counter, rules.appId]"
+                  ></v-text-field>
+                </v-col>
+              </v-row>
+<!--   
+              <v-row>
+                <v-col>
+                  <v-text-field
+                    v-model="appName"
+                    label="输入应用名称；英文、中文，长度 5-10"
+                    prepend-icon="mdi-rename-box"
+                    outlined
+                    clearable
+                    :rules="[rules.required, rules.counter]"
+                  ></v-text-field>
+                </v-col>
+              </v-row> -->
+  
+              <v-row>
+                <v-col>
+                  <v-text-field
+                    v-model="workspaceFolders"
+                    label="选择工作目录"
+                    prepend-icon="mdi-folder"
+                    outlined
+                    readonly
+                    clearable
+                    @click="selectWorkFolder"
+                    :rules="[rules.required]"
+                  ></v-text-field>
+                </v-col>
+              </v-row>
+<!--   
+              <v-row>
+                <v-col>
+                  <v-text-field
+                    v-model="databaseIp"
+                    label="输入数据库IP"
+                    prepend-icon="mdi-ip"
+                    outlined
+                    clearable
+                    :rules="[rules.required, rules.ip]"
+                  ></v-text-field>
+                </v-col>
+              </v-row>
+  
+              <v-row>
+                <v-col>
+                  <v-text-field
+                    v-model="databasePort"
+                    label="输入数据库端口"
+                    prepend-icon="mdi-midi-port"
+                    outlined
+                    clearable
+                    :rules="[rules.required, rules.port]"
+                  ></v-text-field>
+                </v-col>
+              </v-row>
+  
+              <v-row>
+                <v-col>
+                  <v-text-field
+                    v-model="databaseUser"
+                    label="输入数据库账号"
+                    prepend-icon="mdi-account-box"
+                    outlined
+                    clearable
+                    :rules="[rules.required, rules.account]"
+                  ></v-text-field>
+                </v-col>
+              </v-row>
+  
+              <v-row>
+                <v-col>
+                  <v-text-field
+                    v-model="databasePassword"
+                    label="输入数据库密码"
+                    prepend-icon="mdi-lock"
+                    outlined
+                    clearable
+                    :rules="[rules.required]"
+                  ></v-text-field>
+                </v-col>
+              </v-row> -->
+  
+              <v-row class="mt-4 pa-3">
+                <v-spacer></v-spacer>
+                <v-btn
+                    depressed dark
+                    @click="submitCreateAppForm"
+                    color="deep-purple accent-4"
+                  >
+                    开始创建应用
+                  </v-btn>
+              </v-row>
+            </v-form>
+            
           </v-card>
         </div>
         <!-- <<<<<<<<<<<<< 页面内容 -->
@@ -45,38 +149,84 @@
 {% block vueScript %}
 
 <script>
-  console.log("waht")
   new Vue({
     el: '#app',
     template: '#app-template',
     vuetify: new Vuetify(),
     data: () => ({
-
+      rules: {
+        required: value => !!value || 'Required.',
+        counter: value => (value && value.length >= 2 && value.length <= 20) || 'Max 10 Min 2 characters',
+        appId: value => {
+          const pattern = /^[a-zA-Z]\w*$/;
+          return value && pattern.test(value) || 'Invalid appId.'
+        },
+        account: value => {
+          const pattern = /^\w+$/;
+          return value && pattern.test(value) || 'Invalid account.'
+        },
+        port: value => {
+          const pattern = /^\d+$/;
+          return value && pattern.test(value) || 'Invalid port.'
+        },
+        ip: value => {
+          const pattern = /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
+          return value && pattern.test(value) || 'Invalid IP.'
+        }
+      },
+      workspaceFolders: "<$ workspaceFolders $>",
+      selectFolder: null,
+      pageId: "<$ pageId $>",
+      appId: null,
+      appName: null,
+      databaseIp: "127.0.0.1",
+      databasePort: 3306,
+      databaseUser: 'root',
+      databasePassword: '123456',
     }),
     watch: {
 
     },
 
     created() {
-      console.log("created")
     },
-
     mounted() {
     },
     methods: {
-      async doUiAction(uiActionId, uiActionData) {
-        switch (uiActionId) {
-          case 'getTableData':
-            // await this.getTableData();
-            break;
-          default:
-            console.error("[doUiAction] uiActionId not find", { uiActionId });
-            break;
-        }
+      async selectWorkFolder(event) {
+        const newFolder = await window.appAxios({
+          packageType: "selectWorkFolder"
+        });
+        this.workspaceFolders = newFolder.data.appData.fsPath;
       },
+      async submitCreateAppForm() {
+        if (!(await this.$refs.form.validate())) {
+          return false;
+        }
+        await window.appAxios({
+          packageType: "submitCreateAppForm",
+          data: {
+            appData: {
+              workspaceFolders: this.workspaceFolders,
+              appId: this.appId,
+              appName: this.appName,
+              databaseIp: this.databaseIp,
+              databasePort: this.databasePort,
+              databaseUser: this.databaseUser,
+              databasePassword: this.databasePassword,
+            },
+          },
+          callback: (value) => {
+
+          }
+        });
+      }
     }
   })
 </script>
 
 <style scoped>
+  .v-input .v-label {
+    line-height: 1.45;
+  }
 </style>{% endblock %}

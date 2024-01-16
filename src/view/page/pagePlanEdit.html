@@ -20,15 +20,13 @@
         <v-menu
           small
           key="add"
-          offset-y
-        >
+          offset-y>
           <template v-slot:activator="{ attrs, on }">
             <v-btn
               small
               class="mr-2"
               v-bind="attrs"
-              v-on="on"
-            >
+              v-on="on">
               <v-icon small>
                 mdi-plus
               </v-icon>
@@ -38,8 +36,7 @@
             <v-list-item
               v-for="(item, index) in resourceSampleListFilter"
               :key="index"
-              link
-            >
+              link>
               <v-list-item-title v-text="item.text" @click="addResourceLine({item})"></v-list-item-title>
             </v-list-item>
           </v-list>
@@ -67,7 +64,7 @@
             JSON预览
           </v-btn>
         </v-btn-toggle>
-        <v-btn small depressed  class="mr-2" @click="addUiLine">
+        <v-btn small depressed class="mr-2" @click="addUiLine">
           <v-icon small>
             mdi-plus
           </v-icon>
@@ -85,7 +82,7 @@
       <v-progress-circular indeterminate size="32"></v-progress-circular>
     </v-overlay>
   </v-card>
-       
+
   <v-card class="mt-4 pa-4 content-text-case">
     <div class="d-flex justify-space-between align-center">
       <h3 style="font-size: 15px;">TestCase</h3>
@@ -109,7 +106,7 @@
       <v-progress-circular indeterminate size="32"></v-progress-circular>
     </v-overlay>
   </v-card>
-  
+
   <v-navigation-drawer v-model="editJsonDialog" fixed left width="80%" temporary>
     <vue-json-editor v-model="jsonObj.json" :type="jsonObj.type" :show-btns="true" :mode="'code'" lang="zh"
       :title="getJsonEditTitle()"
@@ -130,7 +127,7 @@
     </div>
   </v-navigation-drawer>
 </jh-layout-v3>
-{% endblock %} 
+{% endblock %}
 {% block vue_body %}
 {% include 'component/pageItemTable.html' %}
 {% include 'component/vueJsonEditor.html' %}
@@ -143,27 +140,27 @@
     data: () => {
       const resourceTableSample = { table: "table_name", operation: "select|insert|update|delete" };
       const resourceServiceSample = { service: "serviceName", serviceFunction: "functionName" };
-      const resourceHookSample = { before: [], after: [ { "service": "serviceName", "serviceFunction": "functionName" } ] };
+      const resourceHookSample = { before: [], after: [{ "service": "serviceName", "serviceFunction": "functionName" }] };
       const uiActionConfigSample = {
-              label: "Ui Function Sample",
-              json: {
-                before: [
-                  {
-                    "function": "functionName"
-                  }
-                ],
-                main: [
-                  {
-                    "function": "functionName"
-                  }
-                ],
-                after: [
-                  {
-                    "function": "functionName"
-                  }
-                ]
-              }
-            };
+        label: "Ui Function Sample",
+        json: {
+          before: [
+            {
+              "function": "functionName"
+            }
+          ],
+          main: [
+            {
+              "function": "functionName"
+            }
+          ],
+          after: [
+            {
+              "function": "functionName"
+            }
+          ]
+        }
+      };
       return {
         resourceJsonView: false,
         uiJsonView: false,
@@ -216,31 +213,41 @@
               json: resourceHookSample
             }
           ],
-          ui: [ uiActionConfigSample ],
+          ui: [uiActionConfigSample],
         },
         resourceSampleList: [
-          {text: '查询', value: 'refreshTableData', data: {
-            pageId: "<$ pageId $>", actionId: 'refreshTableData', desc: '✅查询-查询列表', resourceType: 'sql', resourceData: { table: "table_name", operation: "select" }
-          }},
-          {text: '新增', value: 'insertItem', data: {
-            pageId: "<$ pageId $>", actionId: 'insertItem', desc: '✅新增-添加数据', resourceType: 'sql', resourceData: { table: "table_name", operation: "insert" }
-          }},
-          {text: '编辑', value: 'updateItem', data: {
-            pageId: "<$ pageId $>", actionId: 'updateItem', desc: '✅编辑-添加数据', resourceType: 'sql', resourceData: { table: "table_name", operation: "update" }
-          }},
-          {text: '删除', value: 'deleteItem', data: {
-            pageId: "<$ pageId $>", actionId: 'deleteItem', desc: '✅删除-删除数据', resourceType: 'sql', resourceData: { table: "table_name", operation: "delete" }
-          }},
-          {text: '空白', value: '', data: {
-            pageId: "<$ pageId $>",
-            actionId: '',
-            desc: '',
-            resourceType: 'sql',
-            resourceHook: null,
-            resourceData: null,
-          } }
+          {
+            text: '查询', value: 'refreshTableData', data: {
+              pageId: "<$ pageId $>", actionId: 'refreshTableData', desc: '✅查询-查询列表', resourceType: 'sql', resourceData: { table: "table_name", operation: "select" }
+            }
+          },
+          {
+            text: '新增', value: 'insertItem', data: {
+              pageId: "<$ pageId $>", actionId: 'insertItem', desc: '✅新增-添加数据', resourceType: 'sql', resourceData: { table: "table_name", operation: "insert" }
+            }
+          },
+          {
+            text: '编辑', value: 'updateItem', data: {
+              pageId: "<$ pageId $>", actionId: 'updateItem', desc: '✅编辑-添加数据', resourceType: 'sql', resourceData: { table: "table_name", operation: "update" }
+            }
+          },
+          {
+            text: '删除', value: 'deleteItem', data: {
+              pageId: "<$ pageId $>", actionId: 'deleteItem', desc: '✅删除-删除数据', resourceType: 'sql', resourceData: { table: "table_name", operation: "delete" }
+            }
+          },
+          {
+            text: '空白', value: '', data: {
+              pageId: "<$ pageId $>",
+              actionId: '',
+              desc: '',
+              resourceType: 'sql',
+              resourceHook: null,
+              resourceData: null,
+            }
+          }
         ]
-        
+
       };
     },
     computed: {
@@ -270,7 +277,7 @@
       },
       async getResourceList() {
         this.resource.loading = true;
-        const { data: { appData: { resultData: { rows } } } } = await window.constructionPlanAxios({
+        const { data: { appData: { resultData: { rows } } } } = await window.appAxios({
           data: {
             appData: {
               pageId: "pagePlanEdit",
@@ -287,7 +294,7 @@
       },
       async getTestCaseList() {
         this.testCase.loading = true;
-        const { data: { appData: { resultData: { rows } } } } = await window.constructionPlanAxios({
+        const { data: { appData: { resultData: { rows } } } } = await window.appAxios({
           data: {
             appData: {
               pageId: "pagePlanEdit",
@@ -303,7 +310,7 @@
           this.testCase.loading = false;
         }, 300)
       },
-      async addResourceLine({item}) {
+      async addResourceLine({ item }) {
         const { actionId, data } = item;
         if (data.resourceData) {
           data.resourceData = JSON.stringify((data.resourceData || '{}'), null);
@@ -329,7 +336,7 @@
       },
       async getUiList() {
         this.ui.loading = true;
-        const { data: { appData: { resultData: { rows } } } } = await window.constructionPlanAxios({
+        const { data: { appData: { resultData: { rows } } } } = await window.appAxios({
           data: {
             appData: {
               pageId: "pagePlanEdit",
@@ -355,7 +362,7 @@
       async saveResource() {
         if (!this.validateField(this.resource.validate, this.resource.list, 'resource')) return;
         this.resource.saving = true;
-        await window.constructionPlanAxios({
+        await window.appAxios({
           data: {
             appData: {
               pageId: "pagePlanEdit",
@@ -373,7 +380,7 @@
       async saveUi() {
         if (!this.validateField(this.ui.validate, this.ui.list, 'ui')) return;
         this.ui.saving = true;
-        await window.constructionPlanAxios({
+        await window.appAxios({
           data: {
             appData: {
               pageId: "pagePlanEdit",
@@ -391,7 +398,7 @@
       async saveTestCase() {
         if (!this.validateField(this.testCase.validate, this.testCase.list, 'testCase')) return;
         this.testCase.saving = true;
-        await window.constructionPlanAxios({
+        await window.appAxios({
           data: {
             appData: {
               pageId: "pagePlanEdit",
@@ -473,17 +480,21 @@
   .v-subheader {
     height: 38px;
   }
+
   .content-resource,
   .content-ui {
     overflow-x: auto;
   }
+
   .item-filter {
     filter: blur(10rpx);
     transition: scale(2);
   }
+
   .block-title {
     display: inline-block;
   }
+
   .jsoneditor {
     border-color: rgb(239, 242, 245);
   }

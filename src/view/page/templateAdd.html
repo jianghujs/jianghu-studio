@@ -2,9 +2,9 @@
 {% block vue_template %}
 <jh-layout-v3>
     <template slot="breadcrumbsTitle">
-      jinghu-init 
+        jinghu-init
     </template>
-    
+
     <v-card class="mt-3 px-2 pb-6">
         <v-card-title style="font-size: 16px;">Project</v-card-title>
         <v-row class="px-4">
@@ -12,18 +12,18 @@
                 <v-card outlined class="py-1" style="border: 1px solid #eff2f5;">
                     <v-list-item>
                         <v-list-item-content>
-                          <v-list-item-title style="font-weight: 500;color: #3F4254;margin-bottom: 3px !important;">{{item.title}}</v-list-item-title>
-                          <v-list-item-subtitle style="font-size: 13px;color: #B5B5C3;font-weight: 500;">{{item.desc}}</v-list-item-subtitle>
+                            <v-list-item-title style="font-weight: 500;color: #3F4254;margin-bottom: 3px !important;">{{item.title}}</v-list-item-title>
+                            <v-list-item-subtitle style="font-size: 13px;color: #B5B5C3;font-weight: 500;">{{item.desc}}</v-list-item-subtitle>
                         </v-list-item-content>
                         <v-list-item-action>
                             <div class="success--text" role="button" @click="addTemlate(item)">一键安装</div>
                         </v-list-item-action>
-                      </v-list-item>
-                    </v-card>
+                    </v-list-item>
+                </v-card>
             </v-col>
         </v-row>
     </v-card>
-    
+
     <v-card class="mt-4 px-2 pb-6">
         <v-card-title style="font-size: 16px;">Page</v-card-title>
         <v-row class="px-4">
@@ -31,17 +31,17 @@
                 <v-card outlined class="py-1" style="border: 1px solid #eff2f5;">
                     <v-list-item>
                         <v-list-item-content>
-                          <v-list-item-title style="font-weight: 500;color: #3F4254;margin-bottom: 3px !important;">{{item.title}}</v-list-item-title>
-                          <v-list-item-subtitle style="font-size: 13px;color: #B5B5C3;font-weight: 500;">{{item.desc}}</v-list-item-subtitle>
+                            <v-list-item-title style="font-weight: 500;color: #3F4254;margin-bottom: 3px !important;">{{item.title}}</v-list-item-title>
+                            <v-list-item-subtitle style="font-size: 13px;color: #B5B5C3;font-weight: 500;">{{item.desc}}</v-list-item-subtitle>
                         </v-list-item-content>
                         <v-list-item-action>
                             <div class="success--text" role="button" @click="addTemlate(item)">一键安装</div>
                         </v-list-item-action>
-                      </v-list-item>
-                    </v-card>
+                    </v-list-item>
+                </v-card>
             </v-col>
         </v-row>
-    </v-card>      
+    </v-card>
 </jh-layout-v3>
 
 {% endblock %} {% block vue_body %}
@@ -88,7 +88,7 @@
         },
         methods: {
             async addTemlate(item) {
-                await window.constructionPlanAxios({
+                await window.appAxios({
                     data: {
                         appData: {
                             pageId: "templateAdd",

@@ -6,71 +6,82 @@
 
 {% extends 'template/jhsTemplate.html'%}
 {% block vueTemplate %}
+
 <script type="text/html" id="app-template">
-<div>
-<v-app mobile-breakpoint="sm">
-  <jh-menu />
-  <v-main class="mt-13">
-    <!-- 头部内容 >>>>>>>>>>>>> --> 
-    <div class="jh-page-second-bar px-8">
-      <v-row class="align-center" dense>
-        <v-col cols="12" xs="12" sm="12" md="4" xl="3">
-          <div class="py-4 text-body-1 font-weight-bold d-flex align-center">项目首页 
-          </div>
-        </v-col>
-      </v-row>
-    </div>
-    <!-- <<<<<<<<<<<<< 头部内容 -->
+  <div>
+    <v-app mobile-breakpoint="sm">
+      <v-main class="mt-5">
+        <!-- 头部内容 >>>>>>>>>>>>> -->
+        <div class="jh-page-second-bar px-8">
+          <v-row class="align-center" dense>
+            <v-col cols="12" xs="12" sm="12" md="4" xl="3">
+              <div class="py-4 font-weight-bold d-flex align-center" style="font-size: 30px;">【{{appId}}】应用管理</div>
+            </v-col>
+          </v-row>
+        </div>
+        <!-- <<<<<<<<<<<<< 头部内容 -->
 
-    <!-- 页面内容 >>>>>>>>>>>>> -->
-    <div class="jh-page-body-container px-8">
-      <v-card class="rounded-lg">
-        aaa拜拜吧
-      </v-card>
-    </div>
-    <!-- <<<<<<<<<<<<< 页面内容 -->
-  </v-main>
-</v-app>
+        <!-- 页面内容 >>>>>>>>>>>>> -->
+        <div class="jh-page-body-container px-8">
+          <v-card class="rounded-lg pa-4 pt-6">
+            <v-form ref="form">
+             
+            </v-form>
+          </v-card>
+        </div>
+        <!-- <<<<<<<<<<<<< 页面内容 -->
+      </v-main>
+    </v-app>
 
-<jh-toast />
-<jh-mask />
-<jh-confirm-dialog />
-</div>
+    <jh-toast />
+    <jh-mask />
+    <jh-confirm-dialog />
+  </div>
 </script>
 <div id="app"></div>
 {% endblock %}
+{% include 'common/jianghuJs/fixedTableHeightV4.html' %}
 
 {% block vueScript %}
 
-{% include 'common/jianghuJs/fixedTableHeightV4.html' %}
-
-<script type="module">
+<script>
   new Vue({
     el: '#app',
     template: '#app-template',
     vuetify: new Vuetify(),
     data: () => ({
-
-    }),
-    watch: {
-      isHelpPageDrawerShown(val) {
-        if (val && !this.isHelpPageDrawerLoaded) {
-          this.isHelpPageDrawerLoaded = true;
+      workspaceFolders: "<$ workspaceFolders $>",
+      pageId: "<$ pageId $>",
+      appId: "<$ appId $>",
+      rules: {
+        required: value => !!value || 'Required.',
+        counter: value => (value && value.length >= 2 && value.length <= 20) || 'Max 10 Min 2 characters',
+        appId: value => {
+          const pattern = /^[a-zA-Z]\w*$/;
+          return value && pattern.test(value) || 'Invalid appId.'
+        },
+        account: value => {
+          const pattern = /^\w+$/;
+          return value && pattern.test(value) || 'Invalid account.'
+        },
+        port: value => {
+          const pattern = /^\d+$/;
+          return value && pattern.test(value) || 'Invalid port.'
+        },
+        ip: value => {
+          const pattern = /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
+          return value && pattern.test(value) || 'Invalid IP.'
         }
       },
+    }),
+    watch: {
+
     },
 
-    async created() {
-    },
-
-
-
-    async created() {
+    created() {
     },
     mounted() {
     },
-
-
     methods: {
       async doUiAction(uiActionId, uiActionData) {
         switch (uiActionId) {
@@ -82,9 +93,40 @@
             break;
         }
       },
+      async selectWorkFolder(event) {
+        const newFolder = await window.appAxios({
+          packageType: "selectWorkFolder"
+        });
+        this.workspaceFolders = newFolder.data.appData.fsPath;
+      },
+      async submitCreateAppForm() {
+        if (!(await this.$refs.form.validate())) {
+          return false;
+        }
+        await window.appAxios({
+          packageType: "submitCreateAppForm",
+          data: {
+            appData: {
+              workspaceFolders: this.workspaceFolders,
+              appId: this.appId,
+              appName: this.appName,
+              databaseIp: this.databaseIp,
+              databasePort: this.databasePort,
+              databaseUser: this.databaseUser,
+              databasePassword: this.databasePassword,
+            },
+          },
+          callback: (value) => {
+
+          }
+        });
+      }
     }
   })
 </script>
 
 <style scoped>
+  .v-input .v-label {
+    line-height: 1.45;
+  }
 </style>{% endblock %}

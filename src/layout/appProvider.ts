@@ -4,6 +4,7 @@ import * as vscode from "vscode";
 import { BaseTreeView } from "./base/treeView";
 import { EntryItem } from "./tree/entryItem";
 import AppManager from "../core/appManager";
+import { PathUtil } from "../util/pathUtil";
 
 // 树的内容组织管理
 export class AppProvider extends BaseTreeView implements vscode.TreeDataProvider<EntryItem> {
@@ -17,20 +18,28 @@ export class AppProvider extends BaseTreeView implements vscode.TreeDataProvider
       void vscode.window.showInformationMessage("No dependency in empty workspace");
       return Promise.resolve([]);
     }
-    if (element) {
-      // 配置应用的二级左侧树菜单
-      const { appId, appTitle } = element;
-      if (appId) {
-        void vscode.commands.executeCommand("webviewHandler.openAppHomePage", { pageId: "appHome", currDatabase: null, pageName: `应用【${appTitle}】首页` });
-        // 应用的菜单
-        const appMenus: EntryItem[] = AppManager.client(element);
-        return appMenus;
-      } else {
-        // 配置三级菜单
-        return [];
-      }
+    // 检查项目列表并保存到配置
+    if (!element) {
+      this.getAppList();
+      const menuList = AppManager.client(element);
+      menuList.unshift(
+        new EntryItem(
+          {
+            label: "创建应用",
+            type: "manu",
+            command: "webviewHandler.openAppCreatePage",
+            commandArgs: { pageId: "appCreate", currDatabase: null, pageName: "创建应用" },
+            iconPath: {
+              light: PathUtil.getExtensionFileAbsolutePath(this.context, "images/light/add.svg"),
+              dark: PathUtil.getExtensionFileAbsolutePath(this.context, "images/dark/add.svg"),
+            },
+          },
+          undefined
+        )
+      );
+      return menuList;
     } else {
-      return this.getAppList();
+      return element.menuList;
     }
   }
 }

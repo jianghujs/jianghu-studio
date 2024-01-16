@@ -36,7 +36,7 @@
 		"viewsWelcome": [
 			{
 				"view": "appProvider",
-				"contents": "No node dependencies found [learn more](https://openjianghu.org/).\n[Create Project](command:appProvider.projectCreate)"
+				"contents": "No node dependencies found [learn more](https://openjianghu.org/).\n[新建应用](command:appProvider.projectCreate)"
 			}
 		],
 		"commands": [
@@ -83,6 +83,10 @@
 			{
 				"command": "webviewHandler.openAppHomePage",
 				"title": "打开应用首页"
+			},
+			{
+				"command": "webviewHandler.openAppPageManagerPage",
+				"title": "应用页面管理"
 			},
 			{
 				"command": "webviewHandler.openPageCreatePage",

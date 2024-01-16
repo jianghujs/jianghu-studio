@@ -1,4 +1,6 @@
+/* eslint-disable @typescript-eslint/restrict-template-expressions */
 // 初始化框架核心
+import * as vscode from "vscode";
 import { Knex } from "knex";
 import { BizError, ErrorInfo } from "../common/constants";
 import Logger from "../util/logger";
@@ -8,14 +10,16 @@ import KnexManager from "./knexManager";
 import ServiceManager from "./serviceManager";
 import TableManager from "./tableManager";
 import WebviewManager from "./webviewManager";
+import * as fs from "fs";
+import { ConfigUtil } from "../util/configUtil";
 
-export default class constructionPlanCore {
+export default class AppCore {
   public tableManager: TableManager;
   public serviceManager: ServiceManager;
   public webviewManager: WebviewManager;
   public knexManager: KnexManager;
   public jianghuKnexManager: JianghuKnexManager;
-
+  private appCreateTerminal: vscode.Terminal | null = null;
   constructor() {
     this.tableManager = new TableManager();
     this.serviceManager = new ServiceManager();
@@ -24,12 +28,121 @@ export default class constructionPlanCore {
     this.knexManager = new KnexManager();
   }
 
+  // 接收来自与 webview 的消息
   public async handleMessage({ body, uri }: any) {
     console.log(body, uri);
-    const { currDatabase: database } = uri;
-    const {
-      appData: { pageId, actionId },
-    } = body;
+    const { packageType } = body;
+    const pageId = uri.pageId;
+    let resultData: any;
+    const returnBody = { ...body };
+    const panel = this.webviewManager.getPanel(pageId as string);
+    switch (packageType) {
+      case "selectWorkFolder": {
+        // 选择本地目录
+        const fsPath = await this.selectFolder();
+        if (panel) {
+          returnBody.packageType = "selectWorkFolderResponse";
+          returnBody.appData = {
+            fsPath,
+          };
+          void panel.webview.postMessage(returnBody);
+        }
+        break;
+      }
+      case "submitCreateAppForm": {
+        // 关闭当前 webview页面
+        if (panel) {
+          panel.dispose();
+        }
+        // 开始创建项目
+        // , appName, databaseIp, databasePort, databaseUser, databasePassword
+        const { workspaceFolders, appId } = body.appData;
+        if (fs.existsSync(`${workspaceFolders}/${appId}`)) {
+          // eslint-disable-next-line no-template-curly-in-string
+          void vscode.window.showErrorMessage("目录已存在，请更换新目录或者删除已存在目录");
+          return;
+        }
+        if (!this.appCreateTerminal) {
+          this.appCreateTerminal = vscode.window.createTerminal({ name: "正在应用创建", message: "开始创建项目", cwd: workspaceFolders, location: vscode.TerminalLocation.Editor });
+        }
+        const commandText = "export https_proxy=http://127.0.0.1:7890 http_proxy=http://127.0.0.1:7890 all_proxy=socks5://127.0.0.1:7890";
+        const commandText2 = `node /Users/benshanyue/fsll/projects/jianghujs-script-util/openjianghu01/002.jianghu-init/jianghu-init/bin/jianghu-init.js`;
+        const cwd = `${commandText} && cd ${workspaceFolders} && ${commandText2} project --type=1table-crud ${appId as string}`;
+        this.appCreateTerminal.show(false);
+        this.appCreateTerminal.sendText(cwd); // 输入命令
+        vscode.window.onDidChangeActiveTerminal(e => {
+          if (e?.processId !== this.appCreateTerminal?.processId) {
+            this.appCreateTerminal?.dispose();
+            this.appCreateTerminal = null;
+          }
+        });
+
+        break;
+      }
+      case "messageRequest":
+        // res请求
+        resultData = await this.resourceHandler(body, uri);
+        returnBody.packageType = "messageResponse";
+        returnBody.appData = { resultData };
+        // 回消息
+        if (panel) {
+          await panel.webview.postMessage(returnBody);
+        }
+        break;
+      case "viewPageRequest": {
+        // eslint-disable-next-line no-case-declarations
+        const { workspaceFolders, appId, pageFile } = body.appData;
+        const appFolder = `${workspaceFolders as string}/${appId as string}`;
+        const devCommand = "npm run dev"; // ConfigUtil.readPackageJsonDevCommand(appFolder);
+        // 启动项目，并且在一个新的 webview 中打开 pageId
+        // 运行项目下的 package.json 中的 scripts.start
+        if (devCommand) {
+          // 运行该命令
+          const t1 = vscode.window.createTerminal({ name: "启动项目", message: "启动项目", cwd: appFolder });
+          t1.show(false);
+          t1.sendText(devCommand as string);
+          // 在一个新的 webview 中打开网址
+          const webview = vscode.window.createWebviewPanel("jianghu", "jianghu", vscode.ViewColumn.One, {
+            enableScripts: true,
+            retainContextWhenHidden: true,
+          });
+          webview.webview.html = `<iframe src="https://www.163.com" width="100% height="100%"></iframe>`;
+          // webview 打开一个链接
+        }
+        break;
+      }
+      default:
+        break;
+    }
+  }
+
+  private selectFolder(): Promise<string> {
+    return new Promise((resolve, reject) => {
+      void vscode.window
+        .showOpenDialog({
+          canSelectMany: false,
+          canSelectFolders: true,
+          canSelectFiles: false,
+        })
+        .then(fileUri => {
+          if (fileUri && fileUri[0]) {
+            resolve(fileUri[0].fsPath);
+          } else {
+            reject("No folder selected");
+          }
+        });
+    });
+  }
+
+  // 处理 resource的请求
+  private async resourceHandler(body: any, uri: any) {
+    const { appId, currDatabase: database } = uri;
+    const { appData } = body;
+    if (!appData) {
+      return null;
+    }
+    const { pageId, actionId } = appData;
+    // eslint-disable-next-line prefer-const
     const resource = this.tableManager.findResource(pageId as string, actionId as string);
     let resultData: any;
 
@@ -98,15 +211,7 @@ export default class constructionPlanCore {
         error: "无效请求",
       };
     }
-
-    // 回消息
-    const panel = this.webviewManager.getPanel(pageId as string);
-    if (panel) {
-      const returnBody = { ...body };
-      returnBody.packageType = "messageResponse";
-      returnBody.appData = { resultData };
-      await panel.webview.postMessage(returnBody);
-    }
+    return resultData;
   }
 
   private serviceFunctionCheck(resourceData: any): void {

@@ -4,33 +4,32 @@
 import { Knex } from "knex";
 import * as vscode from "vscode";
 import { TableEnum } from "./common/constants";
-import constructionPlanCore from "./core";
+import AppCore from "./core";
 import JianghuKnexManager from "./core/jianghuKnexManager";
-import { ConstructionAdvancedPageList } from "./layout/constructionAdvancedPageList";
-import { ConstructionPlanPageList } from "./layout/constructionPlanPageList";
-import { ConstructionPlanViewPagePlanList } from "./layout/constructionPlanViewPagePlanList";
+// import { ConstructionAdvancedPageList } from "./layout/constructionAdvancedPageList";
+// import { ConstructionPlanPageList } from "./layout/constructionPlanPageList";
+// import { ConstructionPlanViewPagePlanList } from "./layout/constructionPlanViewPagePlanList";
 import * as htmlDiagnostic from "./layout/htmlDiagnostic";
-import TestWebview from "./layout/pageWebview";
 import * as uiAnnotation from "./layout/uiAnnotation";
 import { CommonUtil } from "./util/commonUtil";
 import Logger from "./util/logger";
 import { AppProvider } from "./layout/appProvider";
+import PageWebview from "./layout/pageWebview";
 
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
-  console.log("---------------");
-  const core: constructionPlanCore = new constructionPlanCore();
+  const core: AppCore = new AppCore();
   // @ts-ignore
   // eslint-disable-next-line @typescript-eslint/no-unsafe-call
-  new TestWebview(core).active(context);
+  new PageWebview(core).active(context);
   htmlDiagnostic.activate(context, core);
 
   // // 打开首页
   // void vscode.commands.executeCommand("extension.setting.showIndexPage", { pageId: "index", currDatabase: null, pageName: "首页" });
 
   // 应用管理左侧树菜单构建
-  vscode.window.registerTreeDataProvider("appProvider", new AppProvider(core));
+  vscode.window.registerTreeDataProvider("appProvider", new AppProvider(context, core));
 
   // 2.0 命令配置
   // 创建首页
@@ -42,9 +41,12 @@ export function activate(context: vscode.ExtensionContext) {
   // 刷新应用列表
   context.subscriptions.push(
     vscode.commands.registerCommand("appProvider.refreshAppList", () => {
-      vscode.window.registerTreeDataProvider("appProvider", new AppProvider(core));
+      vscode.window.registerTreeDataProvider("appProvider", new AppProvider(context, core));
     })
   );
+  vscode.window.onDidChangeActiveTerminal(e => {
+    void vscode.commands.executeCommand("appProvider.refreshAppList");
+  });
   // 打开应用首页
   context.subscriptions.push(
     vscode.commands.registerCommand("appProvider.appHome", args => {
@@ -64,11 +66,10 @@ export function activate(context: vscode.ExtensionContext) {
   // vscode.window.registerTreeDataProvider("constructionPlan", new ConstructionPlanPageList(core));
   // vscode.window.registerTreeDataProvider("constructionAdvanced", new ConstructionAdvancedPageList(core));
 
-
   context.subscriptions.push(
     vscode.commands.registerCommand("constructionPlan.refreshDb", () => {
-      vscode.window.registerTreeDataProvider("constructionPlan", new ConstructionPlanPageList(core));
-      vscode.window.registerTreeDataProvider("constructionAdvanced", new ConstructionAdvancedPageList(core));
+      // vscode.window.registerTreeDataProvider("constructionPlan", new ConstructionPlanPageList(core));
+      // vscode.window.registerTreeDataProvider("constructionAdvanced", new ConstructionAdvancedPageList(core));
     })
   );
   context.subscriptions.push(

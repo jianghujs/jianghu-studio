@@ -5,24 +5,15 @@ import { Constants } from "../common/constants";
 import { createJianghuKnex } from "../util/jianghuKnexUtil";
 
 export default class JianghuKnexManager {
-  private static handlerMap: {
-    [key: string]: [value: Knex];
-  } = {};
+  private static handlerMap = new Map<string, Knex>();
 
   public static client(config: Knex.MySqlConnectionConfig) {
     const { host, port, database } = config;
     // host || "" ===> 这样写是为了 fix eslint的报错
     const key = `${host || ""}_${port || ""}_${database || ""}`;
-    if (JSON.stringify(JianghuKnexManager.handlerMap) === "{}") {
-      // @ts-ignore
-      const { list }: { list: [Knex.MySqlConnectionConfig] } = vscode.workspace.getConfiguration(Constants.CONFIG_PREFIX).get("databaseList");
-      for (const item of list || []) {
-        const targetKey = `${item.host as string}_${item.port as number}_${item.database as string}`;
-        JianghuKnexManager.handlerMap[targetKey] = createJianghuKnex(item);
-      }
-      return JianghuKnexManager.handlerMap[key];
-    } else {
-      return JianghuKnexManager.handlerMap[key];
+    if (!JianghuKnexManager.handlerMap.has(key)) {
+      JianghuKnexManager.handlerMap.set(key, createJianghuKnex(config) as Knex);
     }
+    return JianghuKnexManager.handlerMap.get(key);
   }
 }

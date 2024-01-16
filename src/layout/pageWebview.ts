@@ -1,20 +1,20 @@
 import { Knex } from "knex";
 import * as vscode from "vscode";
-import constructionPlanCore from "../core";
+import AppCore from "../core";
 import pageList from "../table/_page";
 import { PathUtil } from "../util/pathUtil";
 import { EntryItem } from "./tree/entryItem";
 
 export default abstract class PageWebview {
   public static currentPanel: vscode.WebviewPanel | PageWebview | undefined;
-  private static core: constructionPlanCore;
+  private static core: AppCore;
 
-  private core: constructionPlanCore;
+  private core: AppCore;
 
   private disposables: vscode.Disposable[] = [];
   private uri: any;
 
-  constructor(core: constructionPlanCore) {
+  constructor(core: AppCore) {
     this.core = core;
   }
 
@@ -24,16 +24,20 @@ export default abstract class PageWebview {
         // 注册参数
         vscode.commands.registerCommand(pageData.command, uri => {
           this.uri = uri;
+          console.log("uri", uri, pageData);
           const { pageId, currDatabase: database, pageName, args } = this.uri;
           const column = vscode.window.activeTextEditor ? vscode.window.activeTextEditor.viewColumn : undefined;
           const panelExist = this.core.webviewManager.getPanel(pageData.page);
+          const workspaceFolders = this.getWorkFolder();
           if (panelExist) {
             this.updateForPage(context, panelExist, {
+              appId: uri.appId,
               pageId,
               pageName,
               database,
               page: pageData.page,
               projectInfo: args,
+              workspaceFolders,
             });
             panelExist.reveal(column);
             return;
@@ -50,11 +54,13 @@ export default abstract class PageWebview {
           );
 
           this.updateForPage(context, panel, {
+            appId: uri.appId,
             pageId,
             pageName,
             database,
             page: pageData.page,
             projectInfo: args,
+            workspaceFolders,
           });
 
           panel.onDidDispose(() => this.dispose(pageData.page), null, this.disposables);
@@ -85,22 +91,42 @@ export default abstract class PageWebview {
     context: vscode.ExtensionContext,
     panel: vscode.WebviewPanel,
     {
+      appId,
       pageId,
       pageName,
       database,
       page,
       projectInfo,
+      workspaceFolders,
     }: {
+      appId: string;
       pageId: string;
       pageName: string;
       page: string;
       database: Knex.MySqlConnectionConfig;
       projectInfo: EntryItem;
+      workspaceFolders: any;
     }
   ): void {
-    panel.title = `${pageName}${(projectInfo && `@${projectInfo.appTitle}`) || ""}`;
+    panel.title = `${pageName}${(projectInfo && `@${projectInfo.appTitle as string}`) || ""}`;
     const uiActionList = this.core.tableManager.getUiActionList(pageId);
     panel.webview.html = "";
-    panel.webview.html = PathUtil.generatePage(context, panel, page, { pageId: pageId || "", uiActionList, database: database?.database });
+    panel.webview.html = PathUtil.generatePage(context, panel, page, { pageId: pageId || "", appId, workspaceFolders, uiActionList, database: database?.database });
+  }
+
+  // 页面打开后，想页面发送当前工作目录
+  private getWorkFolder() {
+    // 向页面中发送基础数据
+    const workspaceFile = vscode.workspace.workspaceFile && vscode.workspace.workspaceFile.path;
+    const workspaceFolderList: readonly vscode.WorkspaceFolder[] | undefined = vscode.workspace.workspaceFolders;
+    let workspaceFolders: any;
+    if (workspaceFile) {
+      // 工作区
+      workspaceFolders = [PathUtil.getWorkspaceFileDir(workspaceFile)];
+    } else {
+      // 普通文件夹
+      workspaceFolders = workspaceFolderList && PathUtil.getRootFloader(workspaceFolderList);
+    }
+    return workspaceFolders;
   }
 }

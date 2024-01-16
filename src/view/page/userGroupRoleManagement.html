@@ -3,171 +3,171 @@
 {% block vue_template %}
 
 <jh-layout-v3>
-    <template slot="breadcrumbsTitle">
-      用户权限
-    </template>
+  <template slot="breadcrumbsTitle">
+    用户权限
+  </template>
 
-    <v-card style="background-color: #f5f8fa;" class="mt-3">
-      <v-navigation-drawer permanent absolute left width="220" v-model="showLeftMenu" hide-overlay>
-        <template v-slot:prepend>
-          <v-tabs color="success" v-model="pageTab" :show-arrows="false">
-            <v-tab>用户</v-tab>
-            <v-tab>组织</v-tab>
-            <v-tab>角色</v-tab>
-          </v-tabs>
-          <v-btn depressed block style="max-width: 180px; display: block; min-width: calc(100% - 24px)!important;"
-            @click="openFormDialog()" color="success ma-3 mb-0">
-            添加新{{tabItemTitle}}
-          </v-btn>
-          <v-col>
-            <v-text-field
-              dense
-              filled
-              single-line
-              hide-details="auto"
-              label="Search" v-model="tabsSearchKeyword" prepend-inner-icon="mdi-magnify"
-              color="success"></v-text-field>
+  <v-card style="background-color: #f5f8fa;" class="mt-3">
+    <v-navigation-drawer permanent absolute left width="220" v-model="showLeftMenu" hide-overlay>
+      <template v-slot:prepend>
+        <v-tabs color="success" v-model="pageTab" :show-arrows="false">
+          <v-tab>用户</v-tab>
+          <v-tab>组织</v-tab>
+          <v-tab>角色</v-tab>
+        </v-tabs>
+        <v-btn depressed block style="max-width: 180px; display: block; min-width: calc(100% - 24px)!important;"
+          @click="openFormDialog()" color="success ma-3 mb-0">
+          添加新{{tabItemTitle}}
+        </v-btn>
+        <v-col>
+          <v-text-field
+            dense
+            filled
+            single-line
+            hide-details="auto"
+            label="Search" v-model="tabsSearchKeyword" prepend-inner-icon="mdi-magnify"
+            color="success"></v-text-field>
+        </v-col>
+      </template>
+      <v-list-item-group v-model="selectedItem" mandatory dense color="success" class="px-3">
+        <v-list-item v-for="item in tabData" :key="item.value">
+          <v-list-item-content>
+            <v-list-item-title>{{ item.text }}({{ item.value }})</v-list-item-title>
+          </v-list-item-content>
+        </v-list-item>
+      </v-list-item-group>
+    </v-navigation-drawer>
+
+    <!-- 页面主要内容 -->
+    <v-container class="fullScreen d-flex flex-column pa-xs-0 pa-0"
+      :style="{maxWidth: 'calc(100vw - ' + (showLeftMenu ? 530 : 0) + 'px)'}">
+      <v-card>
+        <v-row class="ma-0 pa-xs-4 align-center flex-none pt-0 ">
+          <v-col cols="12" xs="12" sm="4" md="4" xl="4" class="d-flex align-center">
+            <v-btn color="success" dark class="elevation-0 mr-4" @click="doUiAction('startCreateItem', null)">新增
+            </v-btn>
+            <span class="body-2">共{{ tableData.length }}条记录</span>
           </v-col>
-        </template>
-        <v-list-item-group v-model="selectedItem" mandatory dense color="success" class="px-3">
-          <v-list-item v-for="item in tabData" :key="item.value">
-            <v-list-item-content>
-              <v-list-item-title>{{ item.text }}({{ item.value }})</v-list-item-title>
-            </v-list-item-content>
-          </v-list-item>
-        </v-list-item-group>
-      </v-navigation-drawer>
-  
-      <!-- 页面主要内容 -->
-      <v-container class="fullScreen d-flex flex-column pa-xs-0 pa-0"
-        :style="{maxWidth: 'calc(100vw - ' + (showLeftMenu ? 530 : 0) + 'px)'}">
-        <v-card>
-          <v-row class="ma-0 pa-xs-4 align-center flex-none pt-0 ">
-            <v-col cols="12" xs="12" sm="4" md="4" xl="4" class="d-flex align-center">
-              <v-btn color="success" dark class="elevation-0 mr-4" @click="doUiAction('startCreateItem', null)">新增
-              </v-btn>
-              <span class="body-2">共{{ tableData.length }}条记录</span>
-            </v-col>
-            <v-col cols="12" xs="12" sm="8" md="8" xl="8" class="pa-xs-0 pa-xs-2 col-sm-8-flex d-flex align-center justify-end">
-              <v-switch class="d-inline-block ma-0 pa-0 mr-2" v-model="showAllData" label="显示全部" color="success" inset
-                @change="doUiAction('refreshTableData')" hide-details dense></v-switch>
-              <v-text-field v-model="searchInput" hide-details prefix="表格过滤：" class="cus-v-input" dense filled
+          <v-col cols="12" xs="12" sm="8" md="8" xl="8" class="pa-xs-0 pa-xs-2 col-sm-8-flex d-flex align-center justify-end">
+            <v-switch class="d-inline-block ma-0 pa-0 mr-2" v-model="showAllData" label="显示全部" color="success" inset
+              @change="doUiAction('refreshTableData')" hide-details dense></v-switch>
+            <v-text-field v-model="searchInput" hide-details prefix="表格过滤：" class="cus-v-input" dense filled
               single-line style="flex: initial;"></v-text-field>
-            </v-col>
-          </v-row>
-
-          <v-row class="flex-nowrap ma-0">
-            <v-col class="d-flex flex-column ma-0 pb-0">
-              <v-data-table :headers="headers" :items="tableData" :search="searchInput"
-                :footer-props="{ itemsPerPageOptions: [20, 40, 60, 100, -1] }" :items-per-page="20"
-                :loading="isTableLoading" checkbox-color="success" mobile-breakpoint="0"
-                class="elevation-0 mt-0 mb-xs-4 flex-fill d-flex flex-column">
-                <template v-slot:item.roleId="{ item }">
-                  {{ (constantCollection.userType.find(({value}) => value === item.roleId) ||
-                  constantCollection.role.find(({value}) => value === item.roleId) || {}).text }}
-                </template>
-                <template v-slot:item.action="{ item }">
-                  <v-btn :small="!isMobile" class="mr-2 success" @click="doUiAction('startUpdateItem', {item})">
-                    修改
-                  </v-btn>
-                  <v-btn :small="!isMobile" class="mr-2 error" @click="doUiAction('deleteItem', {item})">
-                    删除
-                  </v-btn>
-                </template>
-              </v-data-table>
-            </v-col>
-          </v-row>
-        </v-card>
-      </v-container>
-  
-      <v-navigation-drawer permanent absolute right width="220" v-model="showLeftMenu" class="pa-3" hide-overlay>
-        <v-list-item-title style="font-size: 15px !important;font-weight: bold;" class="pb-3">{{tabItemTitle +
-          '信息'}}
-        </v-list-item-title>
-        <v-form v-model="isFormValidRight" ref="formRight" lazy-validation>
-          <v-row dense>
-            <v-col cols="12" v-for="item of editFormFields">
-              <span class="inputLabel">{{item.text}}</span>
-
-              <v-select v-if="item.type === 'select'" class="cus-v-input"  dense filled single-line clearable item-value="value"
-                :label="item.text" v-model="activeItemInfo[item.value]"
-                :rules="item.require == false ? nullRules : requireRules" :items="constantCollection[item.value]">
-              </v-select>
-              <v-textarea v-else-if="item.type === 'textarea'" class="cus-v-input"  dense filled single-line
-                :label="item.text" v-model="activeItemInfo[item.value]"
-                :rules="item.require == false ? nullRules : requireRules">
-              </v-textarea>
-              <v-text-field v-else class="cus-v-input"  dense filled single-line :label="item.text"
-                v-model="activeItemInfo[item.value]" :rules="item.require == false ? nullRules : requireRules">
-              </v-text-field>
-            </v-col>
-          </v-row>
-          <!-- <drawer-form :headers="editFormFields" :editItem="activeItemInfo" :constantCollection="constantCollection" :cols="12" :hasRowPX="false"></drawer-form> -->
-          <v-row class="pa-3 mt-0">
-            <v-spacer></v-spacer>
-            <v-btn color="error" small @click="doUiAction('deleteLeftItem')" class="mr-2">删除</v-btn>
-            <v-btn color="success" small @click="doUiAction('updateLeftItem')">修改</v-btn>
-          </v-row>
-        </v-form>
-      </v-navigation-drawer>
-    </v-card>
-  
-    <!-- 编辑抽屉 -->
-    <v-overlay app :value="isEditDrawerShow"></v-overlay>
-    <v-navigation-drawer v-model="isEditDrawerShow" fixed temporary right width="80%"
-      class="elevation-24">
-      <v-form v-model="isFormValid" ref="form" lazy-validation>
-        <v-row class="pt-8">
-          <span class="title pa-6 pl-12">{{ currentClickButton.title }}信息</span>
-          <v-spacer></v-spacer>
-          <v-btn class="mt-7 mr-8 elevation-0" fab x-small @click="isEditDrawerShow = false">
-            <v-icon dark>mdi-close</v-icon>
-          </v-btn>
+          </v-col>
         </v-row>
-        <drawer-form :headers="tableFields" :editItem="editItem" :constantCollection="constantCollection"></drawer-form>
-        <v-row class="justify-end mx-0 mt-8 px-10">
-          <v-btn color="success" @click="doUiAction(dialogSaveInfoAction)">保存
-          </v-btn>
-          <v-btn class="elevation-0 mr-2 ml-2" @click="isEditDrawerShow = false">取消</v-btn>
+
+        <v-row class="flex-nowrap ma-0">
+          <v-col class="d-flex flex-column ma-0 pb-0">
+            <v-data-table :headers="headers" :items="tableData" :search="searchInput"
+              :footer-props="{ itemsPerPageOptions: [20, 40, 60, 100, -1] }" :items-per-page="20"
+              :loading="isTableLoading" checkbox-color="success" mobile-breakpoint="0"
+              class="elevation-0 mt-0 mb-xs-4 flex-fill d-flex flex-column">
+              <template v-slot:item.roleId="{ item }">
+                {{ (constantCollection.userType.find(({value}) => value === item.roleId) ||
+                constantCollection.role.find(({value}) => value === item.roleId) || {}).text }}
+              </template>
+              <template v-slot:item.action="{ item }">
+                <v-btn :small="!isMobile" class="mr-2 success" @click="doUiAction('startUpdateItem', {item})">
+                  修改
+                </v-btn>
+                <v-btn :small="!isMobile" class="mr-2 error" @click="doUiAction('deleteItem', {item})">
+                  删除
+                </v-btn>
+              </template>
+            </v-data-table>
+          </v-col>
+        </v-row>
+      </v-card>
+    </v-container>
+
+    <v-navigation-drawer permanent absolute right width="220" v-model="showLeftMenu" class="pa-3" hide-overlay>
+      <v-list-item-title style="font-size: 15px !important;font-weight: bold;" class="pb-3">{{tabItemTitle +
+        '信息'}}
+      </v-list-item-title>
+      <v-form v-model="isFormValidRight" ref="formRight" lazy-validation>
+        <v-row dense>
+          <v-col cols="12" v-for="item of editFormFields">
+            <span class="inputLabel">{{item.text}}</span>
+
+            <v-select v-if="item.type === 'select'" class="cus-v-input" dense filled single-line clearable item-value="value"
+              :label="item.text" v-model="activeItemInfo[item.value]"
+              :rules="item.require == false ? nullRules : requireRules" :items="constantCollection[item.value]">
+            </v-select>
+            <v-textarea v-else-if="item.type === 'textarea'" class="cus-v-input" dense filled single-line
+              :label="item.text" v-model="activeItemInfo[item.value]"
+              :rules="item.require == false ? nullRules : requireRules">
+            </v-textarea>
+            <v-text-field v-else class="cus-v-input" dense filled single-line :label="item.text"
+              v-model="activeItemInfo[item.value]" :rules="item.require == false ? nullRules : requireRules">
+            </v-text-field>
+          </v-col>
+        </v-row>
+        <!-- <drawer-form :headers="editFormFields" :editItem="activeItemInfo" :constantCollection="constantCollection" :cols="12" :hasRowPX="false"></drawer-form> -->
+        <v-row class="pa-3 mt-0">
+          <v-spacer></v-spacer>
+          <v-btn color="error" small @click="doUiAction('deleteLeftItem')" class="mr-2">删除</v-btn>
+          <v-btn color="success" small @click="doUiAction('updateLeftItem')">修改</v-btn>
         </v-row>
       </v-form>
     </v-navigation-drawer>
+  </v-card>
 
-    <v-dialog v-model="addItemDialog" width="800px">
-      <v-card>
-        <!-- header -->
-        <v-toolbar
-            flat
-            dense
-            dark
-            style="background-color: #fff;">
-          <div class="black--text ml-4" style="font-size: 16px;">添加{{tabItemTitle}}</div>
-          <v-spacer></v-spacer>
-          <v-toolbar-items>
-            <v-btn
-                text
-                @click="addItemDialog = false""
+  <!-- 编辑抽屉 -->
+  <v-overlay app :value="isEditDrawerShow"></v-overlay>
+  <v-navigation-drawer v-model="isEditDrawerShow" fixed temporary right width="80%"
+    class="elevation-24">
+    <v-form v-model="isFormValid" ref="form" lazy-validation>
+      <v-row class="pt-8">
+        <span class="title pa-6 pl-12">{{ currentClickButton.title }}信息</span>
+        <v-spacer></v-spacer>
+        <v-btn class="mt-7 mr-8 elevation-0" fab x-small @click="isEditDrawerShow = false">
+          <v-icon dark>mdi-close</v-icon>
+        </v-btn>
+      </v-row>
+      <drawer-form :headers="tableFields" :editItem="editItem" :constantCollection="constantCollection"></drawer-form>
+      <v-row class="justify-end mx-0 mt-8 px-10">
+        <v-btn color="success" @click="doUiAction(dialogSaveInfoAction)">保存
+        </v-btn>
+        <v-btn class="elevation-0 mr-2 ml-2" @click="isEditDrawerShow = false">取消</v-btn>
+      </v-row>
+    </v-form>
+  </v-navigation-drawer>
+
+  <v-dialog v-model="addItemDialog" width="800px">
+    <v-card>
+      <!-- header -->
+      <v-toolbar
+        flat
+        dense
+        dark
+        style="background-color: #fff;">
+        <div class="black--text ml-4" style="font-size: 16px;">添加{{tabItemTitle}}</div>
+        <v-spacer></v-spacer>
+        <v-toolbar-items>
+          <v-btn
+            text
+            @click="addItemDialog = false""
             >
-              <v-icon class="black--text" style="font-size: 18px;">mdi-close</v-icon>
-            </v-btn>
-          </v-toolbar-items>
-        </v-toolbar>
-        <v-divider style="border-color: #eff2f5;opacity:0.8;"></v-divider>
+              <v-icon class=" black--text" style="font-size: 18px;">mdi-close</v-icon>
+          </v-btn>
+        </v-toolbar-items>
+      </v-toolbar>
+      <v-divider style="border-color: #eff2f5;opacity:0.8;"></v-divider>
 
-        <v-card-text class="pt-6 pb-8">
-          <v-form v-model="isFormValidLeft" v-if="addItemDialog" ref="formLeft" lazy-validation>
-            <drawer-form :headers="formFields" :editItem="editItem" :constantCollection="constantCollection" :cols="6"></drawer-form>
-          </v-form>
-        </v-card-text>
+      <v-card-text class="pt-6 pb-8">
+        <v-form v-model="isFormValidLeft" v-if="addItemDialog" ref="formLeft" lazy-validation>
+          <drawer-form :headers="formFields" :editItem="editItem" :constantCollection="constantCollection" :cols="6"></drawer-form>
+        </v-form>
+      </v-card-text>
 
-        <!-- footer -->
-        <v-divider style="border-color: #eff2f5;opacity:0.8;"></v-divider>
-        <v-card-text class="py-3 d-flex justify-end" style="color:#A1A5B7;">
-            <v-btn @click="addItemDialog = false"> 取消</v-btn>
-            <v-btn color="success" class="mr-2 ml-2" @click="doUiAction('createLeftItem')"> 保存</v-btn>
-        </v-card-text>
-      </v-card>
-    </v-dialog>
+      <!-- footer -->
+      <v-divider style="border-color: #eff2f5;opacity:0.8;"></v-divider>
+      <v-card-text class="py-3 d-flex justify-end" style="color:#A1A5B7;">
+        <v-btn @click="addItemDialog = false"> 取消</v-btn>
+        <v-btn color="success" class="mr-2 ml-2" @click="doUiAction('createLeftItem')"> 保存</v-btn>
+      </v-card-text>
+    </v-card>
+  </v-dialog>
 </jh-layout-v3>
 
 {% endblock %}
@@ -278,12 +278,12 @@
       formFields() {
         return this.tabItemKeys.filter(item => item.edit == null || item.edit == true)
       },
-      editFormFields(){
+      editFormFields() {
         const headers = this.tabItemKeys.filter(item => item.edit == null || item.edit == true)
         return headers.filter(item => {
-          if(this.pageTab == 0){
+          if (this.pageTab == 0) {
             return item.value !== 'clearTextPassword'
-          }else{
+          } else {
             return item
           }
         })
@@ -333,7 +333,7 @@
         }
       },
       async selectGroup() {
-        const result = await window.constructionPlanAxios({
+        const result = await window.appAxios({
           data: {
             appData: {
               pageId: 'userGroupRoleManagement',
@@ -346,7 +346,7 @@
         })]
       },
       async selectRole() {
-        const result = await window.constructionPlanAxios({
+        const result = await window.appAxios({
           data: {
             appData: {
               pageId: 'userGroupRoleManagement',
@@ -359,7 +359,7 @@
         })]
       },
       async selectUser() {
-        const result = await window.constructionPlanAxios({
+        const result = await window.appAxios({
           data: {
             appData: {
               pageId: 'userGroupRoleManagement',
@@ -382,7 +382,7 @@
           const key = ['userId', 'groupId', 'roleId'][this.pageTab];
           where = { [key]: activeItem.value }
         }
-        const result = await window.constructionPlanAxios({
+        const result = await window.appAxios({
           data: {
             appData: {
               pageId: 'userGroupRoleManagement',
@@ -423,7 +423,7 @@
       async doCreateItem() {
         await window.vtoast.loading("保存中");
         const { userId, groupId, roleId } = this.editItem;
-        await window.constructionPlanAxios({
+        await window.appAxios({
           data: {
             appData: {
               pageId: 'userGroupRoleManagement',
@@ -462,7 +462,7 @@
         await window.vtoast.loading("保存中");
         const id = this.editItem.id;
         const { userId, groupId, roleId } = this.editItem;
-        await window.constructionPlanAxios({
+        await window.appAxios({
           data: {
             appData: {
               pageId: 'userGroupRoleManagement',
@@ -485,7 +485,7 @@
        */
       async doDeleteItem() {
         window.vtoast.loading('正在删除')
-        await window.constructionPlanAxios({
+        await window.appAxios({
           data: {
             appData: {
               pageId: 'userGroupRoleManagement',
@@ -508,7 +508,7 @@
         const insertActionId = ['insertUser', 'insertGroup', 'insertRole'][this.pageTab];
         this.addItemDialog = false;
         window.vtoast.loading("添加中")
-        await window.constructionPlanAxios({
+        await window.appAxios({
           data: {
             appData: {
               pageId: 'userGroupRoleManagement',
@@ -541,7 +541,7 @@
           const where = [{ userId: this.activeItemInfo['userId'] }, { groupId: this.activeItemInfo['groupId'] }, { roleId: this.activeItemInfo['roleId'] }][this.pageTab];
           if (where[whereKey]) {
             window.vtoast.loading("删除中");
-            await window.constructionPlanAxios({
+            await window.appAxios({
               data: {
                 appData: {
                   pageId: 'userGroupRoleManagement',
@@ -560,7 +560,7 @@
         window.vtoast.loading("保存中");
         const { id, ...data } = this.activeItemInfo;
         const actionId = ['updateUser', 'updateGroup', 'updateRole'][this.pageTab];
-        await window.constructionPlanAxios({
+        await window.appAxios({
           data: {
             appData: {
               pageId: 'userGroupRoleManagement',
@@ -576,14 +576,16 @@
   })
 </script>
 <style scoped>
-  .v-navigation-drawer__border{
+  .v-navigation-drawer__border {
     display: none;
   }
-  .v-tab{
+
+  .v-tab {
     min-width: auto !important;
     padding: 0 10px;
   }
-  .v-tabs-bar__content{
+
+  .v-tabs-bar__content {
     justify-content: center;
   }
 </style>

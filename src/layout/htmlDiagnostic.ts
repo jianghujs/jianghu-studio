@@ -3,7 +3,7 @@
 import * as path from "path";
 import * as vscode from "vscode";
 import { Constants } from "../common/constants";
-import constructionPlanCore from "../core";
+import AppCore from "../core";
 import { ConstructionPlanViewPagePlanList } from "../layout/constructionPlanViewPagePlanList";
 import CommonService from "../service/common";
 
@@ -90,7 +90,7 @@ async function updateDiagnostics(activeEditor: vscode.TextEditor, collection: vs
 
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
-export function activate(context: vscode.ExtensionContext, core: constructionPlanCore) {
+export function activate(context: vscode.ExtensionContext, core: AppCore) {
   const collection = vscode.languages.createDiagnosticCollection("htmlDiagnostic");
   let activeEditor = vscode.window.activeTextEditor;
   if (activeEditor) {

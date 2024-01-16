@@ -6,6 +6,25 @@ import Logger from "./logger";
 import nunjucks = require("nunjucks");
 
 export class PathUtil {
+  public static getWorkspaceFileDir(workspaceFile: string) {
+    return workspaceFile.substring(0, workspaceFile.lastIndexOf("/"));
+  }
+  public static getRootFloader(workspaceFolders: readonly vscode.WorkspaceFolder[]): string[] {
+    const newFolders = [];
+    for (const folder of workspaceFolders) {
+      let isProject = fs.existsSync(path.join(folder.uri.path, "app"));
+      isProject = isProject && this.isDir(path.join(folder.uri.path, "app"));
+      isProject = isProject && fs.existsSync(path.join(folder.uri.path, "config"));
+      isProject = isProject && this.isDir(path.join(folder.uri.path, "config"));
+      isProject = isProject && fs.existsSync(path.join(folder.uri.path, "config/config.default.js"));
+      isProject = isProject && fs.existsSync(path.join(folder.uri.path, "package.json"));
+      if (!isProject) {
+        newFolders.push(folder.uri.path);
+      }
+    }
+    return newFolders;
+  }
+
   public static generatePage(context: vscode.ExtensionContext, panel: vscode.WebviewPanel, page: string, locals: object = {}): string {
     const pagePath = this.getExtensionFileAbsolutePath(context, `src/view/page/${page}.html`);
     const rootPath = this.getExtensionFileAbsolutePath(context, "src/view");
@@ -102,6 +121,11 @@ export class PathUtil {
   }
 
   public static isDir(p: string) {
+    const stat = fs.lstatSync(p);
+    return stat.isDirectory();
+  }
+
+  public static deleteFolder(p: string) {
     const stat = fs.lstatSync(p);
     return stat.isDirectory();
   }

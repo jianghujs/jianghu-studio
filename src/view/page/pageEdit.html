@@ -12,22 +12,22 @@
             <v-row class="pa-0 ma-0 pa-xs-4 pb-xs-4 flex-none">
                 <v-col cols="12" class="pa-xs-0 pb-xs-4 pb-3">
                     <span class="inputLabel">PageId</span>
-                    <v-text-field class="cus-v-input" v-model="form.pageId" :counter="50" :rules="required" label="PageId" dense filled single-line hide-details="auto" >
+                    <v-text-field class="cus-v-input" v-model="form.pageId" :counter="50" :rules="required" label="PageId" dense filled single-line hide-details="auto">
                     </v-text-field>
                 </v-col>
                 <v-col cols="12" class="pa-xs-0 pb-xs-4 pb-3">
                     <span class="inputLabel">pageName</span>
-                    <v-text-field class="cus-v-input" v-model="form.pageName" :rules="required" label="pageName" dense filled single-line  hide-details="auto"></v-text-field>            
+                    <v-text-field class="cus-v-input" v-model="form.pageName" :rules="required" label="pageName" dense filled single-line hide-details="auto"></v-text-field>
                 </v-col>
                 <v-col cols="12" class="pa-xs-0 pb-xs-4 pb-3">
                     <span class="inputLabel">PageType</span>
                     <v-select v-model="form.pageType" :items="pageTypeItems" :rules="required" label="PageType" dense filled single-line
-                       hide-details="auto">
+                        hide-details="auto">
                     </v-select>
                 </v-col>
                 <v-col cols="12" class="pa-xs-0 pb-xs-4 pb-3">
                     <span class="inputLabel">Sort</span>
-                    <v-text-field v-model="form.sort" label="Sort" dense filled single-line  hide-details="auto"></v-text-field>
+                    <v-text-field v-model="form.sort" label="Sort" dense filled single-line hide-details="auto"></v-text-field>
                 </v-col>
                 <v-col cols="12" class="pa-xs-0 pb-xs-4 pb-3">
                     <v-btn :disabled="!valid" color="success" class="mr-2" @click="save">保存</v-btn>
@@ -85,7 +85,7 @@
         methods: {
             async del() {
                 if (await window.confirmDialog({ title: '删除', content: '确定删除吗？' })) {
-                    await window.constructionPlanAxios({
+                    await window.appAxios({
                         data: {
                             appData: {
                                 pageId: "pageEdit",
@@ -108,7 +108,7 @@
                     where.pageId = this.pageId;
                 }
                 console.log(this.form)
-                await window.constructionPlanAxios({
+                await window.appAxios({
                     data: {
                         appData: {
                             pageId: "pageEdit",
@@ -129,7 +129,7 @@
                     return
                 }
                 this.loading = true
-                const { data: { appData: { resultData: { rows } } } } = await window.constructionPlanAxios({
+                const { data: { appData: { resultData: { rows } } } } = await window.appAxios({
                     data: {
                         appData: {
                             pageId: "pageEdit",
@@ -251,10 +251,11 @@
         color: red;
     }
 
-    .v-messages{
+    .v-messages {
         margin-right: 5px !important;
     }
-    .v-counter{
+
+    .v-counter {
         margin-left: 0 !important;
     }
 </style>
