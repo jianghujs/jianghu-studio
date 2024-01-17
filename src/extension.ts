@@ -44,9 +44,6 @@ export function activate(context: vscode.ExtensionContext) {
       vscode.window.registerTreeDataProvider("appProvider", new AppProvider(context, core));
     })
   );
-  vscode.window.onDidChangeActiveTerminal(e => {
-    void vscode.commands.executeCommand("appProvider.refreshAppList");
-  });
   // 打开应用首页
   context.subscriptions.push(
     vscode.commands.registerCommand("appProvider.appHome", args => {

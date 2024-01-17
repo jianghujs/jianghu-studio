@@ -20,6 +20,14 @@ export class ConfigUtil {
 
   public static readDatabaseConfig(dir: string) {
     const configPath = path.join(dir, "config/config.local.js");
+    if (!this.pathExists(configPath)) {
+      // 复制 config.local.example.js 到 config.local.js
+      const configLocalExamplePath = path.join(dir, "config/config.local.example.js");
+      if (!this.pathExists(configLocalExamplePath)) {
+        return null;
+      }
+      fs.copyFileSync(configLocalExamplePath, configPath);
+    }
     const databaseConfig = ConfigUtil.getDatabaseConnection(configPath);
     return databaseConfig;
   }

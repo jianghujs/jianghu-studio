@@ -12,6 +12,7 @@ import TableManager from "./tableManager";
 import WebviewManager from "./webviewManager";
 import * as fs from "fs";
 import { ConfigUtil } from "../util/configUtil";
+import { spawn } from "child_process";
 
 export default class AppCore {
   public tableManager: TableManager;
@@ -50,32 +51,105 @@ export default class AppCore {
         break;
       }
       case "submitCreateAppForm": {
-        // 关闭当前 webview页面
-        if (panel) {
-          panel.dispose();
-        }
         // 开始创建项目
-        // , appName, databaseIp, databasePort, databaseUser, databasePassword
-        const { workspaceFolders, appId } = body.appData;
-        if (fs.existsSync(`${workspaceFolders}/${appId}`)) {
-          // eslint-disable-next-line no-template-curly-in-string
-          void vscode.window.showErrorMessage("目录已存在，请更换新目录或者删除已存在目录");
-          return;
-        }
-        if (!this.appCreateTerminal) {
-          this.appCreateTerminal = vscode.window.createTerminal({ name: "正在应用创建", message: "开始创建项目", cwd: workspaceFolders, location: vscode.TerminalLocation.Editor });
-        }
-        const commandText = "export https_proxy=http://127.0.0.1:7890 http_proxy=http://127.0.0.1:7890 all_proxy=socks5://127.0.0.1:7890";
+        // const commandText = "export https_proxy=http://127.0.0.1:7890 http_proxy=http://127.0.0.1:7890 all_proxy=socks5://127.0.0.1:7890";
         const commandText2 = `node /Users/benshanyue/fsll/projects/jianghujs-script-util/openjianghu01/002.jianghu-init/jianghu-init/bin/jianghu-init.js`;
-        const cwd = `${commandText} && cd ${workspaceFolders} && ${commandText2} project --type=1table-crud ${appId as string}`;
-        this.appCreateTerminal.show(false);
-        this.appCreateTerminal.sendText(cwd); // 输入命令
-        vscode.window.onDidChangeActiveTerminal(e => {
-          if (e?.processId !== this.appCreateTerminal?.processId) {
-            this.appCreateTerminal?.dispose();
-            this.appCreateTerminal = null;
+        const { workspaceFolders, appId, appName, databaseIp, databasePort, databaseUser, databasePassword } = body.appData;
+        if (fs.existsSync(`${workspaceFolders}/${appId}`)) {
+          if (fs.readdirSync(`${workspaceFolders}/${appId}`).length) {
+            void vscode.window.showErrorMessage("目录已存在且非空，请更换新目录或者删除已存在目录");
+            return;
+          }
+        } else {
+          fs.mkdirSync(`${workspaceFolders}/${appId}`);
+        }
+        const env = Object.create(process.env);
+        env.https_proxy = "http://127.0.0.1:7890";
+        env.http_proxy = "http://127.0.0.1:7890";
+        env.all_proxy = "socks5://127.0.0.1:7890";
+        const commandDir = `--dir=${workspaceFolders}/${appId}`;
+        const commandTextType = `--type=1table-crud`;
+        const commandDbIp = `--dbIp=${databaseIp}`;
+        const commandDbPort = `--dbPort=${databasePort}`;
+        const commandDbUser = `--dbUser=${databaseUser}`;
+        const commandDbPass = `--dbPass=${databasePassword}`;
+        const child = spawn(`${commandText2} project ${commandDir} ${commandTextType} ${commandDbIp} ${commandDbPort} ${commandDbUser} ${commandDbPass}`, [], {
+          env,
+          cwd: `${workspaceFolders}/${appId}`,
+          shell: true,
+        });
+        let num = 1;
+        // let hander: NodeJS.Timeout | null = null;
+        child.stdout.on("data", (data: string) => {
+          if (`${data}`.length <= 10) {
+            return;
+          }
+          num++;
+          console.log(`打印下${num}: ${data}`);
+          if (data.includes("? project name")) {
+            child.stdin.write(`${appName}\n`); // 替换为你的输入
+          } else if (data.includes("? project description")) {
+            child.stdin.write(`\n`); // 替换为你的输入
+          } else if (data.includes("? project author")) {
+            child.stdin.write(`\n`); // 替换为你的输入
+          } else if (data.includes("? cookie security keys")) {
+            child.stdin.write(`\n`); // 替换为你的输入
+          } else if (data.includes("? database name")) {
+            child.stdin.write(`\n`); // 替换为你的输入
+          }
+          returnBody.packageType = "submitCreateAppFormResponse";
+          returnBody.appData = {
+            message: `${data}`,
+          };
+          // 回消息
+          if (panel) {
+            void panel.webview.postMessage(returnBody);
           }
         });
+        child.stderr.on("data", data => {
+          console.error(`stderr: ${data}`);
+        });
+
+        child.on("close", code => {
+          console.log(`child process exited with code ${code}`);
+          returnBody.packageType = "submitCreateAppFormResponse";
+          returnBody.appData = {
+            message: "创建成功",
+            isEnd: true,
+          };
+          // 回消息
+          if (panel) {
+            void panel.webview.postMessage(returnBody);
+          }
+          // 刷新左侧 tree
+          void vscode.commands.executeCommand("appProvider.refreshAppList");
+        });
+        // Terminal 方法
+        // 关闭当前 webview页面
+        // if (panel) {
+        //   panel.dispose();
+        // }
+        // , appName, databaseIp, databasePort, databaseUser, databasePassword
+        // const { workspaceFolders, appId } = body.appData;
+        // if (fs.existsSync(`${workspaceFolders}/${appId}`)) {
+        //   // eslint-disable-next-line no-template-curly-in-string
+        //   void vscode.window.showErrorMessage("目录已存在，请更换新目录或者删除已存在目录");
+        //   return;
+        // }
+        // if (!this.appCreateTerminal) {
+        //   this.appCreateTerminal = vscode.window.createTerminal({ name: "正在应用创建", message: "开始创建项目", cwd: workspaceFolders, location: vscode.TerminalLocation.Editor });
+        // }
+        // const commandText = "export https_proxy=http://127.0.0.1:7890 http_proxy=http://127.0.0.1:7890 all_proxy=socks5://127.0.0.1:7890";
+        // const commandText2 = `node /Users/benshanyue/fsll/projects/jianghujs-script-util/openjianghu01/002.jianghu-init/jianghu-init/bin/jianghu-init.js`;
+        // const cwd = `${commandText} && cd ${workspaceFolders} && ${commandText2} project --type=1table-crud ${appId as string}`;
+        // this.appCreateTerminal.show(false);
+        // this.appCreateTerminal.sendText(cwd); // 输入命令
+        // vscode.window.onDidChangeActiveTerminal(e => {
+        //   if (e?.processId !== this.appCreateTerminal?.processId) {
+        //     this.appCreateTerminal?.dispose();
+        //     this.appCreateTerminal = null;
+        //   }
+        // });
 
         break;
       }

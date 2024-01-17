@@ -17,6 +17,9 @@ export default class AppManager {
       for (const appItem of list || []) {
         if (appItem.appId) {
           const currDatabase = ConfigUtil.readDatabaseConfig(appItem.dir as string);
+          if (currDatabase === null) {
+            continue;
+          }
           const newEntryItem = new EntryItem(
             {
               appId: appItem.appId as string,

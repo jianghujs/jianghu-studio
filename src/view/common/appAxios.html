@@ -52,10 +52,14 @@
         const listener = data => {
           success = true;
           // 持久话回调，只有明确的结束，才会停止
-          if (callback && !data.appData.isEnd) {
+
+          if (callback) {
             callback(data);
+          }
+          if (callback && !data.appData.isEnd) {
             return;
           }
+          window.callbackMap[packageId](data);
           delete window.callbackMap[packageId];
           resolve({ data });
         };
