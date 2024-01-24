@@ -1,0 +1,105 @@
+{% extends 'template/jhTemplateV4.html'%}
+
+{% block vueTemplate %}
+
+<!--SQL START
+-- 以下为 jianghu init 工具生成的参考 SQL，使用后删除
+-- 创建 page
+INSERT INTO `_page` (`pageId`,`pageName`,`pageType`,`sort`,`operation`,`operationByUserId`,`operationByUser`,`operationAt`) SELECT 'student2Manager','页面','showInMenu','5','jhInsert',NULL,NULL,NULL FROM DUAL WHERE NOT EXISTS (SELECT `pageId` FROM `_page` WHERE `pageId`='student2Manager');
+
+-- 创建 resource
+INSERT INTO `_resource` (`accessControlTable`,`resourceHook`,`pageId`,`actionId`,`desc`,`resourceType`,`appDataSchema`,`resourceData`,`requestDemo`,`responseDemo`,`operation`,`operationByUserId`,`operationByUser`,`operationAt`) SELECT NULL,NULL,'student2Manager','selectItemList','✅查询-查询列表','sql','{}','{ \"table\": \"student\", \"operation\": \"select\" }','','','insert',NULL,NULL,NULL FROM DUAL WHERE NOT EXISTS (SELECT `pageId` FROM `_resource` WHERE `pageId`='student2Manager' AND `actionId`='selectItemList');
+INSERT INTO `_resource` (`accessControlTable`,`resourceHook`,`pageId`,`actionId`,`desc`,`resourceType`,`appDataSchema`,`resourceData`,`requestDemo`,`responseDemo`,`operation`,`operationByUserId`,`operationByUser`,`operationAt`) SELECT NULL,NULL,'student2Manager','insertItem','✅查询-添加成员','sql','{}','{ \"table\": \"student\", \"operation\": \"insert\" }','','','insert',NULL,NULL,NULL FROM DUAL WHERE NOT EXISTS (SELECT `pageId` FROM `_resource` WHERE `pageId`='student2Manager' AND `actionId`='insertItem');
+INSERT INTO `_resource` (`accessControlTable`,`resourceHook`,`pageId`,`actionId`,`desc`,`resourceType`,`appDataSchema`,`resourceData`,`requestDemo`,`responseDemo`,`operation`,`operationByUserId`,`operationByUser`,`operationAt`) SELECT NULL,NULL,'student2Manager','updateItem','✅查询-更新成员','sql','{}','{ \"table\": \"student\", \"operation\": \"update\" }','','','insert',NULL,NULL,NULL FROM DUAL WHERE NOT EXISTS (SELECT `pageId` FROM `_resource` WHERE `pageId`='student2Manager' AND `actionId`='updateItem');
+INSERT INTO `_resource` (`accessControlTable`,`resourceHook`,`pageId`,`actionId`,`desc`,`resourceType`,`appDataSchema`,`resourceData`,`requestDemo`,`responseDemo`,`operation`,`operationByUserId`,`operationByUser`,`operationAt`) SELECT NULL,NULL,'student2Manager','deleteItem','✅查询-删除信息','sql','{}','{ \"table\": \"student\", \"operation\": \"delete\" }','','','insert',NULL,NULL,NULL FROM DUAL WHERE NOT EXISTS (SELECT `pageId` FROM `_resource` WHERE `pageId`='student2Manager' AND `actionId`='deleteItem');
+SQL END!-->
+
+<script type="text/html" id="app-template">
+<div>
+<v-app mobile-breakpoint="sm">
+  <jh-menu />
+  <v-main class="mt-15">
+    <!-- 头部内容 >>>>>>>>>>>>> -->
+    <div class="jh-page-second-bar px-8">
+      <v-row class="align-center">
+        <v-col cols="12" xs="12" sm="12" md="4" xl="3">
+          <div class="py-4 text-body-1 font-weight-bold"><span id="pageName"></span>
+            <!-- 帮助页按钮 -->
+            <span role="button" class="success--text font-weight-regular jh-font-size-13 ml-2" @click="isHelpPageDrawerShown = true">
+              <v-icon size="13" class="success--text">mdi-help-circle-outline</v-icon>帮助
+            </span>
+          </div>
+        </v-col>
+        <!-- 搜索条件表单 >>>>>>>> -->
+        <v-col cols="12" xs="12" sm="12" md="8" xl="9" id="serverSearchContainer">
+          
+        </v-col>
+        <!-- <<<<<<<< 搜索条件表单 -->
+      </v-row>
+    </div>
+    <!-- <<<<<<<<<<<<< 头部内容 -->
+
+    <!-- 页面内容 >>>>>>>>>>>>> -->
+    <div class="jh-page-body-container px-8">
+      <v-card class="rounded-lg" id="pageContentContainer" style="height: calc(100vh - 140px);">
+        
+      </v-card>
+      <div id="drawerContainer">
+
+      </div>
+    </div>
+    <!-- <<<<<<<<<<<<< 页面内容 -->
+
+    <!-- 帮助页抽屉 >>>>>>>>>>>>> -->
+    <v-navigation-drawer v-model="isHelpPageDrawerShown" :permanent="isHelpPageDrawerShown" fixed temporary right width="80%" class="elevation-24">
+      <iframe style="border: 0" :src="`/${appInfo.appId}/pageDoc#404.md`" width="100%" height="100%"></iframe>
+      <v-btn elevation="0" color="success" fab absolute top left small tile class="drawer-close-float-btn" @click="isHelpPageDrawerShown = false">
+        <v-icon>mdi-close</v-icon>
+      </v-btn>
+    </v-navigation-drawer>
+    <!-- <<<<<<<<<<<<< 帮助页抽屉 -->
+
+  </v-main>
+</v-app>
+
+<jh-toast />
+<jh-mask />
+<jh-confirm-dialog />
+</div>
+</script>
+
+<div id="app">
+</div>
+
+{% endblock %}
+
+{% block vueScript %}
+
+{% include 'common/jianghuJs/fixedTableHeightV4.html' %}
+<script type="module">
+  new Vue({
+    el: '#app',
+    template: '#app-template',
+    vuetify: new Vuetify(),
+    data: () => ({
+      isHelpPageDrawerShown: false,
+      // 表格相关数据
+    }),
+    watch: {
+      isHelpPageDrawerShown(val) {
+        if (val && !this.isHelpPageDrawerLoaded) {
+          this.isHelpPageDrawerLoaded = true;
+        }
+      },
+    },
+    async created() {
+    },
+    mounted() {
+    },
+    methods: {
+    }
+  })
+</script>
+
+<style scoped>
+</style>{% endblock %}

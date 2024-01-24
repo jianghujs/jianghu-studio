@@ -6,6 +6,7 @@ import Logger from "./logger";
 import nunjucks = require("nunjucks");
 
 export class PathUtil {
+  public static extensionContext: vscode.ExtensionContext;
   public static getWorkspaceFileDir(workspaceFile: string) {
     return workspaceFile.substring(0, workspaceFile.lastIndexOf("/"));
   }

@@ -42,4 +42,12 @@ export class AppProvider extends BaseTreeView implements vscode.TreeDataProvider
       return element.menuList;
     }
   }
+
+  public getTreeItem(element: EntryItem): vscode.TreeItem | Thenable<vscode.TreeItem> {
+    return element;
+  }
+
+  public getParent(element: EntryItem): vscode.ProviderResult<EntryItem> {
+    return element.parent;
+  }
 }

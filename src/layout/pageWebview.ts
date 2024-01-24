@@ -4,6 +4,7 @@ import AppCore from "../core";
 import pageList from "../table/_page";
 import { PathUtil } from "../util/pathUtil";
 import { EntryItem } from "./tree/entryItem";
+import AppManager from "../core/appManager";
 
 export default abstract class PageWebview {
   public static currentPanel: vscode.WebviewPanel | PageWebview | undefined;
@@ -22,19 +23,22 @@ export default abstract class PageWebview {
     for (const pageData of pageList) {
       context.subscriptions.push(
         // 注册参数
-        vscode.commands.registerCommand(pageData.command, uri => {
+        vscode.commands.registerCommand(pageData.command, (uri: EntryItem) => {
           this.uri = uri;
           console.log("uri", uri, pageData);
-          const { pageId, currDatabase: database, pageName, args } = this.uri;
+          const { pageId, currDatabase: database, pageName, args, pageInfo } = this.uri;
           const column = vscode.window.activeTextEditor ? vscode.window.activeTextEditor.viewColumn : undefined;
           const panelExist = this.core.webviewManager.getPanel(pageData.page);
           const workspaceFolders = this.getWorkFolder();
+          // 当用户点击一个节点时，展开这个节点
+          void AppManager.treeView?.reveal(uri, { select: true, expand: true });
           if (panelExist) {
             this.updateForPage(context, panelExist, {
-              appId: uri.appId,
+              appId: uri.appId as string,
               pageId,
               pageName,
               database,
+              pageInfo,
               page: pageData.page,
               projectInfo: args,
               workspaceFolders,
@@ -54,9 +58,10 @@ export default abstract class PageWebview {
           );
 
           this.updateForPage(context, panel, {
-            appId: uri.appId,
+            appId: uri.appId as string,
             pageId,
             pageName,
+            pageInfo,
             database,
             page: pageData.page,
             projectInfo: args,
@@ -97,6 +102,7 @@ export default abstract class PageWebview {
       database,
       page,
       projectInfo,
+      pageInfo,
       workspaceFolders,
     }: {
       appId: string;
@@ -105,13 +111,14 @@ export default abstract class PageWebview {
       page: string;
       database: Knex.MySqlConnectionConfig;
       projectInfo: EntryItem;
+      pageInfo: Map<string, any> | null;
       workspaceFolders: any;
     }
   ): void {
     panel.title = `${pageName}${(projectInfo && `@${projectInfo.appTitle as string}`) || ""}`;
     const uiActionList = this.core.tableManager.getUiActionList(pageId);
     panel.webview.html = "";
-    panel.webview.html = PathUtil.generatePage(context, panel, page, { pageId: pageId || "", appId, workspaceFolders, uiActionList, database: database?.database });
+    panel.webview.html = PathUtil.generatePage(context, panel, page, { pageId: pageId || "", appId, workspaceFolders, uiActionList, database: database?.database, ...(pageInfo || {}) });
   }
 
   // 页面打开后，想页面发送当前工作目录

@@ -5,6 +5,7 @@ import { EntryItem } from "../layout/tree/entryItem";
 import { ConfigUtil } from "../util/configUtil";
 
 export default class AppManager {
+  public static treeView: vscode.TreeView<EntryItem> | undefined;
   private static handlerMap = new Map<string, EntryItem>();
 
   public static client(config?: EntryItem): EntryItem[] {
@@ -29,7 +30,7 @@ export default class AppManager {
               type: "app",
               command: "webviewHandler.openAppHomePage",
               currDatabase,
-              commandArgs: { appId: appItem.appId, pageId: "appHome", currDatabase, pageName: `[${appItem.appId as string}]应用管理` },
+              commandArgs: { appId: appItem.appId, pageId: "appHome", currDatabase, pageName: `[${appItem.appId as string}]应用管理`, appDir: appItem.dir },
               appDir: appItem.dir,
             },
             vscode.TreeItemCollapsibleState.Collapsed
@@ -45,9 +46,10 @@ export default class AppManager {
                   type: menuItem.type,
                   command: menuItem.command,
                   currDatabase,
-                  commandArgs: { appId: appItem.appId as string, pageId: menuItem.value, currDatabase, pageName: `[${appItem.appId as string}] ${menuItem.label}` },
+                  commandArgs: { appId: appItem.appId as string, pageId: menuItem.value, currDatabase, pageName: `[${appItem.appId as string}] ${menuItem.label}`, appDir: appItem.dir },
                 },
-                vscode.TreeItemCollapsibleState.Collapsed
+                vscode.TreeItemCollapsibleState.Collapsed,
+                newEntryItem
               )
             );
           }

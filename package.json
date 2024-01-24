@@ -61,24 +61,12 @@
 				}
 			},
 			{
-				"command": "appProvider.appHome",
-				"title": "应用首页",
-				"icon": {
-					"light": "images/light/home.svg",
-					"dark": "images/dark/home.svg"
-				}
-			},
-			{
-				"command": "appProvider.pageAdd",
-				"title": "新增页面",
-				"icon": {
-					"light": "images/light/add-page.svg",
-					"dark": "images/dark/add-page.svg"
-				}
-			},
-			{
 				"command": "webviewHandler.openAppCreatePage",
-				"title": "打开应用创建页面"
+				"title": "打开应用创建页面",
+				"icon": {
+					"light": "images/light/add.svg",
+					"dark": "images/dark/add.svg"
+				}
 			},
 			{
 				"command": "webviewHandler.openAppHomePage",
@@ -91,6 +79,10 @@
 			{
 				"command": "webviewHandler.openPageCreatePage",
 				"title": "新增页面"
+			},
+			{
+				"command": "webviewHandler.openPageDesign",
+				"title": "页面设计"
 			},
 			{
 				"command": "constructionPlan.pagePlanEdit",
@@ -156,27 +148,12 @@
 		"menus": {
 			"view/title": [
 				{
-					"command": "appProvider.projectCreate",
-					"when": "view == appProvider",
-					"group": "navigation"
-				},
-				{
 					"command": "appProvider.refreshAppList",
 					"when": "view == appProvider",
 					"group": "navigation"
 				}
 			],
 			"view/item/context": [
-				{
-					"command": "appProvider.appHome",
-					"when": "view == appProvider && viewItem == appItem",
-					"group": "inline"
-				},
-				{
-					"command": "appProvider.pageAdd",
-					"when": "view == appProvider && viewItem == appItem",
-					"group": "inline"
-				},
 				{
 					"command": "constructionPlan.templateAdd",
 					"when": "view == constructionPlan && viewItem == databaseItem",
@@ -275,6 +252,7 @@
 		"mysql": "^2.18.1",
 		"nanoid": "^3.3.1",
 		"nunjucks": "^3.2.3",
-		"ts-md5": "^1.2.11"
+		"ts-md5": "^1.2.11",
+		"open": "^8.0.10"
 	}
 }

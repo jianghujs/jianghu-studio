@@ -15,10 +15,13 @@ import { CommonUtil } from "./util/commonUtil";
 import Logger from "./util/logger";
 import { AppProvider } from "./layout/appProvider";
 import PageWebview from "./layout/pageWebview";
+import { PathUtil } from "./util/pathUtil";
+import AppManager from "./core/appManager";
 
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
+  PathUtil.extensionContext = context;
   const core: AppCore = new AppCore();
   // @ts-ignore
   // eslint-disable-next-line @typescript-eslint/no-unsafe-call
@@ -29,7 +32,11 @@ export function activate(context: vscode.ExtensionContext) {
   // void vscode.commands.executeCommand("extension.setting.showIndexPage", { pageId: "index", currDatabase: null, pageName: "首页" });
 
   // 应用管理左侧树菜单构建
-  vscode.window.registerTreeDataProvider("appProvider", new AppProvider(context, core));
+  const treeDataProvider = new AppProvider(context, core);
+  vscode.window.registerTreeDataProvider("appProvider", treeDataProvider);
+  const treeView = vscode.window.createTreeView("appProvider", { treeDataProvider });
+  treeView.onDidExpandElement(e => console.log("Expanded:", e.element));
+  AppManager.treeView = treeView;
 
   // 2.0 命令配置
   // 创建首页
@@ -42,18 +49,6 @@ export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(
     vscode.commands.registerCommand("appProvider.refreshAppList", () => {
       vscode.window.registerTreeDataProvider("appProvider", new AppProvider(context, core));
-    })
-  );
-  // 打开应用首页
-  context.subscriptions.push(
-    vscode.commands.registerCommand("appProvider.appHome", args => {
-      void vscode.commands.executeCommand("webviewHandler.openAppHomePage", { pageId: "appCreate", currDatabase: null, pageName: "应用首页", args });
-    })
-  );
-  // 新增页面
-  context.subscriptions.push(
-    vscode.commands.registerCommand("appProvider.pageAdd", args => {
-      void vscode.commands.executeCommand("webviewHandler.openPageCreatePage", { pageId: "pageAdd", currDatabase: null, pageName: "新增页面", args });
     })
   );
 

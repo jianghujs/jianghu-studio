@@ -20,6 +20,11 @@ export default [
     title: "页面管理",
   },
   {
+    command: "webviewHandler.openPageDesign",
+    page: "pageDesign",
+    title: "页面设计",
+  },
+  {
     command: "webviewHandler.openPageCreatePage",
     page: "pageEdit",
     title: "",

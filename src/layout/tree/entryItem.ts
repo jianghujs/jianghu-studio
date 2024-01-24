@@ -5,6 +5,7 @@ import { ICommand } from "../../common/ICommand";
 // 树节点
 export class EntryItem extends vscode.TreeItem {
   // 存储当前数据库obj
+  public parent: EntryItem | undefined;
   public currDatabase: any;
   public pageId: any;
   public appId: string | null;
@@ -17,10 +18,12 @@ export class EntryItem extends vscode.TreeItem {
 
   constructor(
     { label, value, currDatabase, type, appId, appTitle, appDir, menuId, menuLabel, menuList, command, commandArgs, iconPath }: any,
-    collapsibleState: vscode.TreeItemCollapsibleState | undefined
+    collapsibleState: vscode.TreeItemCollapsibleState | undefined,
+    parent?: EntryItem
   ) {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
     super(label, collapsibleState);
+    this.parent = parent;
     // view使用的 database
     this.currDatabase = currDatabase; // 正确
     // 右侧view名

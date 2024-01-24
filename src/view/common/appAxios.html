@@ -16,7 +16,7 @@
     window.callbackMap = {};
 
     window.client = acquireVsCodeApi();
-
+    window.resourceListener = {};
 
     getRandomInt = (min, max) => {
       min = Math.ceil(min);
@@ -37,7 +37,7 @@
         }
      * })
      */
-    window.appAxios = ({ data: requestBodyToFill, packageType = "messageRequest", callback }) => {
+    window.appAxios = ({ data: requestBodyToFill, packageType = "messageRequest", callback, isVoid }) => {
       const packageId = `${Date.now()}_${getRandomInt(1000000, 9999999)}`;
       const requestBody = {
         packageId,
@@ -49,74 +49,42 @@
       // 注册回调方法
       return new Promise(function (resolve, reject) {
         let success = false;
-        const listener = data => {
-          success = true;
-          // 持久话回调，只有明确的结束，才会停止
-
-          if (callback) {
-            callback(data);
-          }
-          if (callback && !data.appData.isEnd) {
-            return;
-          }
-          window.callbackMap[packageId](data);
-          delete window.callbackMap[packageId];
-          resolve({ data });
-        };
+        let timeoutHandler;
         // 超时逻辑 5000
         if (!callback) {
-          setTimeout(() => {
+          timeoutHandler = setTimeout(() => {
             if (!success) {
-              delete window.callbackMap[packageId];
               window.vtoast.fail(`请求超时, actionId: ${requestBodyToFill && requestBodyToFill.appData.actionId}, packageId: ${packageId}`);
               reject(new Error("请求超时"));
             }
           }, 5000);
         }
-        window.callbackMap[packageId] = listener;
+        if (isVoid) {
+          resolve(true);
+          return;
+        }
+        window.addEventListener("message", ({ data }) => {
+          success = true;
+          console.log("onVscodeMessage", data);
+          timeoutHandler && clearTimeout(timeoutHandler);
+          if (!data) {
+            reject(new Error("请求失败"));
+            return;
+          }
+          // 对 actionId 做持久监听
+          if (window.resourceListener[data.appData.actionId]) {
+            window.resourceListener[data.appData.actionId](data);
+          }
+          // 持久话回调，只有明确的结束，才会停止
+          if (callback) {
+            callback(data);
+          }
+          if ((callback && data.appData.isEnd) || !callback) {
+            resolve({ data });
+          }
+        });
       });
     };
-
-    // 处理 vscode 发过来的请求
-    window.resourceListener = {};
-
-    // 监听从 vscode 发过来的消息
-    window.addEventListener("message", ({ data }) => {
-      console.log('onVscodeMessage', data);
-      if (!data) {
-        return;
-      }
-      // 回调成功
-      if (data.packageId && window.callbackMap[data.packageId]) {
-        window.callbackMap[data.packageId](data);
-      }
-      switch (data.packageType) {
-        case "initResponse":
-          window.workspaceFolders = data.appData.workspaceFolders;
-          break;
-        case "messageResponse":
-          resourceHandler(data);
-          break;
-        default:
-          break;
-      }
-    });
-
-    /**
-     * 1.0的接收方法
-     */
-
-    resourceHandler = (data) => {
-      if (data.packageType === "messageRequest") {
-        if (window.resourceListener[data.appData.actionId]) {
-          window.resourceListener[data.appData.actionId](data);
-        }
-      } else if (data.packageType === "messageResponse") {
-
-      } else {
-        console.warn("Unkown message type!!!", data);
-      }
-    }
   })();
 </script>
 <!--appAxios.html end-->

@@ -11,9 +11,7 @@ export class ConfigUtil {
         return;
       }
       // 读取package.json中的scripts.dev的值
-      const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, "utf-8"));
-      const devCommand = packageJson.scripts.dev;
-      return devCommand;
+      return JSON.parse(fs.readFileSync(packageJsonPath, "utf-8"));
     }
     return null;
   }

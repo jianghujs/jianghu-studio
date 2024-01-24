@@ -32,6 +32,15 @@ export default [
     resourceData: { table: TableEnum._page, operation: "update" },
   },
   {
+    pageId: "pageManager",
+    actionId: "createItem",
+    desc: "新增 page 配置",
+    resourceHook: {},
+    resourceType: "sql",
+    appDataSchema: {},
+    resourceData: { table: TableEnum._page, operation: "insert" },
+  },
+  {
     pageId: "pagePlanEdit",
     actionId: "getResourceList",
     desc: "测试",

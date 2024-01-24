@@ -14,11 +14,11 @@
         <!-- 头部内容 >>>>>>>>>>>>> -->
         <div class="jh-page-second-bar px-8">
           <v-row class="align-center" dense>
-            <v-col cols="12" xs="12" sm="12" md="4" xl="3">
+            <v-col cols="12" xs="12" sm="12" md="8" xl="8">
               <div class="py-4 font-weight-bold d-flex align-center" style="font-size: 30px;">【{{appId}}】页面管理</div>
             </v-col>
             <v-spacer></v-spacer>
-            <v-btn color="success" @click="pageAdd">添加页面</v-btn>
+            <v-btn color="success" @click="startAddItem">添加页面</v-btn>
           </v-row>
         </div>
         <!-- <<<<<<<<<<<<< 头部内容 -->
@@ -31,11 +31,22 @@
               checkbox-color="success" mobile-breakpoint="0" class="elevation-0 mt-0 mb-xs-4 flex-fill d-flex flex-column">
               <template v-slot:item.action="{ item }">
                 <span role="button" class="success--text font-weight-medium font-size-2 mr-2" @click="startUpdateItem(item)"><v-icon size="16" class="success--text">mdi-note-edit-outline</v-icon>修改</span>
-                <span role="button" class="success--text font-weight-medium font-size-2 mr-2" @click="startViewItem(item)"><v-icon size="16" class="success--text">mdi-eye-outline</v-icon>预览</span>
-                <span role="button" class="success--text font-weight-medium font-size-2 mr-2"><v-icon size="16" class="success--text">mdi-pencil-ruler</v-icon>设计</span>
+                <span role="button" class="success--text font-weight-medium font-size-2 mr-2" @click="startViewItem(item)">
+                  <v-icon v-if="!item.runView" size="16" class="success--text">mdi-eye-outline</v-icon>
+                  <v-progress-circular
+                    v-else
+                    indeterminate
+                    color="success"
+                    size="14"
+                    width="2"
+                  ></v-progress-circular>
+                  预览
+                </span>
+                <span role="button" class="success--text font-weight-medium font-size-2 mr-2" :class="{'disabled': !item.canDesign}" @click="startDesignItem(item)"><v-icon size="16" class="success--text">mdi-pencil-ruler</v-icon>设计</span>
                 <span role="button" class="success--text font-weight-medium font-size-2 mr-2"><v-icon size="16" class="success--text">mdi-delete-empty-outline</v-icon>删除</span>
               </template>
             </v-data-table>
+            <div v-if="logInfo">启动日志：{{logInfo}}</div>
           </v-card>
         </div>
         <!-- <<<<<<<<<<<<< 页面内容 -->
@@ -56,7 +67,7 @@
             </v-row>
             <!-- 抽屉操作按钮 -->
             <v-row class="justify-end mx-0 my-8 px-4">
-                <v-btn color="success" @click="saveForm" small>保存</v-btn>
+                <v-btn color="success" @click="doUiAction('startSaveForm')" small>保存</v-btn>
                 <v-btn class="elevation-0 ml-2" @click="isFormDrawerShown = false" small>取消</v-btn>
             </v-row>
           </v-form>
@@ -103,7 +114,7 @@
       },
       headers: [
         { text: "pageId", tips: "页面文件名", value: "pageId", width: 120, required: true },
-        { text: "pageFile", tips: "页面文件名，不写则默认pageId", value: "pageFile", width: 140 },
+        // { text: "pageFile", tips: "页面文件名，不写则默认pageId", value: "pageFile", width: 140 },
         { text: "pageName", tips: "菜单中显示的名称", value: "pageName", width: 120, required: true },
         { text: "pageType", tips: "菜单的显示方式", value: "pageType", width: 120, type: 'select' },
         { text: "sort", tips: "菜单中的显示排序", value: "sort", width: 120 },
@@ -113,6 +124,7 @@
       ],
       isFormDrawerShown: false,
       pageForm: {},
+      logInfo: null
     }),
     computed: {
       formFeilds() {
@@ -134,25 +146,50 @@
           case 'getPageList':
             await this.getPageList();
             break;
+          case 'startSaveForm':
+            this.saveForm();
+            break;
           default:
             console.error("[doUiAction] uiActionId not find", { uiActionId });
             break;
         }
       },
-      async pageAdd(event) {
-
+      startUpdateItem(item) {
+        this.pageForm = { ...item };
+        this.isFormDrawerShown = true;
+      },
+      startAddItem() {
+        this.pageForm = {};
+        this.isFormDrawerShown = true;
+      },
+      async startDesignItem(item) {
+        if (!item.canDesign) {
+          window.vtoast.fail("该页面不支持设计");
+          return;
+        }
+        await window.appAxios({
+          packageType: "pageDesignRequest",
+          isVoid: true,
+          data: {
+            appData: {
+              pageInfo: item,
+            },
+          },
+        });
       },
       async saveForm() {
         if (!(await this.$refs.pageForm.validate())) {
           window.vtoast.fail("数据不准确");
           return;
         }
+        this.isTableLoading = true;
         const { id, ...data } = this.pageForm;
         await window.appAxios({
+          packageType: id ? "messageRequest" : "createPageRequest",
           data: {
             appData: {
               pageId: "pageManager",
-              actionId: "updateItem",
+              actionId: id ? "updateItem" : "createItem",
               actionData: data,
               where: { id },
             },
@@ -160,26 +197,36 @@
         });
         this.pageForm = {};
         this.isFormDrawerShown = false;
-        this.isTableLoading = true;
         await this.getPageList();
         this.isTableLoading = false;
       },
-      startViewItem(item) {
+      async startViewItem(item) {
         // 预览页面
-        window.appAxios({
+        item.runView = true;
+        window.vtoast.loading({ message: "正在启动预览页面", time: -1 });
+        await window.appAxios({
           packageType: "viewPageRequest",
           data: {
             appData: {
-              pageFile: item.pageId,
+              webPageId: item.pageId,
               appId: this.appId,
               workspaceFolders: this.workspaceFolders,
             },
           },
+          callback: (value) => {
+            this.logInfo = value.appData.message;
+            console.log('正在启动预览页面 res', value);
+            if (value.appData.isEnd) {
+              item.runView = false;
+              if (value.appData.state && value.appData.state === 'fail') {
+                window.vtoast.fail("启动项目失败，请检查项目配置");
+              } else {
+                window.vtoast.success("预览启动成功");
+              }
+            }
+          }
         });
-      },
-      startUpdateItem(item) {
-        this.pageForm = { ...item };
-        this.isFormDrawerShown = true;
+        item.runView = false;
       },
       async getPageList() {
         this.isTableLoading = true;
@@ -189,7 +236,7 @@
               pageId: "pageManager",
               actionId: "selectList",
             },
-          },
+          }
         });
         console.log('getPageList', rows);
         this.pageList = rows;
@@ -202,5 +249,13 @@
 <style scoped>
   .v-input .v-label {
     line-height: 1.45;
+  }
+
+  span[role="button"].disabled {
+    color: #CCCCCC !important;
+  }
+
+  span[role="button"].disabled .v-icon {
+    color: #CCCCCC !important;
   }
 </style>{% endblock %}
