@@ -41,6 +41,14 @@
 		],
 		"commands": [
 			{
+				"command": "jhExtension.showJhPanel",
+				"title": "jh-panel",
+				"icon": {
+					"light": "images/logo.svg",
+					"dark": "images/logo.svg"
+				}
+			},
+			{
 				"command": "extension.setting.showIndexPage",
 				"title": "欢迎页"
 			},
@@ -146,6 +154,13 @@
 			}
 		],
 		"menus": {
+			"editor/title": [
+				{
+					"command": "jhExtension.showJhPanel",
+					"group": "navigation",
+					"when": "showJhPanelBtn"
+				}
+			],
 			"view/title": [
 				{
 					"command": "appProvider.refreshAppList",

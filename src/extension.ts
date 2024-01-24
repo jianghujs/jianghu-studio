@@ -17,12 +17,16 @@ import { AppProvider } from "./layout/appProvider";
 import PageWebview from "./layout/pageWebview";
 import { PathUtil } from "./util/pathUtil";
 import AppManager from "./core/appManager";
+import { JhPanel } from "./jhProvider/JhPanel";
 
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
   PathUtil.extensionContext = context;
   const core: AppCore = new AppCore();
+
+  const jhPanel = new JhPanel(context, core);
+
   // @ts-ignore
   // eslint-disable-next-line @typescript-eslint/no-unsafe-call
   new PageWebview(core).active(context);

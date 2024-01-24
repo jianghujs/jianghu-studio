@@ -13,17 +13,31 @@ export class PathUtil {
   public static getRootFloader(workspaceFolders: readonly vscode.WorkspaceFolder[]): string[] {
     const newFolders = [];
     for (const folder of workspaceFolders) {
-      let isProject = fs.existsSync(path.join(folder.uri.path, "app"));
-      isProject = isProject && this.isDir(path.join(folder.uri.path, "app"));
-      isProject = isProject && fs.existsSync(path.join(folder.uri.path, "config"));
-      isProject = isProject && this.isDir(path.join(folder.uri.path, "config"));
-      isProject = isProject && fs.existsSync(path.join(folder.uri.path, "config/config.default.js"));
-      isProject = isProject && fs.existsSync(path.join(folder.uri.path, "package.json"));
+      const isProject = this.checkIsJhProject(undefined, folder.uri.path);
       if (!isProject) {
         newFolders.push(folder.uri.path);
       }
     }
     return newFolders;
+  }
+
+  public static checkIsJhProject(document?: any, projectPath?: string): boolean {
+    projectPath = this.getProjectPath(document);
+    if (projectPath === "") {
+      if (document && document.uri && document.uri.path) {
+        projectPath = this.getProjectPath(document);
+      }
+    }
+    if (projectPath === "") {
+      return false;
+    }
+    let isProject = fs.existsSync(path.join(projectPath, "app"));
+    isProject = isProject && this.isDir(path.join(projectPath, "app"));
+    isProject = isProject && fs.existsSync(path.join(projectPath, "config"));
+    isProject = isProject && this.isDir(path.join(projectPath, "config"));
+    isProject = isProject && fs.existsSync(path.join(projectPath, "config/config.default.js"));
+    isProject = isProject && fs.existsSync(path.join(projectPath, "package.json"));
+    return isProject;
   }
 
   public static generatePage(context: vscode.ExtensionContext, panel: vscode.WebviewPanel, page: string, locals: object = {}): string {
