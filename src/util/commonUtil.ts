@@ -16,4 +16,25 @@ export class CommonUtil {
     }
     return "";
   }
+
+  public static handleValue(value: any): any {
+    if (value === null || value === undefined) {
+      return value;
+    }
+    if (typeof value === "function") {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+      return value.toString();
+    }
+    if (Array.isArray(value)) {
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      return value.map(CommonUtil.handleValue);
+    }
+    if (typeof value === "object") {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+      Object.keys(value).forEach(key => {
+        value[key] = CommonUtil.handleValue(value[key]);
+      });
+    }
+    return value;
+  }
 }

@@ -35,23 +35,32 @@
   </head>
 
   <body>
+    {% for item in includeList %}
+    {% if item.type != 'vueComponent' and item.type != 'vueUse' %}
+    <$ item | includeListFormat | safe $>
+      {% endif %}
+      {% endfor %}
 
-    {% block vueTemplate %}
-    {% endblock %}
+      {% block vueTemplate %}
+      {% endblock %}
 
-    <!-- 加载工具脚本 >>>>>>>>>>>>> -->
-    {% include 'common/jianghuJs/bugfixTableWheelEvent.html' %}
-    {% include 'common/jianghuJs/bugfixDrawerOutsideClick.html' %}
-    {% include 'common/jianghuJs/fixedTableColV4.html' %}
-    {% include 'common/customRule.html' %}
-    <!-- <<<<<<<<<<<<< 加载工具脚本 -->
+      <!-- 加载工具脚本 >>>>>>>>>>>>> -->
+      {% include 'common/jianghuJs/bugfixTableWheelEvent.html' %}
+      {% include 'common/jianghuJs/bugfixDrawerOutsideClick.html' %}
+      {% include 'common/jianghuJs/jianghuDisplayTextV4.html' %}
+      {% include 'common/jianghuJs/fixedTableColV4.html' %}
+      {% include 'common/customRule.html' %}
+      <!-- <<<<<<<<<<<<< 加载工具脚本 -->
 
-    <!-- 加载全局组件 >>>>>>>>>>>>> -->
-    {% include 'component/jianghuJs/jhToastV4.html' %}
-    {% include 'component/jianghuJs/jhMaskV4.html' %}
-    {% include 'component/jianghuJs/jhConfirmDialogV4.html' %}
-    <!-- <<<<<<<<<<<<< 加载全局组件 -->
+      <!-- 加载全局组件 >>>>>>>>>>>>> -->
+      {% include 'component/jianghuJs/jhToastV4.html' %}
+      {% include 'component/jianghuJs/jhMaskV4.html' %}
+      {% include 'component/jianghuJs/jhMenuV4.html' %}
+      {% include 'component/jianghuJs/jhConfirmDialogV4.html' %}
+      {% include 'component/customComponent.html' %}
 
-    {% block vueScript %}
-    {% endblock %}
+      <!-- <<<<<<<<<<<<< 加载全局组件 -->
+      <!-- $ includeList $ -->
+      {% block vueScript %}
+      {% endblock %}
   </body>

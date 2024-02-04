@@ -41,14 +41,6 @@
 		],
 		"commands": [
 			{
-				"command": "jhExtension.showJhPanel",
-				"title": "jh-panel",
-				"icon": {
-					"light": "images/logo.svg",
-					"dark": "images/logo.svg"
-				}
-			},
-			{
 				"command": "extension.setting.showIndexPage",
 				"title": "欢迎页"
 			},
@@ -91,6 +83,18 @@
 			{
 				"command": "webviewHandler.openPageDesign",
 				"title": "页面设计"
+			},
+			{
+				"command": "jhExtension.showDesignPanel",
+				"title": "可视化设计"
+			},
+			{
+				"command": "jhExtension.openPageCustomDesign",
+				"title": "可视化设计"
+			},
+			{
+				"command": "jhExtension.openPageDesignFromJson",
+				"title": "可视化设计"
 			},
 			{
 				"command": "constructionPlan.pagePlanEdit",
@@ -156,9 +160,9 @@
 		"menus": {
 			"editor/title": [
 				{
-					"command": "jhExtension.showJhPanel",
+					"command": "jhExtension.openPageDesignFromJson",
 					"group": "navigation",
-					"when": "showJhPanelBtn"
+					"when": "openJianghuDesign"
 				}
 			],
 			"view/title": [
@@ -242,7 +246,8 @@
 		"@types/lodash": "^4.14.182",
 		"@types/mocha": "^9.1.0",
 		"@types/node": "14.x",
-		"@types/nunjucks": "^3.2.1",
+		"@types/nunjucks": "3.2.6",
+		"@types/prettier": "^3.0.0",
 		"@types/vscode": "^1.67.0",
 		"@typescript-eslint/eslint-plugin": "^5.26.0",
 		"@typescript-eslint/parser": "^5.26.0",
@@ -253,12 +258,15 @@
 		"eslint-plugin-prettier": "^4.0.0",
 		"glob": "^7.2.0",
 		"mocha": "^9.2.1",
-		"prettier": "^2.6.2",
 		"typescript": "^4.5.5"
 	},
 	"dependencies": {
+		"@babel/generator": "^7.23.6",
+		"@babel/parser": "^7.23.9",
+		"@babel/traverse": "^7.23.9",
 		"ajv": "^8.11.0",
 		"ajv-formats": "^2.1.1",
+		"cheerio": "^1.0.0-rc.12",
 		"dayjs": "^1.11.2",
 		"json5": "^2.2.1",
 		"knex": "^2.1.0",
@@ -267,7 +275,8 @@
 		"mysql": "^2.18.1",
 		"nanoid": "^3.3.1",
 		"nunjucks": "^3.2.3",
+		"open": "^8.0.10",
 		"ts-md5": "^1.2.11",
-		"open": "^8.0.10"
+		"prettier": "^2.6.2"
 	}
 }

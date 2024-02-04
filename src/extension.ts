@@ -17,7 +17,9 @@ import { AppProvider } from "./layout/appProvider";
 import PageWebview from "./layout/pageWebview";
 import { PathUtil } from "./util/pathUtil";
 import AppManager from "./core/appManager";
-import { JhPanel } from "./jhProvider/JhPanel";
+import { JhPanelFromHtml } from "./jhProvider/JhPanelFromHtml";
+import { JhPanelFromPosition } from "./jhProvider/JhPanelFromPosition";
+import { JhPanelUserJson } from "./jhProvider/JhPanelUserJson";
 
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
@@ -25,7 +27,9 @@ export function activate(context: vscode.ExtensionContext) {
   PathUtil.extensionContext = context;
   const core: AppCore = new AppCore();
 
-  const jhPanel = new JhPanel(context, core);
+  new JhPanelFromHtml(context);
+  new JhPanelFromPosition(context);
+  new JhPanelUserJson(context);
 
   // @ts-ignore
   // eslint-disable-next-line @typescript-eslint/no-unsafe-call
@@ -37,6 +41,7 @@ export function activate(context: vscode.ExtensionContext) {
 
   // 应用管理左侧树菜单构建
   const treeDataProvider = new AppProvider(context, core);
+  void treeDataProvider.getChildren();
   vscode.window.registerTreeDataProvider("appProvider", treeDataProvider);
   const treeView = vscode.window.createTreeView("appProvider", { treeDataProvider });
   treeView.onDidExpandElement(e => console.log("Expanded:", e.element));

@@ -5,6 +5,7 @@ import pageList from "../table/_page";
 import { PathUtil } from "../util/pathUtil";
 import { EntryItem } from "./tree/entryItem";
 import AppManager from "../core/appManager";
+import { JhPanel } from "../jhProvider/JhPanel";
 
 export default abstract class PageWebview {
   public static currentPanel: vscode.WebviewPanel | PageWebview | undefined;
@@ -26,12 +27,12 @@ export default abstract class PageWebview {
         vscode.commands.registerCommand(pageData.command, (uri: EntryItem) => {
           this.uri = uri;
           console.log("uri", uri, pageData);
-          const { pageId, currDatabase: database, pageName, args, pageInfo } = this.uri;
+          const { pageId, currDatabase: database, pageName, args, pageInfo, viewColumn, htmlContent, panelId } = this.uri;
           const column = vscode.window.activeTextEditor ? vscode.window.activeTextEditor.viewColumn : undefined;
           const panelExist = this.core.webviewManager.getPanel(pageData.page);
           const workspaceFolders = this.getWorkFolder();
           // 当用户点击一个节点时，展开这个节点
-          void AppManager.treeView?.reveal(uri, { select: true, expand: true });
+          // void AppManager.treeView?.reveal(uri, { select: true, expand: true });
           if (panelExist) {
             this.updateForPage(context, panelExist, {
               appId: uri.appId as string,
@@ -39,29 +40,36 @@ export default abstract class PageWebview {
               pageName,
               database,
               pageInfo,
+              htmlContent,
               page: pageData.page,
               projectInfo: args,
               workspaceFolders,
             });
-            panelExist.reveal(column);
+            panelExist.reveal(viewColumn ? (viewColumn as vscode.ViewColumn) : column);
             return;
           }
 
           const panel = vscode.window.createWebviewPanel(
             pageData.page,
             pageData.title,
-            vscode.ViewColumn.One, // 显示在编辑器的哪个部位
+            viewColumn ? (viewColumn as vscode.ViewColumn) : vscode.ViewColumn.One, // 显示在编辑器的哪个部位
             {
               enableScripts: true, // 启用JS，默认禁用
               retainContextWhenHidden: true,
             }
           );
 
+          if (panelId) {
+            JhPanel.jhPanelSaveStatus.set(panelId as string, false);
+            JhPanel.jhPanel.set(panelId as string, panel);
+          }
+
           this.updateForPage(context, panel, {
             appId: uri.appId as string,
             pageId,
             pageName,
             pageInfo,
+            htmlContent,
             database,
             page: pageData.page,
             projectInfo: args,
@@ -102,6 +110,7 @@ export default abstract class PageWebview {
       database,
       page,
       projectInfo,
+      htmlContent,
       pageInfo,
       workspaceFolders,
     }: {
@@ -111,6 +120,7 @@ export default abstract class PageWebview {
       page: string;
       database: Knex.MySqlConnectionConfig;
       projectInfo: EntryItem;
+      htmlContent: any;
       pageInfo: Map<string, any> | null;
       workspaceFolders: any;
     }
@@ -118,7 +128,10 @@ export default abstract class PageWebview {
     panel.title = `${pageName}${(projectInfo && `@${projectInfo.appTitle as string}`) || ""}`;
     const uiActionList = this.core.tableManager.getUiActionList(pageId);
     panel.webview.html = "";
-    panel.webview.html = PathUtil.generatePage(context, panel, page, { pageId: pageId || "", appId, workspaceFolders, uiActionList, database: database?.database, ...(pageInfo || {}) });
+    // htmlHeadMatch: htmlHeadMatch ? htmlHeadMatch[1] : "",
+    // vueTemplatePatternMatch: vueTemplatePatternMatch ? vueTemplatePatternMatch[1] : "",
+    // vueScriptPatternMatch: vueScriptPatternMatch ? vueScriptPatternMatch[1] : "",
+    panel.webview.html = PathUtil.generatePage(context, panel, page, htmlContent, { pageId: pageId || "", appId, workspaceFolders, uiActionList, database: database?.database, ...(pageInfo || {}) });
   }
 
   // 页面打开后，想页面发送当前工作目录

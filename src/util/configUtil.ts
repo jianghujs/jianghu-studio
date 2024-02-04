@@ -37,7 +37,6 @@ export class ConfigUtil {
    */
   private static getDatabaseConnection(configPath: string) {
     const patter = /(connection:)([\s\S]*?)}/g;
-    console.log(configPath);
     const configArr: any = fs.readFileSync(configPath, "utf-8").match(patter);
     if (configArr && configArr.length) {
       // eslint-disable-next-line @typescript-eslint/restrict-template-expressions

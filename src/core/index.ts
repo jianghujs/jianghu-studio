@@ -1,14 +1,10 @@
 /* eslint-disable @typescript-eslint/restrict-template-expressions */
+/* eslint-disable import/no-extraneous-dependencies */
 // 初始化框架核心
 import * as vscode from "vscode";
 import { Knex } from "knex";
-import { BizError, ErrorInfo } from "../common/constants";
 import Logger from "../util/logger";
-import { sqlResource } from "../util/resourceUtil";
-import JianghuKnexManager from "./jianghuKnexManager";
 import KnexManager from "./knexManager";
-import ServiceManager from "./serviceManager";
-import TableManager from "./tableManager";
 import WebviewManager from "./webviewManager";
 import * as fs from "fs";
 import { ConfigUtil } from "../util/configUtil";
@@ -16,21 +12,33 @@ import { spawn } from "child_process";
 import open = require("open");
 import { PathUtil } from "../util/pathUtil";
 import * as http from "http";
+import ResourceService from "../service/resource";
+import JianghuKnexManager from "./jianghuKnexManager";
+import { sqlResource } from "../util/resourceUtil";
+import TableManager from "./tableManager";
+import ServiceManager from "./serviceManager";
+import { BizError, ErrorInfo } from "../common/constants";
+// @ts-ignore
+// eslint-disable-next-line import/no-extraneous-dependencies
+import * as prettier from "prettier";
+// eslint-disable-next-line import/no-extraneous-dependencies
+import * as parser from "@babel/parser";
+// @ts-ignore
+import traverse from "@babel/traverse";
+// @ts-ignore
+import generate from "@babel/generator";
 
 export default class AppCore {
+  public resourceService: ResourceService;
+  public webviewManager: WebviewManager;
   public tableManager: TableManager;
   public serviceManager: ServiceManager;
-  public webviewManager: WebviewManager;
-  public knexManager: KnexManager;
-  public jianghuKnexManager: JianghuKnexManager;
-  private appCreateTerminal: vscode.Terminal | null = null;
-  private returnBody = {};
+
   constructor() {
     this.tableManager = new TableManager();
-    this.serviceManager = new ServiceManager();
+    this.resourceService = new ResourceService();
     this.webviewManager = new WebviewManager();
-    this.jianghuKnexManager = new JianghuKnexManager();
-    this.knexManager = new KnexManager();
+    this.serviceManager = new ServiceManager();
   }
 
   // 接收来自与 webview 的消息
@@ -72,11 +80,10 @@ export default class AppCore {
         break;
       }
       // 更新页面的配置
-      case "updatePageConfig": {
+      case "updatePageContent": {
         if (body.appData) {
           const { webPageId, actionData } = body.appData;
-          await this.checkPageJson(body, webPageId, uri.appDir as string, panel);
-          await this.updatePageConfig(actionData, webPageId as string, uri.appDir);
+          void this.updatePageConfig(actionData, webPageId as string, uri.appDir);
           await this.buildPageFromJson(body, uri.appDir as string, panel, webPageId as string, "updatePageConfigResponse");
         }
         const returnBody = { ...body, packageType: "updatePageConfigResponse", appData: { isEnd: true } };
@@ -87,16 +94,9 @@ export default class AppCore {
         break;
       }
       // 创建表、生成 json、page、把 ui配置同步到 json
-      case "updateTableForm": {
-        const { webPageId, actionData } = body.appData;
+      case "updateTableField": {
         // 根据字段的config生成 table表
         await this.updateTable(body.appData, uri);
-        // 根据 table表用命令自动生成 json配置
-        await this.checkPageJson(body, webPageId, uri.appDir as string, panel);
-        // 对 json配置进行重新配置
-        await this.buildPageJson(actionData, uri.appDir as string, webPageId as string);
-        // 根据最新的 json配置生成新的页面表单布局
-        await this.buildPageFromJson(body, uri.appDir as string, panel, webPageId as string, "saveFieldResponse");
         // 通知页面，任务完成
         const returnBody = { ...body, packageType: "saveFieldResponse", appData: { isEnd: true } };
         // 回消息
@@ -107,7 +107,11 @@ export default class AppCore {
       }
       // 正常数据请求
       case "messageRequest":
-        await this.resourceHandler(body, uri, panel);
+        if (!body.isJianghuAxios) {
+          await this.resourceHandler(body, uri, panel);
+        } else {
+          await this.normalRequest(body, uri, panel);
+        }
         break;
       // 创建空白页面
       case "createPageRequest":
@@ -123,51 +127,57 @@ export default class AppCore {
         break;
     }
   }
+
   private updatePageConfig(actionData: any, webPageId: string, appDir: any) {
-    const { tableConfig, pageConfig, itemKey } = actionData;
-    const jsonPath = `${appDir}/app/view/init-json/page/${webPageId}.js`;
-    return new Promise(resolve => {
-      void import(jsonPath).then((pageJson: any) => {
-        pageJson.common.data.tableSelected = [];
-        pageJson.common.data.isMobile = "window.innerWidth < 600";
-        pageJson.pageContent.attrs = {
-          ":show-select": pageConfig.showSelect.value,
-          ":single-select": pageConfig.singleSelect.value,
-          "v-model": "tableSelected",
-          "item-key": itemKey,
-        };
-        pageJson.pageContent.value = (tableConfig as []).map((item: any) => ({
-          ...item,
-          type: "v-text-field",
-          itemKey: itemKey === item.value,
-          // formatter: "dateTimeFormatter",
-        }));
-        pageJson.pageContent.rowActionList = (pageConfig.rowActionList as []).map((item: any) => ({
-          tag: "span",
-          value: `<v-icon size="16" class="${item.color}--text">mdi-${item.icon}</v-icon>${item.label}`,
-          item,
-          attrs: {
-            role: "button",
-            class: `${item.color}--text font-weight-medium font-size-2 mr-2`,
-            "@click": `doUiAction('${item.click}', item)`,
-          },
-        }));
-        pageJson.pageContent.headActionList = (pageConfig.headActionList as []).map((item: any) => ({
-          tag: "v-btn",
-          value: `${item.label}`,
-          item,
-          attrs: {
-            color: "success",
-            outlined: true,
-            class: "mr-2",
-            "@click": `doUiAction('${item.click}')`,
-          },
-        }));
-        const pageJsonStr = `const content = ${JSON.stringify(pageJson, null, 2)};\n\n module.exports = content;`;
-        fs.writeFileSync(jsonPath, pageJsonStr);
-        resolve(true);
-      });
+    const { header, headerKey, pageContent, jsonPath } = actionData;
+    const resJsonPath = `${appDir}/app/view/init-json/page/${webPageId}.js`;
+    let pageConfigString = fs.readFileSync(jsonPath as string, "utf8");
+    const resAst = parser.parse(pageConfigString, {
+      sourceType: "module",
+      plugins: ["typescript", "asyncGenerators", "classProperties", "dynamicImport", "objectRestSpread"],
     });
+
+    // 用 traverse 遍历下，找到对应的节点行数，然后替换直接行数替换
+    const pageContentRange = { start: -1, end: -1 };
+    const headerRange = { start: -1, end: -1 };
+    const actionContentRange = { start: -1, end: -1 };
+    const headContentRange = { start: -1, end: -1 };
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+    traverse(resAst, {
+      ObjectProperty(path: any) {
+        if (path.node.key.name === "pageContent") {
+          pageContentRange.start = path.node.loc.start.line;
+          pageContentRange.end = path.node.loc.end.line;
+        }
+        if (path.node.key.name === "actionContent") {
+          actionContentRange.start = path.node.loc.start.line;
+          actionContentRange.end = path.node.loc.end.line;
+        }
+        if (path.node.key.name === "headContent") {
+          headContentRange.start = path.node.loc.start.line;
+          headContentRange.end = path.node.loc.end.line;
+        }
+      },
+    });
+    const indexList: any[] = [pageContentRange, headerRange];
+    const indexListKey: any[] = ["pageContent", headerKey, "actionContent", "headContent"];
+    let pageConfigStringLines = pageConfigString.split("\n");
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+    indexList.forEach((item: any, index: number) => {
+      let startLine = item.start - 1;
+      while (startLine < item.end) {
+        pageConfigString = pageConfigStringLines[startLine] = startLine === item.start - 1 ? `${indexListKey[index]}:<!!${indexListKey[index]}!!>,` : "<!LINETEMP!>";
+        startLine++;
+      }
+    });
+    pageConfigStringLines = pageConfigStringLines.filter(item => item !== "<!LINETEMP!>");
+    pageConfigString = pageConfigStringLines.join("\n");
+    // 替换 data内的数据；前提是数据中不能有数组
+    pageConfigString = pageConfigString.replace(/headers: \[.*?\],/s, `${headerKey}: ${JSON.stringify(header, null, 2)},`);
+    pageConfigString = pageConfigString.replace(`pageContent:<!!pageContent!!>`, `pageContent: ${JSON.stringify(pageContent, null, 2)}`);
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+    pageConfigString = prettier.format(pageConfigString, { parser: "babel" });
+    fs.writeFileSync(resJsonPath, pageConfigString);
   }
 
   private async getFieldListRequest(body: any, uri: any, panel: vscode.WebviewPanel) {
@@ -212,9 +222,8 @@ export default class AppCore {
   }
 
   private getFieldConfigRequest(body: any, uri: any, panel: vscode.WebviewPanel) {
-    const { webPageId } = body.appData;
-    const jsonPath = `${uri.appDir}/app/view/init-json/page/${webPageId}.js`;
-    if (!fs.existsSync(jsonPath)) {
+    const { pageJsonPath } = body.appData;
+    if (!pageJsonPath || !fs.existsSync(pageJsonPath as string)) {
       if (panel) {
         const returnBody = { ...body, packageType: "getFieldConfigResponse", appData: { error: true } };
         void panel.webview.postMessage(returnBody);
@@ -222,7 +231,7 @@ export default class AppCore {
       return;
     }
     // js中是 module.exports = content; 这里需要把 content 转换为 json
-    void import(jsonPath).then((pageConfig: any) => {
+    void import(pageJsonPath).then((pageConfig: any) => {
       if (!pageConfig) {
         // 回消息
         if (panel) {
@@ -237,11 +246,9 @@ export default class AppCore {
           ...body,
           packageType: "getFieldConfigResponse",
           appData: {
-            formItemList: pageConfig.createDrawerContent.formItemList,
-            contentList: pageConfig.updateDrawerContent.contentList,
-            constantObj: pageConfig.common.data.constantObj,
+            actionContent: pageConfig.actionContent,
             pageContent: pageConfig.pageContent,
-            headerContent: pageConfig.headerContent || {},
+            headContent: pageConfig.headContent,
           },
         };
         void panel.webview.postMessage(returnBody);
@@ -251,7 +258,9 @@ export default class AppCore {
   private async buildPageFromJson(body: any, appFolder: string, panel: vscode.WebviewPanel, webPageId: string, packageType: string) {
     // 运行命令 jianghu-init json --generateType=page --pageType=webPageId --file=webPageId -y
     return new Promise(resolve => {
-      const commandText = `jianghu-init json --generateType=page --pageType=page --file=${webPageId} -y`;
+      // const commandBasic = "node /Users/benshanyue/fsll/projects/jianghujs-script-util/openjianghu01/002.jianghu-init/jianghu-init/bin/jianghu-init.js";
+      const commandBasic = "jianghu-init";
+      const commandText = `${commandBasic} json --generateType=page --pageType=page --file=${webPageId} -y`;
       const child = spawn(commandText, [], {
         cwd: appFolder,
         shell: true,
@@ -270,58 +279,16 @@ export default class AppCore {
       });
       child.on("close", code => {
         console.log(`buildPageFromJson child process exited with code ${code}`);
+        // 格式化下处理
+        // const htmlPath = `${appFolder}/app/view/page/${webPageId}.html`;
+        // const textA = fs.readFileSync(htmlPath, "utf8");
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-call
+        // fs.writeFileSync(htmlPath, prettier.format(textA, { parser: "html" }));
         resolve(true);
       });
     });
   }
-  private async buildPageJson(actionData: any, appDir: string, webPageId: string) {
-    return new Promise(resolve => {
-      const { fieldList } = actionData;
-      const jsonPath = `${appDir}/app/view/init-json/page/${webPageId}.js`;
-      // js中是 module.exports = content; 这里需要把 content 转换为 json
-      void import(jsonPath).then((pageConfig: any) => {
-        // 复制component/customRule.html到项目中
-        if (fs.existsSync(`${appDir}/app/view/component/customRule.html`)) {
-          fs.unlinkSync(`${appDir}/app/view/component/customRule.html`);
-        }
-        fs.copyFileSync(PathUtil.getExtensionFileAbsolutePath(PathUtil.extensionContext, `src/view/common/customRule.html`), `${appDir}/app/view/component/customRule.html`);
-        pageConfig.common.data.validationRules = {};
-        pageConfig.common.data.tableSelected = [];
-        pageConfig.common.data.isMobile = "window.innerWidth < 600";
-        // TODO 自定义的 rule规则如何完整的放入到 json中
-        // pageConfig.common.created = [];
 
-        pageConfig.includeList = [{ type: "include", path: `component/customRule.html` }];
-        const formItemList: any[] = [];
-        (fieldList as []).map((item: any) => {
-          const {
-            fieldName,
-            text,
-            tag,
-            config: { cols, rules, constants, ...configMap },
-          } = item;
-          if (constants) {
-            constants.constantKey = fieldName;
-            if (!pageConfig.common.data.constantObj) {
-              pageConfig.common.data.constantObj = {};
-            }
-            pageConfig.common.data.constantObj[fieldName] = constants.constantValue;
-          }
-          let newItem = {};
-          if (tag === "v-select") {
-            newItem = { label: text, model: fieldName, tag, rules, cols, attrs: { ":items": `constantObj.${fieldName}`, ...configMap.attributes } };
-          } else {
-            newItem = { label: text, model: fieldName, tag, rules, cols, attrs: { ...configMap.attributes } };
-          }
-          formItemList.push(newItem);
-        });
-        pageConfig.createDrawerContent.formItemList = formItemList;
-        const pageConfigJson = `const content = ${JSON.stringify(pageConfig, null, 2)};\n\n module.exports = content;`;
-        fs.writeFileSync(jsonPath, pageConfigJson);
-        resolve(true);
-      });
-    });
-  }
   private viewPageRequest(body: any, uri: any, panel: vscode.WebviewPanel, appFolder: string) {
     const { appId, webPageId } = body.appData;
     const startApp = () => {
@@ -526,55 +493,41 @@ export default class AppCore {
       // 读取表的所有字段
       const tableFieldListResult = await knex.raw(`show full fields from ${tableName}`);
       (fieldList as []).map((item: any) => {
-        const { fieldName, text: fieldComment, fieldType } = item;
-        if (fieldName === "id") {
+        const { Field } = item;
+        if (Field === "id") {
           return;
         }
-        const field: any = {
-          fieldName,
-          fieldComment,
-          fieldType,
-        };
         // 重复的字段，不再创建
-        const exsitField: any = (tableFieldListResult[0] as []).find((tableField: any) => tableField.Field === fieldName);
+        const exsitField: any = (tableFieldListResult[0] as []).find((tableField: any) => tableField.Field === Field);
         if (exsitField) {
-          tableExsitFieldList.push(field);
+          tableExsitFieldList.push(item);
         } else {
-          tableFieldList.push(field);
+          tableFieldList.push(item);
         }
       });
       // 更新表字段的 sql
       tableSql = `ALTER TABLE \`${tableName}\` `;
       // 补充新字段
       tableFieldList.map((item: any) => {
-        const { fieldName, fieldType, fieldComment } = item;
-        tableSql += `ADD COLUMN \`${fieldName}\` ${fieldType} COLLATE utf8mb4_bin DEFAULT NULL COMMENT '${fieldComment}',`;
+        const { Field, Type, Comment, Default } = item;
+        tableSql += `ADD COLUMN \`${Field}\` ${Type} COLLATE utf8mb4_bin DEFAULT '${Default}' COMMENT '${Comment}',`;
       });
       // tableExsitFieldList 对比下，修改字段类型
       tableExsitFieldList.map((item: any) => {
-        const { fieldName, fieldType, fieldComment } = item;
-        const exsitField: any = (tableFieldListResult[0] as []).find((tableField: any) => tableField.Field === fieldName);
-        if (fieldType !== exsitField.Type || fieldComment !== exsitField.Comment) {
-          tableSql += `MODIFY COLUMN \`${fieldName}\` ${fieldType} COLLATE utf8mb4_bin DEFAULT NULL COMMENT '${fieldComment}',`;
+        const { Field, Type, Comment, Default } = item;
+        const exsitField: any = (tableFieldListResult[0] as []).find((tableField: any) => tableField.Field === Field);
+        if (Type !== exsitField.Type || Field !== exsitField.Field || Comment !== exsitField.Default || Comment !== exsitField.Default) {
+          tableSql += `MODIFY COLUMN \`${Field}\` ${Type} COLLATE utf8mb4_bin DEFAULT '${Default}' COMMENT '${Comment}',`;
         }
         // 去掉最后一个逗号
       });
       tableSql = tableSql.substring(0, tableSql.length - 1);
     } else {
-      (fieldList as []).map((item: any) => {
-        const { fieldName, text: fieldComment, fieldType } = item;
-        const field: any = {
-          fieldName,
-          fieldComment,
-          fieldType,
-        };
-        tableFieldList.push(field);
-      });
       // 创建表的 sql
       tableSql = `CREATE TABLE \`${tableName}\` (\`id\` int(11) NOT NULL AUTO_INCREMENT,`;
-      tableFieldList.map((item: any) => {
-        const { fieldName, fieldType, fieldComment } = item;
-        tableSql += `\`${fieldName}\` ${fieldType} COLLATE utf8mb4_bin DEFAULT NULL COMMENT '${fieldComment}',`;
+      (fieldList as any[]).map((item: any) => {
+        const { Field, Type, Comment, Default } = item;
+        tableSql += `\`${Field}\` ${Type} COLLATE utf8mb4_bin DEFAULT '${Default}' COMMENT '${Comment}',`;
       });
       tableSql += "`operation` varchar(255) COLLATE utf8mb4_bin DEFAULT 'insert' COMMENT '操作; insert, update, jhInsert, jhUpdate, jhDelete jhRestore',";
       tableSql += "`operationByUserId` varchar(255) COLLATE utf8mb4_bin DEFAULT NULL COMMENT '操作者userId',";
@@ -605,45 +558,6 @@ export default class AppCore {
     });
   }
 
-  private vlidatePageConfig(body: any, webPageId: any, appFolder: any, panel: vscode.WebviewPanel) {
-    // 验证下 page的 config是否完整，是否已坏等等
-  }
-
-  private async checkPageJson(body: any, webPageId: any, appFolder: any, panel: vscode.WebviewPanel) {
-    // 运行命令 jianghu-init json --generateType=json --pageType=jh-page --table=pageId --pageId=pageId -y
-    return new Promise(resolve => {
-      const jsonPath = `${appFolder}/app/view/init-json/page/${webPageId}.js`;
-      if (fs.existsSync(jsonPath)) {
-        //  TODO 验证文件是否有效
-        // this.vlidatePageConfig(body, webPageId, appFolder, panel);
-        resolve(true);
-        return;
-      }
-      // jianghu-init json --generateType=json --pageType=jh-page --table=ceshi --pageId=ceshi -y
-      const commandText = `jianghu-init json --generateType=json --pageType=jh-page --table=${webPageId} --pageId=${webPageId} -y`;
-      const child = spawn(commandText, [], {
-        cwd: appFolder,
-        shell: true,
-      });
-      child.stdout.on("data", (data: string) => {
-        console.log(`checkPageJson stdout: ${data}`);
-        const returnBody = { ...body, packageType: "saveFieldResponse", appData: { message: `${data}` } };
-        // 回消息
-        if (panel) {
-          void panel.webview.postMessage(returnBody);
-        }
-      });
-      child.stderr.on("data", data => {
-        // 创建失败；重新运行
-        console.error(`checkPageJson stderr: ${data}`);
-      });
-      child.on("close", code => {
-        console.log(`checkPageJson: child process exited with code ${code}`);
-        resolve(true);
-      });
-    });
-  }
-
   private createEmptyPage(body: any, uri: any) {
     const { appData } = body;
     const appFolder = uri.appDir;
@@ -663,6 +577,67 @@ export default class AppCore {
     content = content.replace('<span id="pageName"></span>', `<span id="pageName">${pageName}</span>`);
     // 写入新内容
     fs.writeFileSync(targetPath, content);
+  }
+
+  private async normalRequest(body: any, uri: any, panel?: vscode.WebviewPanel) {
+    const { currDatabase: database } = uri;
+    const { appData } = body;
+    if (!appData) {
+      return null;
+    }
+    const { pageId, actionId } = appData;
+    // eslint-disable-next-line prefer-const
+    let resultData: any;
+
+    // database ===> ctx.app.knex
+    const app: any = {};
+    if (database) {
+      app.jianghuKnex = JianghuKnexManager.client(database as Knex.MySqlConnectionConfig);
+      app.knex = KnexManager.client(database as Knex.MySqlConnectionConfig);
+      app.database = database;
+    }
+    const ctx = {
+      request: { body },
+      app: { logger: Logger, ...app },
+    };
+
+    if (ctx.app.database) {
+      const tableResource = await sqlResource({
+        jianghuKnex: ctx.app.jianghuKnex,
+        appData: {
+          where: {
+            pageId,
+            actionId,
+          },
+        },
+        resourceData: { table: "_resource", operation: "select" },
+      });
+      if (!(tableResource?.rows as any)?.length) {
+        if (panel) {
+          const returnBody = { ...body, packageType: "messageResponse", appData: { resultData } };
+          await panel.webview.postMessage(returnBody);
+          return;
+        }
+      }
+      const resourceData = (tableResource?.rows as any).length ? (tableResource?.rows as any)[0].resourceData : null;
+      if (!resourceData) {
+        if (panel) {
+          const returnBody = { ...body, packageType: "messageResponse", appData: { resultData } };
+          await panel.webview.postMessage(returnBody);
+          return;
+        }
+      }
+      resultData = await sqlResource({
+        jianghuKnex: ctx.app.jianghuKnex,
+        appData: body.appData,
+        resourceData: JSON.parse(resourceData as string),
+      });
+    }
+    const returnBody = { ...body, packageType: "messageResponse", appData: { resultData } };
+    // 回消息
+    if (panel) {
+      await panel.webview.postMessage(returnBody);
+    }
   }
 
   // 处理 resource的请求

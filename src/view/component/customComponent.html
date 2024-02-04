@@ -1,0 +1,384 @@
+<!--customComponent.html start-->
+<template id="customComponent">
+  <!-- v-tab-item 无法渲染！！ -->
+  <div class="v-window v-item-group theme--light v-tabs-items" v-if="isObject && domItem.tag && domItem.tag === 'v-tabs-items'">
+    <div class="v-window-item" v-for="(item, index) of domItem.value" :data-key="index" v-if="isActiveTab === index">
+      <template v-for="item2 of item.value">
+        <custom-component v-if="item2.tag" :dom-item="item2" :key="item2.uid" :uid="item2.uid"></custom-component>
+        <span v-else>{{item2}}</span>
+      </template>
+    </div>
+  </div>
+  <!-- v-data-table -->
+  <v-data-table v-else-if="isObject && domItem.tag && domItem.tag === 'v-data-table'" v-bind="attrMap" v-on="eventMap" hide-default-header>
+    <template v-slot:header="{ props, on }">
+      <thead>
+        <tr>
+          <th role="columnheader" v-for="header of props.headers" scope="col" :width="header.width" class="text-start"
+            @click="$root.setActiveTh(header)"
+            :class="{[header.class]: true, 'editing': $root.activeTh && $root.activeTh.value === header.value}" :style="{'width': header.width + 'px', 'min-width': header.width + 'px'}">
+            <v-simple-checkbox v-if="header.value === 'data-table-select' && !pageConfig.singleSelect.value" v-bind="props" v-on="on" class="v-data-table__checkbox" color="green"></v-simple-checkbox>
+            <span v-else>{{header.text}}
+              <v-icon v-if="header.fixed" size="12" color="red">mdi-lock</v-icon>
+              <v-icon v-if="header.itemKey" size="12" color="red">mdi-key</v-icon>
+            </span>
+          </th>
+        </tr>
+      </thead>
+    </template>
+    <template v-slot:item="{ headers, item }">
+      <tr>
+        <td v-for="header of headers" scope="col" :width="header.width" class="text-start"
+          @click="$root.setActiveData(header, item)"
+          :class="{[header.class]: header.class, 'editing': $root.activeData && $root.activeData.value === header.value, 'isActionTd': header.value === 'action'}"
+          :style="{'width': header.width + 'px', 'min-width': header.width + 'px'}">
+          <v-simple-checkbox v-if="header.value === 'data-table-select'" :value="demoSelected.includes(item)" @input="rowSelect(item)" class="v-data-table__checkbox" color="green"></v-simple-checkbox>
+          <template v-else-if="header.value === 'action'">
+            <span role="button" :class="{[rowAction.attrs.class]: true, 'activeDom': $root.activeBtnItem && $root.activeBtnItem.uid === rowAction.uid}" v-for="rowAction of rowActionBtns"
+              @click="setRowActiveBtn(rowAction)">
+              <v-icon size="16" :class="rowActionClass(rowAction)">{{rowAction | rowActionIcon}}</v-icon>{{rowAction | rowActionText}}
+            </span>
+            <span role="button" class="error--text font-weight-medium font-size-2 mr-2" @click="addNewRowBtn">
+              <v-icon size="16" class="error--text">mdi-plus</v-icon>
+            </span>
+          </template>
+          <span v-else>{{item[header.value]}}</span>
+        </td>
+      </tr>
+    </template>
+    <!-- 没有数据 -->
+    <template v-slot:loading>
+      <div class="jh-no-data">数据加载中</div>
+    </template>
+    <template v-slot:no-data>
+      <div class="jh-no-data">暂无数据</div>
+    </template>
+    <template v-slot:no-results>
+      <div class="jh-no-data">暂无数据</div>
+    </template>
+    <!-- 表格分页 -->
+    <template v-slot:footer.page-text="pagination">
+      <span>{{pagination.pageStart}}-{{pagination.pageStop}}</span>
+      <span class="ml-1">共{{pagination.itemsLength}}条</span>
+    </template>
+  </v-data-table>
+  <!-- v-tabs -->
+  <v-tabs v-else-if=" isObject && domItem.tag && domItem.tag==='v-tabs'" v-bind=" attrMap" @change="onTabChange">
+    <template v-for="(item2, index) of domItem.value">
+      <custom-component :dom-item="item2" :key="item2.uid" :uid="item2.uid" @addNewBtn="addNewBtn(index)"></custom-component>
+    </template>
+  </v-tabs>
+  <!-- 其他标签、暂未发现异常的标签用 component 渲染 -->
+  <component v-else-if="isObject && domItem.tag"
+    :is="domItem.tag"
+    v-bind="attrMap"
+    :uid="domItem.uid"
+    v-on="eventMap">
+    <template v-if="domItem.value && domItem.value.length">
+      <template v-if="domItem.value.length === 1 && typeof domItem.value[0] === 'string'">
+        {{domItem.value[0]}}
+      </template>
+      <template v-else>
+        <draggable v-if="$root.isFormCol(domItem.value)"
+          class="dragArea"
+          v-model="designfieldConfigList"
+          touchStartThreshold="10"
+          chosen-class="chosen"
+          force-fallback="true"
+          group="uid"
+          animation="300"
+          @change="draggableChange"
+          @start="$root.onStart"
+          @end="$root.onEnd">
+          <transition-group style="display: flex; flex-wrap: wrap;">
+            <template v-for="item of domItem.value">
+              <custom-component v-if="item.tag" :dom-item="item" :key="item.uid" :uid="item.uid"></custom-component>
+              <span v-else>{{item}}</span>
+            </template>
+          </transition-group>
+        </draggable>
+        <template v-else>
+          <template v-for="(item, index) of domItem.value">
+            <custom-component v-if="item.tag" :dom-item="item" :key="item.uid"></custom-component>
+            <span v-else>{{item}}</span>
+          </template>
+        </template>
+      </template>
+    </template>
+  </component>
+  <span v-else>
+    {{domItem}}
+  </span>
+</template>
+<script>
+  // type：字段类型[textarea: 多行文本框，select：下拉框，input：输入框，date：时间选择, searchMultiple: 多选，searchOne: 单选]
+  Vue.component("custom-component", {
+    vuetify: new Vuetify(),
+    name: 'custom-component',
+    data: () => ({
+      designfieldConfigList: [],
+      footerProps: {}
+    }),
+    props: ["domItem"],
+    filters: {
+      rowActionIcon(rowAction) {
+        return rowAction.value.find(item => item.tag === 'v-icon').value[0];
+      },
+      rowActionText(rowAction) {
+        return rowAction.value.find(item => typeof item === 'string');
+      }
+    },
+    computed: {
+      isObject() {
+        return typeof this.domItem === 'object';
+      },
+      attrMap() {
+        return typeof this.domItem === 'string' ? {} : this.processAttrs(this.domItem.attrs)
+      },
+      eventMap() {
+        const eventList = typeof this.domItem === 'string' ? {} : this.processEvents(this.domItem.attrs);
+        if (this.domItem.tag === 'v-btn' && !this.domItem.attrs["@click"].startsWith("$root.addNewHeadBtn")) {
+          eventList.click = this.vbtnClick;
+        }
+        return eventList;
+      },
+      classMap() {
+        return typeof this.domItem === 'string' ? {} : {
+          class: (this.domItem.attrs["class"] || "") + " " + (this.domItem.attrs[":class"] ? eval(`this.$root.${this.domItem.attrs[":class"]}`) : "")
+        };
+      },
+      isActiveTab() {
+        return eval(`this.$root.${this.domItem.attrs['v-model']}`);
+      },
+      rowActionBtns() {
+        if (this.domItem.tag === "v-data-table") {
+          const actionSolt = this.domItem.value.find(item => item.tag === 'template' && item.attrs['v-slot:item.action']);
+          const btnList = [];
+          this.tickRowActionBtn(actionSolt.value, btnList);
+          console.log("btnList", btnList);
+          return btnList;
+        }
+        return [];
+      },
+    },
+    watch: {
+
+    },
+    async created() {
+      if (this.domItem.tag === 'v-tabs-items') {
+        const modelKey = this.domItem.attrs["v-model"];
+        this.$root.$watch(modelKey, (newVal, oldVal) => {
+          console.log(`message changed from ${modelKey} ${oldVal} to ${newVal}`);
+        });
+      }
+      if (this.domItem.tag === 'v-data-table') {
+        const modelKey = this.domItem.attrs[":headers"];
+        this.$root.$watch(modelKey, (newVal, oldVal) => {
+          console.log(`message changed from ${modelKey} ${oldVal} to ${newVal}`);
+        }, { deep: true });
+      }
+      this.setDataTableHeader();
+    },
+    methods: {
+      setDataTableHeader() {
+        // 在 data-table 的前边增加一个按钮 
+        if (this.$root.headPlusBtnUid) {
+          return;
+        }
+        this.$root.headPlusBtnUid = `tag_id_${Math.random().toString(36).substr(2, 16)}`;
+        if (Array.isArray(this.domItem.value)) {
+          const dataTableIndexList = [];
+          this.domItem.value.forEach((item, index) => {
+            if (typeof item === 'object' && item.tag === 'v-data-table') {
+              dataTableIndexList.push(index);
+            }
+          });
+          if (dataTableIndexList.length > 0) {
+            dataTableIndexList.forEach((item, index) => {
+              if (item === 0) {
+                this.domItem.value.unshift({
+                  uid: this.$root.headPlusBtnUid,
+                  tag: "v-row",
+                  attrs: { class: "ma-0 pa-4" },
+                  value: [{
+                    tag: "v-btn",
+                    attrs: {
+                      class: "mr-2",
+                      "@click": `$root.addNewHeadBtn('${this.$root.headPlusBtnUid}')`,
+                      small: true,
+                    },
+                    value: [{ tag: "v-icon", attrs: { size: "16", dark: true }, value: ["mdi-plus-box"] }],
+                  }]
+                });
+              } else {
+                if (this.domItem.value[item - 1].tag === 'v-row') {
+                  const lastNotBtnIndex = this.domItem.value[item - 1].value.findIndex(item2 => item2.tag !== 'v-btn')
+                  this.domItem.value[item - 1].value.splice(lastNotBtnIndex, 0, {
+                    uid: this.$root.headPlusBtnUid,
+                    tag: "v-btn",
+                    attrs: {
+                      class: "mr-2",
+                      "@click": `$root.addNewHeadBtn('${this.$root.headPlusBtnUid}')`,
+                      small: true,
+                    },
+                    value: [{ tag: "v-icon", attrs: { size: "16", dark: true }, value: ["mdi-plus-box"] }],
+                  });
+                  console.log("this.domItem.value[item - 1]", this.domItem.value[item - 1]);
+                } else {
+                  this.domItem.value.splice(item - 1, 0, {
+                    uid: this.$root.headPlusBtnUid,
+                    tag: "v-row",
+                    attrs: { class: "ma-0 pa-4" },
+                    value: [{
+                      tag: "v-btn",
+                      attrs: {
+                        class: "mr-2",
+                        "@click": `$root.addNewHeadBtn('${this.$root.headPlusBtnUid}')`,
+                        small: true,
+                      },
+                      value: [{ tag: "v-icon", attrs: { size: "16", dark: true }, value: ["mdi-plus-box"] }],
+                    }]
+                  });
+                }
+              }
+            });
+          }
+        }
+      },
+      addNewRowBtn(dom) {
+        this.domItem.value.forEach(item => {
+          if (item.tag === 'template' && item.attrs['v-slot:item.action']) {
+            if (item.value.find(item2 => item.attrs['v-if'] && item.attrs['v-if'].includes("isMobile"))) {
+              item.value.forEach(item2 => {
+                if (item2.attrs['v-if']) {
+                  item2.value.push({
+                    uid: `tag_id_${Math.random().toString(36).substr(2, 16)}`,
+                    tag: "span",
+                    attrs: {
+                      role: "button",
+                      class:
+                        "success--text font-weight-medium font-size-2 mr-2",
+                      "@click": "doUiAction('startUpdateItem', item)",
+                    },
+                    value: [
+                      {
+                        uid: `tag_id_${Math.random().toString(36).substr(2, 16)}`,
+                        tag: "v-icon",
+                        attrs: {
+                          size: "16",
+                          class: "success--text",
+                        },
+                        value: ["mdi-button-cursor"],
+                      },
+                      "文字",
+                    ],
+                  });
+                }
+              });
+            } else {
+              item.value.push({
+                uid: `tag_id_${Math.random().toString(36).substr(2, 16)}`,
+                tag: "span",
+                attrs: {
+                  role: "button",
+                  class:
+                    "success--text font-weight-medium font-size-2 mr-2",
+                  "@click": "doUiAction('startUpdateItem', item)",
+                },
+                value: [
+                  {
+                    uid: `tag_id_${Math.random().toString(36).substr(2, 16)}`,
+                    tag: "v-icon",
+                    attrs: {
+                      size: "16",
+                      class: "success--text",
+                    },
+                    value: ["mdi-note-edit-outline"],
+                  },
+                  "编辑",
+                ],
+              });
+            }
+          }
+        })
+        this.$root.resetActionWidth();
+      },
+      rowActionClass(rowAction) {
+        return rowAction.value.find(item => item.tag === 'v-icon').attrs.class;
+      },
+      tickRowActionBtn(itemList, btnList) {
+        if (itemList && itemList.length > 0) {
+          itemList.forEach(item => {
+            if (item.tag === 'v-btn' || (item.tag === 'span' && item.attrs['role'] === 'button')) {
+              if (!item.value.includes("操作")) {
+                btnList.push(item);
+              }
+            } else {
+              Array.isArray(item.value) && item.value.length && this.tickRowActionBtn(item.value, btnList);
+            }
+          });
+        }
+      },
+      vbtnClick(event) {
+        this.domItem.type = "headAction";
+        this.$root.setActiveBtn(this.domItem);
+        document.querySelector(`[uid=${this.domItem.uid}]`) && document.querySelector(`[uid=${this.domItem.uid}]`).classList.add("activeDom");
+      },
+      setRowActiveBtn(rowAction) {
+        const regex = /(\w+--text)/g;
+        const str = rowAction.attrs.class;
+        const matches = str.match(regex);
+        rowAction.color = matches && matches[0].split("--")[0];
+        rowAction.type = "rowAction";
+        this.$root.setActiveBtn(rowAction)
+      },
+      onTabChange(event) {
+        const modelKey = this.domItem.attrs["v-model"];
+        this.$root[modelKey] = event;
+      },
+      draggableChange(event) {
+        const { moved: { newIndex, oldIndex } } = event;
+        this.domItem.value.splice(newIndex, 0, this.domItem.value.splice(oldIndex, 1)[0]);
+      },
+      processEvents(attrs) {
+        let result = {};
+        for (let key in attrs) {
+          if (key.startsWith('@')) {
+            // 如果属性名以 '@' 开头，我们需要动态计算它的值
+            let expr = attrs[key];
+            result[key.slice(1)] = (event) => {
+              eval(`this.$root.${expr}`)
+            };
+          }
+        }
+        return result;
+      },
+      processAttrs(attrs) {
+        let result = {};
+        for (let key in attrs) {
+          if (key.startsWith(':')) {
+            // 如果属性名以 ':' 开头，我们需要动态计算它的值
+            let expr = attrs[key];
+            if (expr !== 'null' && expr !== 'undefined') {
+              if (expr.startsWith("{")) {
+                result[key.slice(1)] = eval('(' + expr + ')');
+              } else if (expr === 'true' || expr === 'false') {
+                result[key.slice(1)] = expr === 'true';
+              } else if ((!isNaN(expr) && !isNaN(parseFloat(expr)))) {
+                result[key.slice(1)] = expr.includes(".") ? parseFloat(expr) : parseInt(expr);
+              } else {
+                result[key.slice(1)] = eval(`this.$root.${expr}`);
+              }
+            }
+          } else if (!key.startsWith('@') && key !== 'v-bind') {
+            // 否则，我们直接使用它的值
+            result[key] = attrs[key];
+          }
+        }
+        return result;
+      }
+    },
+    template: '#customComponent'
+  })
+</script>
+<!--customComponent.html end-->

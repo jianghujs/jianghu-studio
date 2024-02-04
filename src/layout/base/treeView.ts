@@ -12,15 +12,15 @@ import * as fs from "fs";
 import * as json5 from "json5";
 import * as path from "path";
 import * as vscode from "vscode";
-import { Constants, ConstantsValue } from "../../common/constants";
+import { Constants } from "../../common/constants";
 import AppCore from "../../core";
 import { PathUtil } from "../../util/pathUtil";
 import { EntryItem } from "../tree/entryItem";
+import AppManager from "../../core/appManager";
 
 // 树的内容组织管理
 export class BaseTreeView {
   public core: AppCore;
-  public appList: any[];
   public configList: any[];
   public workspaceRoot: string;
   public context: vscode.ExtensionContext;
@@ -29,7 +29,6 @@ export class BaseTreeView {
     this.core = core;
     this.workspaceRoot = vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length > 0 ? vscode.workspace.workspaceFolders[0].uri.fsPath : "";
     this.configList = [];
-    this.appList = [];
     this.context = context;
   }
 
@@ -43,8 +42,8 @@ export class BaseTreeView {
    * 提取工作目录下的项目
    */
   public getAppList() {
-    this.findProjectConfig(this.workspaceRoot);
-    void vscode.workspace.getConfiguration(Constants.CONFIG_PREFIX).update("appList", { list: this.appList }, true);
+    PathUtil.findProjectConfig(this.workspaceRoot);
+    void vscode.workspace.getConfiguration(Constants.CONFIG_PREFIX).update("appList", { list: AppManager.appList }, true);
   }
   /**
    * 查找项目数据库列表
@@ -67,7 +66,7 @@ export class BaseTreeView {
   private findConfigDatabase(dir: string) {
     const configPath = path.join(dir, "config/config.local.js");
     const packageJsonPath = path.join(dir, "package.json");
-    if (this.pathExists(packageJsonPath) && this.pathExists(configPath)) {
+    if (PathUtil.pathExists(packageJsonPath) && PathUtil.pathExists(configPath)) {
       if (!fs.readFileSync(packageJsonPath, "utf-8").includes("egg-jianghu") && !fs.readFileSync(packageJsonPath, "utf-8").includes("@jianghujs/jianghu")) {
         return;
       }
@@ -82,62 +81,6 @@ export class BaseTreeView {
         this.findConfigDatabase(path.join(dir, item));
       }
     }
-  }
-  /**
-   * 递归查找[jhconfig]文件，读取 config.default.js
-   * @param dir
-   * @returns
-   */
-  private findProjectConfig(dir: string) {
-    const configPath = path.join(dir, "config/config.default.js");
-    const packageJsonPath = path.join(dir, "package.json");
-    if (this.pathExists(packageJsonPath) && this.pathExists(configPath)) {
-      if (!fs.readFileSync(packageJsonPath, "utf-8").includes("@jianghujs/jianghu")) {
-        return;
-      }
-      this.appList.push({ ...this.getConfigJson(configPath), dir });
-    } else {
-      const dirArray = fs.readdirSync(dir);
-      for (const item of dirArray) {
-        // 跳过无必要的深层文件夹
-        if (!PathUtil.isDir(path.join(dir, item)) || ["app", "logs", "node_modules", "run", "sql", "typings", "upload"].includes(item)) {
-          continue;
-        }
-        this.findProjectConfig(path.join(dir, item));
-      }
-    }
-  }
-  /**
-   * 判断path
-   * @param p
-   * @returns
-   */
-  private pathExists(p: string): boolean {
-    try {
-      fs.accessSync(p);
-    } catch (err) {
-      return false;
-    }
-
-    return true;
-  }
-
-  /**
-   * 获取config.default
-   * @param configPath
-   * @returns
-   */
-  private getConfigJson(configPath: string) {
-    const appIdPatter = /const appId = '([^']*)';/;
-    console.log(configPath);
-    const configContent = fs.readFileSync(configPath, "utf-8");
-    const appIdMatch: any = configContent.match(appIdPatter);
-    console.log(appIdMatch[1]);
-    const appTitleMatch = configContent.match(/appTitle: '([^']*)',/);
-    return {
-      appId: appIdMatch && appIdMatch[1],
-      appTitle: appTitleMatch && appTitleMatch[1],
-    };
   }
 
   /**

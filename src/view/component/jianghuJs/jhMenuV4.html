@@ -12,7 +12,7 @@
     >
       <!-- 页面标题 -->
       <v-toolbar-title ref="toolbarTitle" class="px-4 jh-toolbar-title">
-        <span class="text-h7 font-weight-bold">{{ appTitle }}</span>
+        <span class="text-h7 font-weight-bold">标题</span>
       </v-toolbar-title>
       <v-divider class="jh-divider"></v-divider>
   
@@ -77,7 +77,7 @@
       <v-app-bar-nav-icon color="success" @click.stop="isMobileMenuDrawerShown = !isMobileMenuDrawerShown" v-if="isMobile"></v-app-bar-nav-icon>
       <!-- 页面标题 -->
       <v-toolbar-title ref="toolbarTitle" class="mr-5 pl-0">
-        <span class="text-h7 font-weight-bold">{{ appTitle }}</span>
+        <span class="text-h7 font-weight-bold">标题</span>
       </v-toolbar-title>
       <!-- pc端菜单 >>>>>>>>>>>>> -->
       <v-tabs
@@ -155,7 +155,7 @@
             <div v-if="!isMobile" text v-bind="attrs" v-on="on" class="jh-avatar-menu-btn px-1">
               <v-icon :size="32" color="grey lighten-2">mdi-account-circle</v-icon>
               <div class="ml-1">
-                <p class="jh-font-size-12 black--text mb-0">{{ userInfo.user.username }}</p>
+                <p class="jh-font-size-12 black--text mb-0">username</p>
               </div>
             </div>
             <!-- 移动端右上角用户信息 -->
@@ -167,15 +167,15 @@
             <!-- 右上角下拉菜单 -->
             <v-list-item v-if="isMobile">
               <v-list-item-content>
-                <p class="jh-font-size-12 black--text mb-0">{{ userInfo.user.username }}</p>
-                <p class="jh-font-size-10 grey--text mb-0">{{ userInfo.user.userId }}</p>
+                <p class="jh-font-size-12 black--text mb-0">username</p>
+                <p class="jh-font-size-10 grey--text mb-0">userId</p>
               </v-list-item-content>
             </v-list-item>
             
             <template v-if="!isMobile">
               <v-list-item>
                 <v-list-item-content>
-                  <p class="jh-font-size-12 grey--text mb-0">{{ userInfo.user.userId }}</p>
+                  <p class="jh-font-size-12 grey--text mb-0">userId</p>
                 </v-list-item-content>
               </v-list-item>
               <v-divider class="my-1 jh-divider"></v-divider>
@@ -224,9 +224,6 @@
       return {
         isMobile: window.innerWidth < 500,
         tabsMaxWidth: 'calc(100vw - 353px)',
-        appDirectoryLink: '<$ ctx.app.config.appDirectoryLink $>',
-        appType: '<$ ctx.app.config.appType $>',
-        appTitle: '<$ ctx.app.config.appTitle $>',
         userInfo: window.userInfo,
         // 弹出菜单数据
         isMobileMenuDrawerShown: false,
@@ -241,7 +238,12 @@
         currentMenuTabIndex: -1,
         // 当前二级菜单pageID
         currentSecondMenuPageId: null,
-
+        allowPageList: [{
+          pageType: "showInMenu",
+          pageId: "pageId",
+          pageName: "pageName",
+          sort: 1,
+        }]
       };
     },
     watch: {
@@ -300,7 +302,7 @@
           // 设置标题、菜单选中
           this.currentMenuTabIndex = index;
           const currentPageTitle = this.inMenuList[index].title;
-          document.title = this.appTitle + (currentPageTitle ? " - " + currentPageTitle : "");
+          document.title = "appTitle" + (currentPageTitle ? " - " + currentPageTitle : "");
           return;
         }
         // 子菜单定位
@@ -311,7 +313,7 @@
               this.currentSecondMenuPageId = child.pageId;
               item.active = true;
               const currentPageTitle = `[${item.title}]${child.title}`;
-              document.title = this.appTitle + (currentPageTitle ? " - " + currentPageTitle : "");
+              document.title = "appTitle" + (currentPageTitle ? " - " + currentPageTitle : "");
               return true;
             }
             return false;
@@ -323,7 +325,7 @@
       groupMenuList() {
         // 菜单元数据处理
         const menuListResource = _
-          .chain(this.userInfo.allowPageList)
+          .chain(this.allowPageList)
           .filter(page => _.includes(['showInMenu', 'link'], page.pageType) || (_.includes(['dynamicInMenu', 'avatarInMenu'], page.pageType) && this.currentPageId === page.pageId))
           .value();
         // 分组菜单数据
@@ -352,7 +354,7 @@
           if (page.length === 1) {
             const menu = page[0];
             return {
-              path: menu.pageType === 'link' ? menu.pageFile : `/${window.appInfo.appId}/page/${menu.pageId}`,
+              path: menu.pageType === 'link' ? menu.pageFile : `/appId/page/${menu.pageId}`,
               pageId: menu.pageId,
               title: menu.pageName,
               children: null
@@ -370,7 +372,7 @@
               title = child.pageName;
             }
             return {
-              path: child.pageType === 'link' ? child.pageFile : `/${window.appInfo.appId}/page/${child.pageId}`,
+              path: child.pageType === 'link' ? child.pageFile : `/appId/page/${child.pageId}`,
               pageId: child.pageId,
               title,
               children: null
@@ -386,26 +388,16 @@
       },
       // 多应用项目，添加回到目录
       computedMultiAppMenuList() {
-        if (window.appInfo.appId !== 'directory') {
-          const appType = '<$ ctx.app.config.appType $>';
-          if (appType === 'multiApp' && this.appDirectoryLink) {
-            this.inMenuList.unshift({
-              path: this.appDirectoryLink,
-              pageId: 'directory',
-              title: '回到目录',
-              children: null
-            });
-          }
-        }
+
       },
       // 右侧菜单构建
       computedRightMenuList() {
         this.inRightMenuList = _
-          .chain(this.userInfo.allowPageList)
+          .chain(this.allowPageList)
           .filter(['pageType', 'showInRightMenu'])
           .map((page) => {
             return {
-              path: _.includes(page.pageId, 'http') ? page.pageId : `/${window.appInfo.appId}/page/${page.pageId}`,
+              path: _.includes(page.pageId, 'http') ? page.pageId : `/appId/page/${page.pageId}`,
               title: page.pageName,
               sort: parseInt(page.sort),
               icon: page.pageIcon
@@ -417,11 +409,11 @@
       // 头像菜单构建
       computedAvatarMenuList() {
         this.inAvatarMenuList = _
-          .chain(this.userInfo.allowPageList)
+          .chain(this.allowPageList)
           .filter(['pageType', 'showInAvatarMenu'])
           .map((page) => {
             return {
-              path: `/${window.appInfo.appId}/page/${page.pageId}`,
+              path: `/appId/page/${page.pageId}`,
               title: page.pageName,
               sort: parseInt(page.sort)
             };
@@ -431,28 +423,10 @@
       },
       // 登出
       async logout() {
-        try {
-          await window.jianghuAxios({
-            data: {
-              appData: {
-                pageId: 'allPage',
-                actionId: 'logout'
-              }
-            }
-          })
-          vtoast.success('注销成功');
-          this.routeToLoginPage();
-        } catch (error) {
-          vtoast.fail(error.errorReason);
-          this.routeToLoginPage();
-        }
+
       },
       // 导航到登陆页
       routeToLoginPage() {
-        localStorage.removeItem(`${window.appInfo.authTokenKey}_authToken`);
-        setTimeout(() => {
-          location.href = '<$ ctx.app.config.loginPage $>';
-        }, 700);
       }
     },
   });
@@ -515,18 +489,19 @@
   }
 
   /* 左上角菜单 */
-  .jh-header-tab.v-tab--active{
+  .jh-header-tab.v-tab--active {
     color: var(--gray-900) !important;
   }
-  .jh-header-tab.jh-header-tab-active{
+
+  .jh-header-tab.jh-header-tab-active {
     color: #4caf50 !important;
   }
 
   /* 右上角菜单 */
-  .jh-right-menu svg{
+  .jh-right-menu svg {
     width: 28px;
     height: 28px;
-    vertical-align: middle;    
+    vertical-align: middle;
   }
 </style>
 <!-- <<<<<<<<<<<<< jhMenu.html -->

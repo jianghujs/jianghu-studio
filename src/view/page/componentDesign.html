@@ -1,0 +1,185 @@
+{% block htmlHead %}
+<style>
+  /* css */
+</style>
+{% endblock %}
+
+{% extends 'template/jhsTemplate.html'%}
+{% block vueTemplate %}
+<script type="text/html" id="app-template">
+  <div>
+    <v-app mobile-breakpoint="sm">
+      <v-main>
+        <!-- 头部内容 >>>>>>>>>>>>> -->
+        <div class="px-8 py-0 mt-4">
+        </div>
+        <!-- 表单设计 -->
+        <div class="jh-page-body-container px-8 mt-4" >
+          <$ tagHtml | safe $>
+        </div>
+        <!-- <<<<<<<<<<<<< 设计区域 -->
+      </v-main>
+    </v-app>
+
+    <jh-toast />
+    <jh-mask />
+    <jh-confirm-dialog />
+  </div>
+</script>
+<div id="app"></div>
+{% endblock %}
+{% include 'common/jianghuJs/fixedTableHeightV4.html' %}
+
+{% block vueScript %}
+<script src="../lib/js/Sortable.min.js"></script>
+<script src="../lib/js/vuedraggable.umd.min.js"></script>
+<script>
+  new Vue({
+    el: '#app',
+    template: '#app-template',
+    vuetify: new Vuetify(),
+    data: () => ({
+      isMobile: window.innerWidth < 600,
+      tagRenge: "<$ tagRenge $>",
+      //===//<$ dataCommon | safe $> 
+    }),
+    computed: {},
+    watch: {},
+    async created() {
+    },
+    mounted() {
+    },
+    methods: {},
+  })
+</script>
+<style scoped>
+  body {
+    padding: 0 !important;
+  }
+
+  .jh-page-body-container>.v-card {
+    min-height: calc(100vh - 64px - 56px) !important;
+  }
+
+  .v-input .v-label {
+    line-height: 1.45;
+  }
+
+  .designContainer {
+    max-width: 200px;
+    min-width: 200px;
+    border-right: 1px solid #EEEEEE;
+    border-radius: 0 !important;
+  }
+
+  .designContainer.right {
+    border-left: 1px solid #EEEEEE;
+    border-right: 0 !important;
+    padding-left: 12px;
+  }
+
+  .v-bottom-navigation .v-btn.v-btn--active {
+    background-color: #e0ffe9;
+  }
+
+  .v-bottom-navigation {
+    box-shadow: 0 1px 20px 0 rgb(0 0 0 / 2%) !important;
+  }
+
+  .designItemBox>div>span {
+    display: flex;
+    flex-wrap: wrap;
+  }
+
+  .designItemBox {
+    position: relative;
+  }
+
+  .designItemBox .chosen {
+    border: 1px dotted #333333;
+    cursor: move;
+  }
+
+  .designItemBox .col-12:hover {
+    border: 1px dotted #333333;
+    cursor: move;
+  }
+
+  .designItemBox .col-12 .v-icon.mdi-close:hover {
+    color: red;
+  }
+
+  .designItemBox .col-12 {
+    border-radius: 8px;
+    border: 1px dotted #FFFFFF;
+  }
+
+  .designItemBox .col-12.active {
+    border: 1px dotted #333333;
+    background-color: #fbfbfb;
+  }
+
+  .rulesBox .theme--light.v-btn-toggle .v-btn.v-btn--active {}
+
+  .rulesBox .theme--light.v-btn-toggle .v-btn {
+    border-radius: 4px !important;
+    border: 1px solid #EEEEEE !important;
+    margin-bottom: 3px !important;
+    margin-right: 2px !important;
+    max-height: 24px !important;
+    font-size: 12px;
+  }
+
+  .rulesBox .v-btn-toggle {
+    display: flex !important;
+    flex-wrap: wrap;
+  }
+
+  .tableTabsBox .v-tab {
+    padding: 0 !important;
+  }
+
+  .tableTabsBox .v-slide-group__prev,
+  .tableTabsBox .v-slide-group__next {
+    display: none !important;
+  }
+
+  .v-application .activeBtnItem {
+    border: 1px dashed #333333 !important;
+    background-color: transparent !important;
+  }
+
+  .v-data-table>.v-data-table__wrapper>table>tbody>tr>td.editing,
+  .v-data-table--fixed-header>.v-data-table__wrapper>table>thead>tr>th.editing {
+    border: 1px dashed #333333 !important;
+  }
+
+  .v-data-table>.v-data-table__wrapper>table>tbody>tr>td.isActionTd {
+    white-space: nowrap !important;
+  }
+
+  .viewLeftListItem.v-list-item {
+    position: relative;
+    overflow: hidden;
+    border: 1px solid #CCCCCC;
+    border-radius: 5px;
+    margin-bottom: 5px;
+    margin-right: 10px;
+    min-height: 35px !important;
+  }
+
+  .v-list-item.shown::after {
+    content: "";
+    background-color: #007220 !important;
+    position: absolute;
+    transform: rotate(45deg);
+    top: -30px;
+    right: -40px;
+    width: 50px;
+    height: 50px;
+  }
+
+  /* customStyle >>>>>> */
+
+  /* <<<<<< customStyle */
+</style>{% endblock %}

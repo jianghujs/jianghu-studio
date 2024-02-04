@@ -17,7 +17,7 @@ export class JhHtmlCodeLensProvider implements vscode.CodeLensProvider {
         const command = {
           title: "DoUiAction 管理",
           command: "jhExtension.showJhPanel", // 当用户点击这个 CodeLens 时执行的命令
-          arguments: [range.start],
+          arguments: [range.start, "doUiActionManager"],
         };
         const lens = new vscode.CodeLens(range, command);
         lenses.push(lens);
@@ -30,7 +30,7 @@ export class JhHtmlCodeLensProvider implements vscode.CodeLensProvider {
         const command = {
           title: "Resource 流程管理",
           command: "jhExtension.showJhPanel", // 当用户点击这个 CodeLens 时执行的命令
-          arguments: [range.start],
+          arguments: [range.start, "resourceManager"],
         };
         const lens = new vscode.CodeLens(range, command);
         lenses.push(lens);

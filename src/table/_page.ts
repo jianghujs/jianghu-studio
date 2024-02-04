@@ -25,6 +25,16 @@ export default [
     title: "页面设计",
   },
   {
+    command: "webviewHandler.openComponentDesign",
+    page: "componentDesign",
+    title: "可视化设计",
+  },
+  {
+    command: "webviewHandler.openPageCustomDesign",
+    page: "pageCustomDesign",
+    title: "页面设计",
+  },
+  {
     command: "webviewHandler.openPageCreatePage",
     page: "pageEdit",
     title: "",

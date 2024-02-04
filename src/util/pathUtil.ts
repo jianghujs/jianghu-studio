@@ -4,12 +4,25 @@ import * as vscode from "vscode";
 import filters from "../view/extend/filter";
 import Logger from "./logger";
 import nunjucks = require("nunjucks");
+import AppManager from "../core/appManager";
 
 export class PathUtil {
   public static extensionContext: vscode.ExtensionContext;
+
+  public static getJhAppId(projectPath: string) {
+    // 提取 projectPath 目录下的 config/config.default.js 文件 中的 appId
+    const configPath = path.join(projectPath, "config/config.default.js");
+    return new Promise(resolve => {
+      void import(configPath).then((config: any) => {
+        resolve(config);
+      });
+    });
+  }
+
   public static getWorkspaceFileDir(workspaceFile: string) {
     return workspaceFile.substring(0, workspaceFile.lastIndexOf("/"));
   }
+
   public static getRootFloader(workspaceFolders: readonly vscode.WorkspaceFolder[]): string[] {
     const newFolders = [];
     for (const folder of workspaceFolders) {
@@ -19,6 +32,65 @@ export class PathUtil {
       }
     }
     return newFolders;
+  }
+
+  /**
+   * 递归查找[jhconfig]文件，读取 config.default.js
+   * @param dir
+   * @returns
+   */
+  public static findProjectConfig(dir: string) {
+    const configPath = path.join(dir, "config/config.default.js");
+    const packageJsonPath = path.join(dir, "package.json");
+    if (this.pathExists(packageJsonPath) && this.pathExists(configPath)) {
+      if (!fs.readFileSync(packageJsonPath, "utf-8").includes("@jianghujs/jianghu")) {
+        return;
+      }
+      AppManager.appList.push({ ...this.getConfigJson(configPath), dir });
+    } else {
+      const dirArray = fs.readdirSync(dir);
+      for (const item of dirArray) {
+        // 跳过无必要的深层文件夹
+        if (!PathUtil.isDir(path.join(dir, item)) || ["app", "logs", "node_modules", "run", "sql", "typings", "upload"].includes(item)) {
+          continue;
+        }
+        this.findProjectConfig(path.join(dir, item));
+      }
+    }
+  }
+
+  /**
+   * 获取config.default
+   * @param configPath
+   * @returns
+   */
+  public static getConfigJson(configPath: string) {
+    const appIdPatter = /const appId = '([^']*)';/;
+    const configContent = fs.readFileSync(configPath, "utf-8");
+    const appIdMatch: any = configContent.match(appIdPatter);
+    const appTitleMatch = configContent.match(/appTitle: '([^']*)',/);
+    return {
+      appId: appIdMatch && appIdMatch[1],
+      appTitle: appTitleMatch && appTitleMatch[1],
+    };
+  }
+
+  public static pathExists(p: string): boolean {
+    try {
+      fs.accessSync(p);
+    } catch (err) {
+      return false;
+    }
+    return true;
+  }
+
+  public static checkIsJhHtmlPage(document: any): boolean {
+    // /Users/benshanyue/fsll/vscode-work/test01/app/view/page/ceshi.html 判断 .html接回。且上级目录是 /view/page/
+    const pagePath = document.uri.path;
+    const pageDir = path.dirname(pagePath as string);
+    const pageName = path.basename(pagePath as string);
+    const isPage = pageName.endsWith(".html") && pageDir.endsWith("/view/page");
+    return isPage;
   }
 
   public static checkIsJhProject(document?: any, projectPath?: string): boolean {
@@ -40,7 +112,7 @@ export class PathUtil {
     return isProject;
   }
 
-  public static generatePage(context: vscode.ExtensionContext, panel: vscode.WebviewPanel, page: string, locals: object = {}): string {
+  public static generatePage(context: vscode.ExtensionContext, panel: vscode.WebviewPanel, page: string, content: any, locals: object = {}): string {
     const pagePath = this.getExtensionFileAbsolutePath(context, `src/view/page/${page}.html`);
     const rootPath = this.getExtensionFileAbsolutePath(context, "src/view");
     Logger.info("pagePath", pagePath);
@@ -57,16 +129,70 @@ export class PathUtil {
     for (const key of Object.keys(filters)) {
       env.addFilter(key, filters[key]);
     }
-
-    let html = env.render(pagePath, locals);
+    let html: string;
+    if (page === "pageCustomDesign") {
+      // eslint-disable-next-line prefer-const
+      let { htmlHeadMatch, vueTemplatePatternMatch, vueScriptPatternMatch, projectPath } = content;
+      let pageSource = fs.readFileSync(pagePath, "utf-8");
+      if (htmlHeadMatch) {
+        pageSource = pageSource.replace("{% block htmlHead %}{% endblock %}", `${htmlHeadMatch as string}`);
+      }
+      if (vueTemplatePatternMatch) {
+        pageSource = pageSource.replace("{% block vueTemplate %}{% endblock %}", `${vueTemplatePatternMatch as string}`);
+      }
+      if (vueScriptPatternMatch) {
+        if ((vueScriptPatternMatch as string).includes("{% include")) {
+          // rootPath {% include
+          const pattern = /{% include ['"](.*?)['"] %}/g;
+          const matches = (vueScriptPatternMatch as string).match(pattern);
+          matches?.map((match: string) => {
+            const extractedPath = match.replace("{% include '", "").replace("' %}", "");
+            // console.log(extractedPath); // 输出: common/jianghuJs/fixedTableHeightV4.html
+            if (extractedPath) {
+              // 检查下指定目录下有没有
+              const exists = fs.existsSync(path.join(rootPath, `/${extractedPath}`));
+              if (!exists) {
+                const componentContent = fs.readFileSync(path.join(projectPath as string, `/app/view/${extractedPath}`), "utf-8");
+                vueScriptPatternMatch = (vueScriptPatternMatch as string).replace(match, componentContent);
+              }
+            }
+          });
+        }
+        pageSource = pageSource.replace("{% block vueScript %}{% endblock %}", `${vueScriptPatternMatch as string}`);
+      }
+      html = env.renderString(pageSource, locals);
+    } else {
+      let pageSource = fs.readFileSync(pagePath, "utf-8");
+      //  <!-- $ includeList $ -->
+      // {
+      //   type: "include",
+      //   path: match[1],
+      // }
+      // let includeString = "";
+      // const { includeList, projectPath } = locals as any;
+      // (includeList as any[]).forEach(item => {
+      //   const exists = fs.existsSync(path.join(rootPath, `/${item.path as string}`));
+      //   if (exists) {
+      //     includeString += `{% include '${item.path as string}' %}\n`;
+      //   } else {
+      //     includeString += fs.readFileSync(path.join(projectPath as string, `/app/view/${item.path as string}`), "utf-8") + "\n";
+      //   }
+      // });
+      pageSource = pageSource.replace(/\/\/===\/\//gm, "");
+      // console.log("includeString", includeString);
+      html = env.renderString(pageSource, locals);
+    }
 
     // vscode不支持直接加载本地资源，需要替换成其专有路径格式，这里只是简单的将样式和JS的路径替换
     html = html.replace(/(<link.+?href="|<script.+?src="|<img.+?src=")(.+?)"/g, (m, $1, $2) => {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       const absLocalPath = path.resolve(dirPath, $2);
       const webviewUri = panel.webview.asWebviewUri(vscode.Uri.file(absLocalPath));
+      // eslint-disable-next-line @typescript-eslint/restrict-plus-operands
       const replaceHref = $1 + webviewUri.toString() + '"';
       return replaceHref;
     });
+    html = html.replace(/\/\/===\/\//g, "");
     return html;
   }
   /**

@@ -37,13 +37,14 @@
         }
      * })
      */
-    window.appAxios = ({ data: requestBodyToFill, packageType = "messageRequest", callback, isVoid }) => {
+    window.appAxios = ({ data: requestBodyToFill, packageType = "messageRequest", callback, isVoid, isJianghuAxios = false }) => {
       const packageId = `${Date.now()}_${getRandomInt(1000000, 9999999)}`;
       const requestBody = {
         packageId,
         packageType,
         timestamp: new Date().toISOString(),
         appData: requestBodyToFill && requestBodyToFill.appData,
+        isJianghuAxios,
       };
       window.client.postMessage(requestBody);
       // 注册回调方法
@@ -83,6 +84,13 @@
             resolve({ data });
           }
         });
+      });
+    };
+    window.jianghuAxios = ({ data, packageType = "messageRequest", callback, isVoid }) => {
+      return new Promise(async (resolve, reject) => {
+        result = await window.appAxios({ data, packageType, callback, isVoid, isJianghuAxios: true });
+        console.log("jianghuAxios result", result)
+        resolve(result);
       });
     };
   })();
