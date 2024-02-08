@@ -45,10 +45,10 @@ export class JhPanelUserJson extends JhPanel {
         const webPageId = editor.document.uri.path.split("/").pop()?.split(".")[0] as string;
 
         const document = editor.document;
-        const sourceCode = document.getText();
+        let sourceCode = document.getText();
         // sourceCode 需要格式化，否则读取就不准；但目前格式化后 include 会被折行，需要再处理
         // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-call
-        // sourceCode = prettier.format(textA, { parser: "html" })
+        sourceCode = prettier.format(sourceCode, { parser: "html" });
         const sourceCodeLines = sourceCode.split("\n");
         const htmlStartIndex = sourceCodeLines.findIndex(line => line.includes('<v-app mobile-breakpoint="sm">'));
         const htmlEndIndex = sourceCodeLines.findIndex(line => line.includes("</v-app>"));
@@ -58,7 +58,6 @@ export class JhPanelUserJson extends JhPanel {
         const otherLines = sourceCodeLines.slice(vueStartIndex + vueScriptPattern.split("\n").length);
         const styleStartIndex = otherLines.findIndex(line => line.includes("<style"));
         const styleEndIndex = otherLines.findIndex(line => line.includes("</style>"));
-        const includeLines = sourceCodeLines.filter(line => line.includes("{% include"));
         const vueStylePattern = otherLines.slice(styleStartIndex + 1, styleEndIndex).join("\n");
         // console.log("vueTemplatePattern", vueTemplatePattern);
         // console.log("vueScriptPattern", vueScriptPattern);
@@ -80,17 +79,17 @@ export class JhPanelUserJson extends JhPanel {
               await this.initPageInfo(pageConfig, currDatabase, appId as string, webPageId);
               progress.report({ increment: 10 });
               // 0. 从代码中提取到 头部信息
-              this.matchHeadContent(vueTemplatePattern, pageConfig, htmlCheerio);
+              this.matchHeadContent(pageConfig, htmlCheerio);
               progress.report({ increment: 20 });
               // 1. 从代码中提取到 表格 v-data-table 以及关联的 data 和 uiAction、method
-              this.matchDataTable(vueTemplatePattern, pageConfig, htmlCheerio);
+              this.matchDataTable(pageConfig, htmlCheerio);
               progress.report({ increment: 30 });
               // 2. 从代码中提取到 抽屉 v-drawer 以及关联的 data 和 uiAction、method
               this.matchDrawer(pageConfig, htmlCheerio);
               progress.report({ increment: 40 });
               this.matchDoUiAction(pageConfig, vueScriptPattern);
               progress.report({ increment: 50 });
-              this.matchIncludes(pageConfig, includeLines, projectPath);
+              this.matchIncludes(pageConfig, sourceCode);
               progress.report({ increment: 60 });
               console.log("pageConfig", pageConfig);
               const pageConfigJson = `const content = ${JSON.stringify(pageConfig, null, 2)};\n\n module.exports = content;`;
@@ -114,28 +113,24 @@ export class JhPanelUserJson extends JhPanel {
       })
     );
   }
-  private matchIncludes(pageConfig: any, includeLines: string[], projectPath: string) {
-    const regex = /{% include '(.*?)' %}/;
+  private matchIncludes(pageConfig: any, sourceCode: string) {
+    const regex = /{% include\s*["']([\s\S]*?)["'] %}/gs;
+    const matches = sourceCode.match(regex);
     pageConfig.includeList = [];
-    includeLines.forEach(line => {
-      const match = regex.exec(line);
-      if (match) {
-        const path: string | undefined = match[1];
-        let project: string | undefined;
-        if (fs.existsSync(`${this.context.extensionPath}/src/view/${match[1]}`)) {
-          project = `${this.context.extensionPath}/src/view/`;
-        } else if (fs.existsSync(`${projectPath}/app/view/${match[1]}`)) {
-          project = `${projectPath}/app/view/`;
-        }
+    if (matches) {
+      matches.forEach(match => {
+        const path = match.match(/["']([\s\S]*?)["']/);
         if (path) {
-          (pageConfig.includeList as any[]).push({
-            type: "include",
-            path,
-            project,
-          });
+          const pathStr = path[1].trim();
+          if (path) {
+            (pageConfig.includeList as any[]).push({
+              type: "include",
+              path: pathStr,
+            });
+          }
         }
-      }
-    });
+      });
+    }
   }
   private matchMethodsWatch(vueScriptPattern: string, newJsonText: string): string {
     const ast = parser.parse(vueScriptPattern, {
@@ -173,9 +168,9 @@ export class JhPanelUserJson extends JhPanel {
           console.log("data", path.node);
           if (path.node.value.body) {
             (path.node.value.body.properties as any[]).forEach(property => {
-              if (property.key.name !== "isHelpPageDrawerShown" || property.key.name !== "isHelpPageDrawerLoaded") {
-                // eslint-disable-next-line @typescript-eslint/no-unsafe-call
-                const { code } = generate(property, {});
+              // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+              const { code } = generate(property, {});
+              if (!(code as string).includes("isHelpPageDrawerShown") && !(code as string).includes("isHelpPageDrawerLoaded")) {
                 datas.push(code as string);
               }
             });
@@ -217,7 +212,7 @@ export class JhPanelUserJson extends JhPanel {
         }
       },
     });
-    newJsonText = newJsonText.replace('"<<!DATA!>>"', `\`${datas.join(",\n")}\``);
+    newJsonText = newJsonText.replace('"<<!DATA!>>"', `{\n${datas.join(",\n")}\n}`);
     newJsonText = newJsonText.replace('"<<!CREATED!>>"', `\`${createdLines.join("\n")}\``);
     newJsonText = newJsonText.replace('"<<!MOUNTED!>>"', `\`${mountedLines.join("\n")}\``);
     newJsonText = newJsonText.replace('"<<!COMPUTED!>>"', `{\n${computeds.join(",\n")}\n}`);
@@ -242,7 +237,6 @@ export class JhPanelUserJson extends JhPanel {
   private async initPageInfo(pageConfig: any, currDatabase: Map<string, EntryItem>, appId: string, webPageId: string) {
     pageConfig.pageId = webPageId;
     pageConfig.table = webPageId;
-    pageConfig.common.data = {};
     const jianghuKnex: Knex<any, any[]> | undefined = JianghuKnexManager.client(currDatabase as Knex.MySqlConnectionConfig);
     if (jianghuKnex) {
       const resourceList = await sqlResource({
@@ -279,7 +273,7 @@ export class JhPanelUserJson extends JhPanel {
     });
   }
 
-  private matchDataTable(vueTemplatePattern: string, pageConfig: any, cApi: cheerio.CheerioAPI) {
+  private matchDataTable(pageConfig: any, cApi: cheerio.CheerioAPI) {
     const $ = cApi;
     const bodyContainer = $(`div.jh-page-body-container > v-card`);
     if (!bodyContainer) {
@@ -290,79 +284,15 @@ export class JhPanelUserJson extends JhPanel {
   }
 
   // 头部信息提取到 json中
-  private matchHeadContent(vueTemplatePattern: string, pageConfig: any, cApi: cheerio.CheerioAPI) {
-    // .jh-page-second-bar
-    // { tag: 'jh-page-title', value: "班级页面", attrs: {}, helpBtn: true, slot: [] },
-    if (!vueTemplatePattern) {
-      return;
-    }
-
+  private matchHeadContent(pageConfig: any, cApi: cheerio.CheerioAPI) {
     const $ = cApi;
-    const headTag = $(`div.jh-page-second-bar`);
-    if (!headTag) {
+    const bodyContainer = $(`div.jh-page-second-bar`);
+    if (!bodyContainer) {
       return;
     }
-    const headRow = $(headTag).children("v-row");
-    // 头部没有 row 非法
-    if (!headRow.length) {
-      return;
-    }
-    const headCol = $(headRow).children("v-col");
-    // 头部没有 col 非法
-    if (!headCol.length) {
-      return;
-    }
-    const headTitle = $(headCol).eq(0);
-    const titleMap: any = {
-      tag: "jh-page-title",
-      value: $(headTitle).children("div").eq(0).contents().first().text().trim(),
-      attrs: $(headTitle).attr(),
-      helpBtn: headTag.html()?.includes('@click="isHelpPageDrawerShown = true"'),
-      slot: [],
-    };
-    pageConfig.pageName = titleMap.value;
-    pageConfig.headContent = [];
-    (pageConfig.headContent as any[]).push(titleMap);
-    if (headCol.length < 2) {
-      return;
-    }
-    const serverSearchDom = $(headCol).eq(1);
-    const jhBackendSearchBtn = $(serverSearchDom).find(".jh-backend-search-btn > v-btn");
-    const serverSearchFieldList = $(serverSearchDom).find(" > v-row > v-col");
-    const serverSearchMapValues: any[] = [];
-    serverSearchFieldList.map((index, item) => {
-      const attrs: Record<string, any> | undefined = $(item).children("v-text-field").attr();
-      if (!attrs) {
-        return;
-      }
-      Object.keys(attrs).map(key => {
-        if (attrs[key] === "") {
-          attrs[key] = true;
-        }
-      });
-      const model = attrs["v-model"];
-      delete attrs["v-model"];
-      serverSearchMapValues.push({ tag: "v-text-field", model, attrs });
-    });
-    const serverSearchDomAttrs: Record<string, string> | undefined = $(serverSearchDom).attr();
-    console.log("serverSearchDomAttrs", serverSearchDomAttrs);
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-    const serverSearchMap: any = {
-      tag: "jh-search",
-      value: serverSearchMapValues,
-      attrs: serverSearchDomAttrs,
-      searchBtn: null,
-    };
-    if (jhBackendSearchBtn.length) {
-      const jhBackendSearchBtnAttrs: Record<string, string> | undefined = $(jhBackendSearchBtn).attr();
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-      serverSearchMap.searchBtn = {
-        tag: jhBackendSearchBtn[0].name,
-        attrs: jhBackendSearchBtnAttrs,
-        value: $(jhBackendSearchBtn).text().trim(),
-      };
-    }
-    (pageConfig.headContent as any[]).push(serverSearchMap);
+    pageConfig.headContentStudio = [];
+    this.loopFindChildren(bodyContainer, pageConfig.headContentStudio as any[], cApi);
+    pageConfig.hasHelpDrawer = $(bodyContainer).html()?.includes("isHelpPageDrawerShown = true");
   }
 
   private loopFindChildren(dom: cheerio.Cheerio<cheerio.Element>, parent: any[], cApi: cheerio.CheerioAPI) {
@@ -429,6 +359,7 @@ export class JhPanelUserJson extends JhPanel {
       fs.mkdirSync(`${projectPath}/app/view/init-json/page-temp/`);
     }
     const fileList = fs.readdirSync(`${projectPath}/app/view/init-json/page-temp/`);
+    const configDefaultPath = `${projectPath}/config/config.default.js`;
     // 清空临时文件夹
     fileList.forEach(file => {
       fs.unlinkSync(`${projectPath}/app/view/init-json/page-temp/${file}`);
@@ -438,14 +369,24 @@ export class JhPanelUserJson extends JhPanel {
     const jsonTextLines = jsonText.split("\n");
     // 便利每一样，如果该行包含 tag: 则在下一行插入一个唯一标识
     const newLins: string[] = [];
-    jsonTextLines.forEach((line, index) => {
+    jsonTextLines.forEach(line => {
       if (line.includes("tag:")) {
         newLins.push(`uid: "tag_id_${Math.random().toString(36).substr(2, 16)}",`);
       }
       newLins.push(line);
     });
     // 复制一份到临时文件夹
-    fs.writeFileSync(newJsonPath, newLins.join("\n"));
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-call
+    let prettierText = prettier.format(newLins.join("\n"), { parser: "babel" });
+    prettierText = (prettierText as string).replace(/window\.innerWidth <=? \d+/gm, match => '"__FUN__(' + match + ')__FUN__"');
+    fs.writeFileSync(newJsonPath, prettierText as string);
+    let primaryColor = "";
+    const configDefaultContent = fs.readFileSync(configDefaultPath, "utf-8");
+    const regex = /(primaryColor:\s*")([^"]*)(")/;
+    const matchs = configDefaultContent.match(regex);
+    if (matchs) {
+      primaryColor = matchs[2];
+    }
     void import(newJsonPath).then((pageConfig: any) => {
       void vscode.commands.executeCommand("webviewHandler.openPageDesign", {
         appId,
@@ -464,6 +405,9 @@ export class JhPanelUserJson extends JhPanel {
           actionContent: pageConfig.actionContent,
           headContent: pageConfig.headContent,
           includeList: pageConfig.includeList,
+          headContentStudio: pageConfig.headContentStudio,
+          hasHelpDrawer: pageConfig.hasHelpDrawer,
+          primaryColor,
         },
       });
     });

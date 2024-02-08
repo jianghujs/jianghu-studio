@@ -129,7 +129,7 @@ export default class AppCore {
   }
 
   private updatePageConfig(actionData: any, webPageId: string, appDir: any) {
-    const { header, headerKey, pageContent, jsonPath } = actionData;
+    const { header, headerKey, pageContent, hasHelpDrawer, headContentStudio, actionContent, constantObj, cPrimaryColor, jsonPath, rootPath } = actionData;
     const resJsonPath = `${appDir}/app/view/init-json/page/${webPageId}.js`;
     let pageConfigString = fs.readFileSync(jsonPath as string, "utf8");
     const resAst = parser.parse(pageConfigString, {
@@ -138,13 +138,22 @@ export default class AppCore {
     });
 
     // 用 traverse 遍历下，找到对应的节点行数，然后替换直接行数替换
+    const constantObjRange = { start: -1, end: -1 };
     const pageContentRange = { start: -1, end: -1 };
-    const headerRange = { start: -1, end: -1 };
     const actionContentRange = { start: -1, end: -1 };
     const headContentRange = { start: -1, end: -1 };
+    const hasHelpDrawerRange = { start: -1, end: -1 };
     // eslint-disable-next-line @typescript-eslint/no-unsafe-call
     traverse(resAst, {
       ObjectProperty(path: any) {
+        if (path.node.key.name === "hasHelpDrawer") {
+          hasHelpDrawerRange.start = path.node.loc.start.line;
+          hasHelpDrawerRange.end = path.node.loc.end.line;
+        }
+        if (path.node.key.name === "constantObj") {
+          constantObjRange.start = path.node.loc.start.line;
+          constantObjRange.end = path.node.loc.end.line;
+        }
         if (path.node.key.name === "pageContent") {
           pageContentRange.start = path.node.loc.start.line;
           pageContentRange.end = path.node.loc.end.line;
@@ -153,14 +162,14 @@ export default class AppCore {
           actionContentRange.start = path.node.loc.start.line;
           actionContentRange.end = path.node.loc.end.line;
         }
-        if (path.node.key.name === "headContent") {
+        if (path.node.key.name === "headContentStudio") {
           headContentRange.start = path.node.loc.start.line;
           headContentRange.end = path.node.loc.end.line;
         }
       },
     });
-    const indexList: any[] = [pageContentRange, headerRange];
-    const indexListKey: any[] = ["pageContent", headerKey, "actionContent", "headContent"];
+    const indexList: any[] = actionContent ? [actionContentRange, constantObjRange] : [pageContentRange, headContentRange, hasHelpDrawerRange];
+    const indexListKey: any[] = actionContent ? ["actionContent", "constantObj"] : ["pageContent", "headContentStudio", "hasHelpDrawer"]; // , "actionContent", "headContent"
     let pageConfigStringLines = pageConfigString.split("\n");
     // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
     indexList.forEach((item: any, index: number) => {
@@ -173,11 +182,37 @@ export default class AppCore {
     pageConfigStringLines = pageConfigStringLines.filter(item => item !== "<!LINETEMP!>");
     pageConfigString = pageConfigStringLines.join("\n");
     // 替换 data内的数据；前提是数据中不能有数组
-    pageConfigString = pageConfigString.replace(/headers: \[.*?\],/s, `${headerKey}: ${JSON.stringify(header, null, 2)},`);
-    pageConfigString = pageConfigString.replace(`pageContent:<!!pageContent!!>`, `pageContent: ${JSON.stringify(pageContent, null, 2)}`);
+    if (headerKey) {
+      const headerRegex = new RegExp((headerKey as string) + ": \\[.*?\\],", "s");
+      pageConfigString = pageConfigString.replace(headerRegex, `${headerKey}: ${JSON.stringify(header, null, 2)},`);
+    }
+    if (hasHelpDrawer !== undefined) {
+      pageConfigString = pageConfigString.replace(`hasHelpDrawer:<!!hasHelpDrawer!!>`, `hasHelpDrawer: ${hasHelpDrawer}`);
+    }
+    if (constantObj) {
+      pageConfigString = pageConfigString.replace(`constantObj:<!!constantObj!!>`, `constantObj: ${JSON.stringify(constantObj, null, 2)}`);
+    }
+    if (pageContent) {
+      pageConfigString = pageConfigString.replace(`pageContent:<!!pageContent!!>`, `pageContent: ${JSON.stringify(pageContent, null, 2)}`);
+    }
+    if (headContentStudio) {
+      pageConfigString = pageConfigString.replace(`headContentStudio:<!!headContentStudio!!>`, `headContentStudio: ${JSON.stringify(headContentStudio, null, 2)}`);
+    }
+    if (actionContent) {
+      pageConfigString = pageConfigString.replace(`actionContent:<!!actionContent!!>`, `actionContent: ${JSON.stringify(actionContent, null, 2)}`);
+    }
     // eslint-disable-next-line @typescript-eslint/no-unsafe-call
     pageConfigString = prettier.format(pageConfigString, { parser: "babel" });
     fs.writeFileSync(resJsonPath, pageConfigString);
+    // 改变主题色
+    if (cPrimaryColor) {
+      const configPath = `${rootPath}config/config.default.js`;
+      let configContent = fs.readFileSync(configPath, "utf8");
+      const regex = /(primaryColor:\s*")([^"]*)(")/;
+      // 替换 primaryColor 的值
+      configContent = configContent.replace(regex, "$1" + (cPrimaryColor as string) + "$3");
+      fs.writeFileSync(configPath, configContent);
+    }
   }
 
   private async getFieldListRequest(body: any, uri: any, panel: vscode.WebviewPanel) {
@@ -246,9 +281,7 @@ export default class AppCore {
           ...body,
           packageType: "getFieldConfigResponse",
           appData: {
-            actionContent: pageConfig.actionContent,
-            pageContent: pageConfig.pageContent,
-            headContent: pageConfig.headContent,
+            ...pageConfig,
           },
         };
         void panel.webview.postMessage(returnBody);
@@ -258,8 +291,8 @@ export default class AppCore {
   private async buildPageFromJson(body: any, appFolder: string, panel: vscode.WebviewPanel, webPageId: string, packageType: string) {
     // 运行命令 jianghu-init json --generateType=page --pageType=webPageId --file=webPageId -y
     return new Promise(resolve => {
-      // const commandBasic = "node /Users/benshanyue/fsll/projects/jianghujs-script-util/openjianghu01/002.jianghu-init/jianghu-init/bin/jianghu-init.js";
-      const commandBasic = "jianghu-init";
+      const commandBasic = "node /Users/benshanyue/fsll/projects/jianghujs-script-util/openjianghu01/002.jianghu-init/jianghu-init/bin/jianghu-init.js";
+      // const commandBasic = "jianghu-init";
       const commandText = `${commandBasic} json --generateType=page --pageType=page --file=${webPageId} -y`;
       const child = spawn(commandText, [], {
         cwd: appFolder,
@@ -280,10 +313,10 @@ export default class AppCore {
       child.on("close", code => {
         console.log(`buildPageFromJson child process exited with code ${code}`);
         // 格式化下处理
-        // const htmlPath = `${appFolder}/app/view/page/${webPageId}.html`;
-        // const textA = fs.readFileSync(htmlPath, "utf8");
+        const htmlPath = `${appFolder}/app/view/page/${webPageId}.html`;
+        const textA = fs.readFileSync(htmlPath, "utf8");
         // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-call
-        // fs.writeFileSync(htmlPath, prettier.format(textA, { parser: "html" }));
+        fs.writeFileSync(htmlPath, prettier.format(textA, { parser: "html" }));
         resolve(true);
       });
     });
@@ -301,7 +334,6 @@ export default class AppCore {
       }
 
       // 启动项目，并且在一个新的 webview 中打开 pageId
-      // 运行项目下的 package.json 中的 scripts.start
       if (devCommand) {
         let t1: vscode.Terminal | undefined = vscode.window.terminals.find(terminal => terminal.name === `启动项目${appId}`);
         if (!t1) {
@@ -732,12 +764,7 @@ export default class AppCore {
   }
 
   private serviceFunctionCheck(resourceData: any): void {
-    if (
-      !this.serviceManager.getServiceMap() ||
-      !resourceData ||
-      !this.serviceManager.getServiceMap()[resourceData.service] ||
-      !this.serviceManager.getServiceMap()[resourceData.service][resourceData.serviceFunction]
-    ) {
+    if (!this.serviceManager.getServiceMap() || !resourceData || !this.serviceManager.getServiceMap()[resourceData.service] || !this.serviceManager.getServiceMap()[resourceData.service][resourceData.serviceFunction]) {
       Logger.error(`${resourceData.service as string} : ${resourceData.serviceFunction as string}`);
       throw new BizError(ErrorInfo.resource_not_found);
     }

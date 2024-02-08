@@ -11,8 +11,7 @@ const content = {
     // **** //
   ], // { type: < js | css | html >, path: ''}
   common: {
-    data: {},
-    dataString: "<<!DATA!>>",
+    data: "<<!DATA!>>",
     dataExpression: {},
     doUiAction: {},
     watch: "<<!WATCH!>>",

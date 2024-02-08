@@ -163,23 +163,7 @@ export class PathUtil {
       html = env.renderString(pageSource, locals);
     } else {
       let pageSource = fs.readFileSync(pagePath, "utf-8");
-      //  <!-- $ includeList $ -->
-      // {
-      //   type: "include",
-      //   path: match[1],
-      // }
-      // let includeString = "";
-      // const { includeList, projectPath } = locals as any;
-      // (includeList as any[]).forEach(item => {
-      //   const exists = fs.existsSync(path.join(rootPath, `/${item.path as string}`));
-      //   if (exists) {
-      //     includeString += `{% include '${item.path as string}' %}\n`;
-      //   } else {
-      //     includeString += fs.readFileSync(path.join(projectPath as string, `/app/view/${item.path as string}`), "utf-8") + "\n";
-      //   }
-      // });
       pageSource = pageSource.replace(/\/\/===\/\//gm, "");
-      // console.log("includeString", includeString);
       html = env.renderString(pageSource, locals);
     }
 

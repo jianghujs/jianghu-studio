@@ -30,7 +30,6 @@ export class JhPanel {
 
   // 检查是否要显示可视化设计按钮
   protected checkIsJhHtmlPage(document: any) {
-    console.log("checkIsJhHtmlPage", document.uri.path);
     if (!document) {
       return;
     }

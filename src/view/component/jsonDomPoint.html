@@ -1,0 +1,271 @@
+<!-- html json 节点 >>>>>>>>>>-->
+<script>
+  const getUid = () => {
+    return `tag_id_${Math.random().toString(36).substr(2, 16)}`;
+  }
+  const serverSearchCol = () => {
+    return {
+      uid: getUid(),
+      tag: "v-col",
+      attrs: { cols: "12", xs: "12", sm: "12", md: "8", xl: "9" },
+      value: []
+    }
+  }
+
+  const serverSearchFieldRow = () => {
+    return {
+      uid: getUid(),
+      tag: "v-row",
+      attrs: {
+        class: "jh-backend-form-container justify-end ma-0 py-3",
+      },
+      value: [
+        serverSearchPlusBtn(),
+        serverSearchBtn(),
+      ]
+    };
+  }
+
+  const serverSearchPlusBtn = () => {
+    return {
+      uid: getUid(),
+      tag: "div",
+      isAddBtn: true,
+      attrs: {
+        class: "jh-backend-search-plus-btn ml-2",
+      },
+      value: [
+        {
+          uid: getUid(),
+          tag: "v-btn",
+          isAddBtn: true,
+          attrs: {
+            class: "mr-2",
+            "@click": `addNewServerSearchField()`,
+            small: true,
+          },
+          value: [{ uid: getUid(), tag: "v-icon", attrs: { size: "16", dark: true }, value: ["mdi-plus-box"] }],
+        }
+      ]
+    };
+  }
+
+  const serverSearchBtn = () => {
+    return {
+      uid: getUid(),
+      tag: "div",
+      attrs: {
+        class: "jh-backend-search-btn ml-2",
+      },
+      value: [
+        {
+          uid: getUid(),
+          tag: "v-btn",
+          attrs: {
+            class: "elevation-0 float-right mt-2 mt-md-0",
+            color: "success",
+            small: true,
+            "@click": "doUiAction('getTableData')",
+          },
+          value: ["查询"],
+        },
+      ],
+    };
+  }
+
+  const serverSearchFieldCol = () => {
+    return {
+      uid: getUid(),
+      tag: "v-col",
+      attrs: { cols: "12", sm: "4", md: "3", xl: "2", class: "pa-0 pr-0 pl-md-2 " },
+      value: [
+        serverSearchFieldItem(),
+      ],
+    };
+  }
+
+  const serverSearchFieldItem = () => {
+    return {
+      uid: getUid(),
+      tag: "v-text-field",
+      attrs: {
+        prefix: "前缀",
+        class: "jh-v-input bg-white",
+        dense: true,
+        "single-line": true,
+        filled: true,
+      },
+      value: [],
+    }
+  }
+
+  const helpBtn = () => {
+    return {
+      uid: getUid(),
+      tag: "span",
+      attrs: {
+        role: "button",
+        class:
+          "success--text font-weight-regular jh-font-size-13 ml-2",
+        "@click": "isHelpPageDrawerShown = true",
+      },
+      value: [
+        {
+          uid: getUid(),
+          tag: "v-icon",
+          attrs: {
+            size: "13",
+            class: "success--text",
+          },
+          value: ["mdi-help-circle-outline"],
+        },
+        "帮助",
+      ],
+    };
+  }
+
+  const headPlusIconBtn = (uid) => {
+    return {
+      uid,
+      tag: "v-btn",
+      isAddBtn: true,
+      attrs: {
+        class: "mr-2",
+        "@click": `addNewHeadBtn()`,
+        small: true,
+      },
+      value: [{ uid: getUid(), tag: "v-icon", attrs: { size: "16", dark: true }, value: ["mdi-plus-box"] }],
+    };
+  }
+
+  const tableHeadRow = (iconBtn, tableDataSearchColPoint) => {
+    return {
+      uid: getUid(),
+      tag: "v-row",
+      attrs: { class: "ma-0 pa-4" },
+      value: [iconBtn, {
+        uid: getUid(),
+        tag: "v-spacer",
+        attrs: {},
+        value: [],
+      }, tableDataSearchColPoint]
+    };
+  }
+
+  const tableDataSearchCol = () => {
+    return {
+      tag: "v-col",
+      uid: getUid(),
+      attrs: {
+        cols: "12",
+        sm: "6",
+        md: "4",
+        class: "pa-0",
+      },
+      value: [],
+    }
+  }
+
+  const headBtn = () => {
+    return {
+      uid: getUid(),
+      tag: "v-btn",
+      color: "success",
+      attrs: {
+        color: "success",
+        class: "mr-2",
+        small: true,
+        "@click": "",
+      },
+      value: ["文字"],
+    }
+  }
+
+  const tdBtn = () => {
+    return {
+      uid: getUid(),
+      tag: "span",
+      attrs: {
+        role: "button",
+        class:
+          "success--text font-weight-medium font-size-2 mr-2",
+        "@click": "",
+      },
+      value: [
+        {
+          uid: getUid(),
+          tag: "v-icon",
+          attrs: {
+            size: "16",
+            class: "success--text",
+          },
+          value: ["mdi-button-cursor"],
+        },
+        "文字",
+      ],
+    };
+  }
+
+  const tableSearchInput = (vModel) => {
+    return {
+      uid: getUid(),
+      tag: "v-text-field",
+      attrs: {
+        prefix: "筛选",
+        "v-model": vModel,
+        class: "jh-v-input",
+        dense: true,
+        filled: true,
+        "single-line": true,
+      },
+      value: [],
+    }
+  }
+
+  const textFieldCol = (item) => {
+    return {
+      uid: getUid(),
+      tag: "v-col",
+      attrs: { cols: "12", sm: "12", md: "4" },
+      value: [
+        {
+          uid: etUid(),
+          tag: "span",
+          attrs: { class: "jh-input-label" },
+          value: [item.Comment],
+        },
+        {
+          uid: getUid(),
+          tag: "v-text-field",
+          attrs: {
+            class: "jh-v-input",
+            dense: true,
+            "single-line": true,
+            filled: true,
+            "v-model": `updateItem.${item.Field}`,
+            ":rules": "validationRules.requireRules",
+          },
+          value: [],
+        },
+      ],
+    };
+  }
+
+  const tableItem = (needPush, shown = true) => {
+    return {
+      text: needPush.Comment,
+      value: needPush.Field,
+      type: "v-text-field",
+      width: needPush.Field === 'action' ? 120 : 80,
+      sortable: true,
+      align: needPush.Field === 'action' ? "center" : "left",
+      class: "",
+      cellClass: "",
+      fixed: false,
+      shown,
+    };
+  }
+
+
+</script>
+<!-- <<<<<<<<<< html json 节点-->

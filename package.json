@@ -97,6 +97,10 @@
 				"title": "可视化设计"
 			},
 			{
+				"command": "jhExtension.openPageDesignReadJson",
+				"title": "可视化设计"
+			},
+			{
 				"command": "constructionPlan.pagePlanEdit",
 				"title": "pagePlanEdit Info View"
 			},
@@ -122,15 +126,15 @@
 			},
 			{
 				"command": "constructionAdvanced.userManagement",
-				"title": ""
+				"title": "用户管理"
 			},
 			{
 				"command": "constructionAdvanced.recordHistoryManagement",
-				"title": ""
+				"title": "历史数据"
 			},
 			{
 				"command": "constructionAdvanced.userGroupRoleManagement",
-				"title": ""
+				"title": "权限管理"
 			},
 			{
 				"command": "constructionPlan.pageEdit",
@@ -160,7 +164,7 @@
 		"menus": {
 			"editor/title": [
 				{
-					"command": "jhExtension.openPageDesignFromJson",
+					"command": "jhExtension.openPageDesignReadJson",
 					"group": "navigation",
 					"when": "openJianghuDesign"
 				}
@@ -177,11 +181,6 @@
 					"command": "constructionPlan.templateAdd",
 					"when": "view == constructionPlan && viewItem == databaseItem",
 					"group": "inline"
-				},
-				{
-					"command": "constructionPlan.pageAdd",
-					"when": "view == constructionPlan && viewItem == databaseItem",
-					"group": "inline@2"
 				},
 				{
 					"command": "constructionPlan.pageEdit",
@@ -214,12 +213,14 @@
 				{
 					"id": "appProvider",
 					"name": "应用管理",
+					"title": "",
 					"icon": "images/tool-light.svg",
 					"contextualTitle": "Project Manager"
 				},
 				{
 					"id": "constructionAdvanced",
 					"name": "系统配置",
+					"title": "",
 					"icon": "images/tool-light.svg",
 					"contextualTitle": "Advanced"
 				}
@@ -228,6 +229,7 @@
 				{
 					"id": "constructionPlanView",
 					"name": "施工方案查看",
+					"title": "",
 					"contextualTitle": "Package Explorer"
 				}
 			]

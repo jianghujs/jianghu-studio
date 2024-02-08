@@ -29,298 +29,42 @@
         </div>
         <!-- 表单设计 -->
         <div class="jh-page-body-container px-8 mt-4 d-flex">
-          <!-- 字段设计 -->
-          <v-card class="rounded-lg pa-4" style="max-height: calc(100vh - 200px); overflow-y: auto; flex: 1;" v-if="tabIndex === 0">
-            <div class="d-flex">
-              <div style="flex: 1; max-width: 50px; margin-right: 20px;">主键</div>
-              <div style="flex: 1; margin-right: 20px;">字段名</div>
-              <div style="flex: 1; margin-right: 20px;">字段类型</div>
-              <div style="flex: 1; margin-right: 20px;">字段说明</div>
-              <div style="flex: 1; margin-right: 20px;">默认值</div>
-            </div>
-            <v-radio-group v-model="priKey">
-              <template v-for="item of tableFieldList">
-                <div class="d-flex">
-                  <div style="flex: 1; max-width: 50px; margin-right: 20px;">
-                    <v-radio :value="item.Field" ></v-radio>
-                  </div>
-                  <div style="flex: 1; margin-right: 20px;">
-                    <v-text-field class="jh-v-input" dense filled single-line v-model="item.Field"></v-text-field>
-                  </div>
-                  <div style="flex: 1; margin-right: 20px;">
-                    <v-select :items="['int(11)', 'varchar(255)']" v-model="item.Type" dense filled single-line></v-select>
-                  </div>
-                  <div style="flex: 1; margin-right: 20px;">
-                    <v-text-field class="jh-v-input" dense single-line filled v-model="item.Comment"></v-text-field>
-                  </div>
-                  <div style="flex: 1; margin-right: 20px;">
-                    <v-text-field class="jh-v-input" dense single-line filled v-model="item.Default"></v-text-field>
-                  </div>
-                </div>
-              </template>
-            </v-radio-group>
-            <div class="d-flex">
-              <v-btn class="mr-4 mt-0" @click="addNewTableField"><v-icon>mdi-plus</v-icon>新增字段</v-btn>
-              <v-spacer></v-spacer>
-            </div>
-          </v-card>
           <!-- 页面设计 -->
-          <div class="designContainerCardLeft" v-if="tabIndex === 1">
-            <template v-for="item of pageContent">
-              <custom-component v-if="item.tag" :dom-item="item" :key="item.uid" :uid="item.uid"></custom-component>
-              <span v-else>{{item}}</span>
-            </template>
-          </div>
-          <template v-for="(item, index) of actionContent">
-            <div class="designContainerCardLeft" v-if="tabIndex === index + 2">
-              <v-card class="rounded-lg pa-4" style="max-height: calc(100vh - 200px); overflow-y: auto;">
-                <draggable v-if="isFormCol(item.value)" 
-                v-model="designfieldConfigList" 
-                touchStartThreshold="10" 
-                chosen-class="chosen" 
-                force-fallback="true" 
-                group="uid" 
-                animation="300" 
-                @start="onStart" 
-                @end="onEnd">
-                  <transition-group style="display: flex; flex-wrap: wrap;">
-                    <template v-for="item2 of item.value">
-                      <custom-component v-if="item2.tag" :dom-item="item2" :key="item2.uid" :uid="item2.uid"></custom-component>
-                      <span v-else>{{item2}}</span>
-                    </template>
-                  </transition-group>
-                </draggable>
-                <template v-else v-for="item2 of item.value">
-                  <custom-component v-if="item2.tag" :dom-item="item2" :key="item2.uid" :uid="item2.uid"></custom-component>
-                  <span v-else>{{item2}}</span>
-                </template>
-              </v-card>
-            </div>
-          </template>
-          <!-- 右侧属性、配置面板 -->
-          <v-card class="designContainerCard rounded-lg pa-4" v-if="tabIndex > 0">
-            <!-- 按钮的配置 -->
-            <template v-if="activeBtnItem">
-              <v-row class="ma-0 pa-2">
-                <v-icon color="success" size="18">mdi-information</v-icon>
-                <span style="line-height: 36px; font-size: 14px; font-weight: bold; padding-left: 12px;">按钮属性</span></span>
-                <v-spacer></v-spacer>
-                <v-icon size="20" color="red" @click="closePropertyContainer">mdi-close-circle</v-icon>
-              </v-row>
-              <v-divider></v-divider>
-              <v-row class="mt-4">
-                <v-spacer></v-spacer>
-                <v-btn color="red" class="mr-4" dark small @click="removeBtn">移除按钮</v-btn>
-              </v-row>
-              <v-row class="mt-4">
-                <v-col>
-                  <v-text-field label="按钮位置" placeholder="按钮位置" readonly hide-details outlined dense v-model="activeBtnItem.type === 'headAction' ? '表格头按钮' : '数据行按钮'"></v-text-field>
-                </v-col>
-              </v-row>
-              <v-row>
-                <v-col>
-                  <v-select label="按钮类型" placeholder="按钮类型" @change="activeBtnItemTypeChange" :items="constants[activeBtnItem.type]" hide-details outlined dense v-model="activeBtnItem.attrs['@click']"></v-select>
-                </v-col>
-              </v-row>
-              <v-row class="mt-4">
-                <v-col>
-                  <v-text-field label="按钮文字" placeholder="按钮文字" hide-details outlined dense v-model="activeBtnItem.value[activeBtnItem.tag !== 'v-btn' ? 1 : 0]"></v-text-field>
-                </v-col>
-              </v-row>
-              <v-row v-if="activeBtnItem.tag !== 'v-btn'">
-                <v-col>
-                  <v-text-field label="按钮图标(选填)" :append-icon="activeBtnItem.value[0].value[0]" placeholder="按钮图标" hide-details outlined dense v-model="activeBtnItem.value[0].value[0]"></v-text-field>
-                </v-col>
-              </v-row>
-              <v-row>
-                <v-col>
-                  <v-select label="按钮颜色" placeholder="按钮颜色" :items="constants.color" hide-details outlined dense :value="activeBtnItem.color" @change="btnColorChange"></v-select>
-                </v-col>
-              </v-row>
-            </template>
-            <!-- 表格头的配置 -->
-            <template v-else-if="activeTh">
-              <v-row class="ma-0 pa-2">
-                <v-icon color="success" size="18">mdi-information</v-icon>
-                <span style="line-height: 36px; font-size: 14px; font-weight: bold; padding-left: 12px;">表单字段属性</span></span>
-                <v-spacer></v-spacer>
-                <v-icon size="20" color="red" @click="closePropertyContainer">mdi-close-circle</v-icon>
-              </v-row>
-              <v-divider></v-divider>
-              <v-row class="mt-2">
-                <v-col>
-                  <v-row class="ma-0 pa-0">
-                    <span>字段名</span>
-                    <v-spacer></v-spacer>
-                  </v-row>
-                  <div class="d-flex">
-                    <v-text-field hide-details outlined dense v-model="activeTh.text"></v-text-field>
-                  </div>
-                </v-col>
-              </v-row>
-              <v-row class="mt-2">
-                <v-col>
-                  <v-row class="ma-0 pa-0">
-                    <span>字段Key</span>
-                    <v-spacer></v-spacer>
-                    <span style="color: #999999; font-size: 12px;">（类型：{{activeTh.Type}}）</span>
-                  </v-row>
-                  <div class="d-flex">
-                    <v-text-field disabled hide-details outlined dense :value="activeTh.value"></v-text-field>
-                  </div>
-                </v-col>
-              </v-row>
-              <v-row>
-                <v-col>
-                  <v-row class="ma-0 pa-0">
-                    <span>显示顺序<v-icon size="14" color="red">mdi-swap-horizontal</v-icon></span>
-                    <v-spacer></v-spacer>
-                    <span style="color: #999999;">（index：{{activeTh.index}}）</span>
-                  </v-row>
-                  <div class="d-flex">
-                    <v-btn @click="tdMove(activeTh, -999)" color="gray" outlined small class="px-2" style="min-width: 30px;"><v-icon size="14">mdi-arrow-collapse-left</v-icon></v-btn>
-                    <v-btn @click="tdMove(activeTh, -1)" color="gray" outlined small class="px-2" style="min-width: 30px;"><v-icon size="14">mdi-arrow-left</v-icon></v-btn>
-                    <v-spacer></v-spacer>
-                    <v-btn @click="tdMove(activeTh, 1)" color="gray" outlined small class="px-2" style="min-width: 30px;"><v-icon size="14">mdi-arrow-right</v-icon></v-btn>
-                    <v-btn @click="tdMove(activeTh, 999)" color="gray" outlined small class="px-2" style="min-width: 30px;"><v-icon size="14">mdi-arrow-collapse-right</v-icon></v-btn>
-                  </div>
-                </v-col>
-              </v-row>
-              <v-row class="ma-0 pa-0 mt-4 align-center">
-                  <span>列宽度<v-icon size="14" color="red">mdi-arrow-left-right</v-icon></span>
-                  <v-spacer></v-spacer>
-                  <v-text-field hide-details outlined dense style="max-width: 63px;" v-model="activeTh.width"></v-text-field>
-              </v-row>
-              <v-row class="ma-0 pa-0 mt-4 align-center" v-if="activeTh.value !== 'action'">
-                  <span>数据主键<v-icon size="14" color="red">mdi-key</v-icon></span>
-                  <v-spacer></v-spacer>
-                  <v-switch color="success" class="mt-0" dense inset hide-details v-model="activeTh.itemKey"></v-switch>
-              </v-row>
-              <v-row class="ma-0 pa-0 mt-4 align-center">
-                  <span>列显示<v-icon size="14" color="red">mdi-eye</v-icon></span>
-                  <v-spacer></v-spacer>
-                  <v-switch color="success" class="mt-0" dense inset hide-details v-model="activeTh.shown" @change="fieldShownChange"></v-switch>
-              </v-row>
-              <v-row class="ma-0 pa-0 mt-4 align-center">
-                  <span>列固定<v-icon size="14" color="red">mdi-lock</v-icon></span>
-                  <v-spacer></v-spacer>
-                  <v-switch color="success" class="mt-0" dense inset hide-details v-model="activeTh.fixed"></v-switch>
-              </v-row>
-              <v-row class="ma-0 pa-0 mt-4 align-center">
-                  <span>行排序<v-icon size="14" color="red">mdi-swap-vertical</v-icon></span>
-                  <v-spacer></v-spacer>
-                  <v-switch color="success" class="mt-0" dense inset hide-details v-model="activeTh.sortable"></v-switch>
-              </v-row>
-            </template>
-            <!-- 数据的配置 -->
-            <template v-else-if="activeData">
-              <v-row class="ma-0 pa-2">
-                <v-icon color="success" size="18">mdi-format-line-style</v-icon>
-                <span style="line-height: 36px; font-size: 14px; font-weight: bold; padding-left: 12px;">数据显示配置</span></span>
-                <v-spacer></v-spacer>
-                <v-icon size="20" color="red" @click="closePropertyContainer">mdi-close-circle</v-icon>
-              </v-row>
-              <v-divider></v-divider>
-              <v-row class="mt-2">
-                <v-col>
-                  <v-row class="ma-0 pa-0">
-                    <span>数据显示方式</span>
-                    <v-spacer></v-spacer>
-                  </v-row>
-                  <div class="d-flex">
-                    <v-select :items="constants.dataType" hide-details outlined dense v-model="activeData.dataType"></v-select>
-                  </div>
-                </v-col>
-              </v-row>
-            </template>
-            <!-- 页面的配置 -->
-            <template v-else-if="tabIndex === 1">
-              <v-row class="ma-0 pa-2">
-                <v-icon color="success" size="18">mdi-cog</v-icon>
-                <span style="line-height: 36px; font-size: 14px; font-weight: bold; padding-left: 12px;">页面配置</span>
-                <v-spacer></v-spacer>
-              </v-row>
-              <v-divider></v-divider>
-              <div v-for="(item, key) of pageConfigFilter" class="d-flex align-center" style="height: 60px;">
-                <span style="min-width: 60px;">{{item.label}}</span>
-                <v-spacer></v-spacer>
-                <v-text-field v-if="key === 'rowActionWidth' || key === 'fixedField'" style="width: 60px;" :label="item.label" :placeholder="item.label" hide-details outlined dense v-model="pageConfig[key].value"></v-text-field>
-                <v-switch color="success" dense inset v-else v-model="pageConfig[key].value"></v-switch>
-              </div>
-            </template>
-            <template v-if="tabHasForm">
-              <template v-if="activeFieldConfig">
-                <v-row class="ma-0 pa-2">
-                  <v-icon color="success" size="18">mdi-information</v-icon>
-                  <span style="line-height: 36px; font-size: 14px; font-weight: bold; padding-left: 12px;">表单字段配置</span>
-                  <v-spacer></v-spacer>
+          <v-tabs-items v-model="tabIndex" class="page-tabs-item">
+            <v-tab-item :key="0" :value="0" class="pa-4">
+              <template v-for="(item, key) of pageJsonContent">
+                <template v-if="['pageContent', 'actionContent', 'headContent'].includes(key)"></template>
+                <v-row v-else-if="typeof item === 'string'">
+                  <v-col class="d-flex align-center">
+                    <span style="text-align: right; display: inline-block; min-width: 100px; padding-right: 20px;">{{key}}:</span>
+                    <v-text-field v-model="pageJsonContent[key]" class="jh-v-input" dense single-line filled style="flex: 1;"></v-text-field>
+                  </v-col>
                 </v-row>
-                <v-divider></v-divider>
-                <!-- table的字段备注 -->
-                <v-text-field label="字段" placeholder="字段" outlined dense v-model="activeFieldConfig.text"></v-text-field>
-                <!-- table的字段名 -->
-                <v-text-field label="字段名称" placeholder="字段名称" :disabled="activeFieldConfig.disabled" outlined dense v-model="activeFieldConfig.fieldName"></v-text-field>
-                <v-select :items="constants.fieldType" label="字段类型" outlined dense v-model="activeFieldConfig.fieldType"></v-select>
-                <v-select :items="tagList" label="表单类型" outlined dense v-model="activeFieldConfig.tag"></v-select>
-                <!-- 多行的行数 -->
-                <v-text-field v-if="activeFieldConfig.tag === 'v-textarea'" label="行数" placeholder="行数" outlined dense v-model="activeFieldConfig.config.attributes.rows"></v-text-field>
-                <!-- 滑块的最大和最小 -->
-                <v-text-field v-if="['v-range-slider', 'v-slider'].includes(activeFieldConfig.tag)" label="最小值" placeholder="最小值" outlined dense v-model="activeFieldConfig.config.attributes.min"></v-text-field>
-                <v-text-field v-if="['v-range-slider', 'v-slider'].includes(activeFieldConfig.tag)" label="最大值" placeholder="最大值" outlined dense v-model="activeFieldConfig.config.attributes.max"></v-text-field>
-                <!-- 数字的最大和最小 -->
-                <v-text-field v-if="['v-text-field'].includes(activeFieldConfig.tag) && activeFieldConfig.config.attributes.type === 'number'" label="最小值" placeholder="最小值" outlined dense v-model="activeFieldConfig.config.attributes.min"></v-text-field>
-                <v-text-field v-if="['v-text-field'].includes(activeFieldConfig.tag) && activeFieldConfig.config.attributes.type === 'number'" label="最大值" placeholder="最大值" outlined dense v-model="activeFieldConfig.config.attributes.max"></v-text-field>
-                <!-- 时间的最大和最小 -->
-                <v-text-field v-if="['v-date-picker'].includes(activeFieldConfig.tag)" label="开始时间" placeholder="开始时间" outlined dense v-model="activeFieldConfig.config.attributes.startTime"></v-text-field>
-                <v-text-field v-if="['v-date-picker'].includes(activeFieldConfig.tag)" label="结束时间" placeholder="结束时间" outlined dense v-model="activeFieldConfig.config.attributes.endTime"></v-text-field>
-                <!-- 下拉、单选、多选的选项配置 -->
-                <div v-if="['v-radio-group', 'v-select', 'v-checkbox'].includes(activeFieldConfig.tag)">
-                    <div class="d-flex"><span>选项</span><v-spacer></v-spacer><v-btn icon dense @click="addNewOption"><v-icon>mdi-plus</v-icon></v-btn></div>
-                    <div class="d-flex" v-for="(option, index) of activeFieldConfig.config.constants.constantValue">
-                      <v-text-field :label="option" :placeholder="option" outlined dense v-model="activeFieldConfig.config.constants.constantValue[index]"></v-text-field>
-                      <v-btn icon dense><v-icon size="16" @click="removeOption(option)">mdi-close</v-icon></v-btn>
-                    </div>
+                <div v-else-if="Array.isArray(item)">
+                  <div style="padding: 12px;">{{key}}: {{item}}</div>
                 </div>
-                <!-- 组件在页面中的横向占比 -->
-                <div class="mb-4">
-                    <span>表单占比</span>
-                    <v-btn-toggle dense v-model="activeFieldConfig.config.cols" color="success">
-                      <v-btn v-for="col in [4,6,8,12]" class="px-1" :key="col" :value="col" style="font-size: 12px;" outlined>{{parseInt(col/12*100)}}%</v-btn>
-                    </v-btn-toggle>
-                </div>
-                <!-- rules -->
-                <div class="rulesBox">
-                    <span>字段规则</span>
-                    <v-btn-toggle dense v-model="activeFieldConfig.config.rules" multiple color="success" >
-                      <v-btn v-for="(rule, ruleKey) in rules" :key="ruleKey" :value="ruleKey" outlined>{{rule.name}}</v-btn>
-                    </v-btn-toggle>
+                <div v-else>
+                  <div style="padding: 12px;">{{key}}: {{item}}</div>
                 </div>
               </template>
-            </template>
-            <!-- 隐藏字段 -->
-            <template v-if="tabIndex === 1 || (tabHasForm && !activeFieldConfig)">
-              <v-divider class="mt-4"></v-divider>
-              <v-row class="ma-0 pa-2">
-                <v-icon color="success" size="18">mdi-database-eye-outline</v-icon>
-                <span style="line-height: 36px; font-size: 14px; font-weight: bold; padding-left: 12px;">未显示字段</span>
-                <v-spacer></v-spacer>
-              </v-row>
-              <v-divider></v-divider>
-              <div class="d-flex align-center" style="max-height: 360px; overflow-y: auto;">
-                <v-list dense v-if="tableHiddenHeaderList && tableHiddenHeaderList.length">
-                  <v-list-item two-line class="px-0" v-for="(item, index) of tableHiddenHeaderList" :key="index" @click="setActiveTh(item)">
-                    <v-list-item-content>
-                      <v-list-item-title>{{item.Field}} <span style="color: #999999;">[{{item.Type}}]</span></v-list-item-title>
-                      <v-list-item-subtitle>{{item.Comment}}</v-list-item-subtitle>
-                    </v-list-item-content>
-                  </v-list-item>
-                </v-list>
-                <div v-else style="text-align: center; line-height: 50px; color: #999999; width: 100%;">
-                  字段已全部显示
-                </div>
-              </div>
-            </template>
-          </v-card>
+            </v-tab-item>
+            <v-tab-item :key="1" :value="1" class="pa-4">
+              <template v-for="(item, key) of headContent">
+                <v-card>{{item}}</v-card>
+              </template>
+            </v-tab-item>
+            <v-tab-item :key="2" :value="2" class="pa-4">
+              <template v-for="(item, key) of pageContent">
+                <v-card>{{item}}</v-card>
+              </template>
+            </v-tab-item>
+            <v-tab-item :key="3" :value="3" class="pa-4">
+              <template v-for="(item, key) of actionContent">
+                <v-card>{{item}}</v-card>
+              </template>
+            </v-tab-item>
+          </v-tabs-items>
+          <!-- 右侧属性、配置面板 -->
         </div>
         <!-- <<<<<<<<<<<<< 头部内容 -->
         <!-- 设计区域 >>>>>>>>>>>>> -->
@@ -346,29 +90,24 @@
     template: '#app-template',
     vuetify: new Vuetify(),
     filters: {
-      toText(value) {
-        if (!value) {
-          return "";
-        }
-        if (Array.isArray(value)) {
-          return value.join(",");
-        }
-        return value;
-      }
+
     },
     data: () => ({
       workspaceFolders: "<$ workspaceFolders $>",
+      projectPath: "<$ projectPath $>",
       pageId: "<$ pageId $>",
       appId: "<$ appId $>",
       webPageId: "<$ webPageId $>",
       panelId: "<$ panelId $>",
       jsonPath: "<$ jsonPath $>",
+      hasHelpDrawer: "<$ hasHelpDrawer $>",
       // pageFile: "<$ pageFile $>",
       webPageName: "<$ webPageName $>",
-      activeDom: false,
-      tabItems: [{ text: "字段设计", icon: "database-cog" }, { text: "页面设计", icon: "language-html5" },],
+      tabItems: [{ text: "基础信息", icon: "database-cog" }, { text: "头部设计", icon: "database-cog" }, { text: "页面设计", icon: "database-cog" }, { text: "抽屉设计", icon: "database-cog" },],
       tableTabIndex: "0",
-      constants: {
+
+      // END 表格的配置项目
+      designConstants: {
         fieldType: ['int(11)', 'varchar(255)', 'text'],
         rowAction: [
           { text: '编辑', value: "doUiAction('startUpdateItem', item)" },
@@ -376,264 +115,46 @@
           { text: '查看', value: "doUiAction('viewItem', item)" }
         ],
         headAction: [{ text: '新增数据', value: 'startCreateItem' }, { text: '全选', value: 'selectAll' }, { text: '批量删除', value: 'deleteAll' }],
+        doUiAction: [],
         dataType: [{ text: '纯文本', value: 'text' }, { text: '时间类型', value: 'dateTime' }, { text: '内容转换', value: 'parse' }],
-        color: ["success", "error", "warning", "info", "primary", "secondary", "accent", "green", "red", "blue", "yellow", "pink", "purple", "orange", "brown", "grey", "gray", "white", "black"],
+        color: ["success", "error", "warning", "info", "primary", "secondary", "accent"],
       },
 
-      rules: {
-        required: {
-          name: "必填",
-          fun: value => !!value || "Required.",
-        },
-        counter: {
-          name: "字数限制",
-          // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-          fun: (value, max, min) => (value && value.length >= min && value.length <= max) || `Max ${max} Min ${min} characters`,
-        },
-        phone: {
-          name: "手机号",
-          fun: value => {
-            const pattern = /^\d+$/;
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-            return (value && pattern.test(value)) || "Invalid port.";
-          },
-        },
-        ip: {
-          name: "ip地址",
-          fun: value => {
-            const pattern = /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-            return (value && pattern.test(value)) || "Invalid IP.";
-          },
-        },
-        url: {
-          name: "网址",
-          fun: value => {
-            const pattern = new RegExp(
-              "^(https?:\\/\\/)?" + // protocol
-              "((([a-z\\d]([a-z\\d-]*[a-z\\d])*)\\.)+[a-z]{2,}|" + // domain name and extension
-              "((\\d{1,3}\\.){3}\\d{1,3}))" + // OR ip (v4) address
-              "(\\:\\d+)?" + // port
-              "(\\/[-a-z\\d%_.~+]*)*" + // path
-              "(\\?[;&a-z\\d%_.~+=-]*)?" + // query string
-              "(\\#[-a-z\\d_]*)?$", "i"); // fragment locator
-            return !!pattern.test(value);
-          },
-        },
-        idCard: {
-          name: "身份证",
-          fun: value => {
-            const reg = /(^\d{15}$)|(^\d{18}$)|(^\d{17}(\d|X|x)$)/;
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-            return reg.test(value);
-          },
-        },
-        email: {
-          name: "邮箱",
-          fun: value => {
-            const pattern = /^[\w-]+(\.[\w-]+)*@[\w-]+(\.[\w-]+)+$/;
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-            return pattern.test(value);
-          },
-        },
-        // eslint-disable-next-line id-blacklist
-        number: {
-          name: "数字",
-          fun: value => {
-            const pattern = /^\d+$/;
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-            return pattern.test(value);
-          },
-        },
-        acount: {
-          name: "数字",
-          fun: value => {
-            const pattern = /^[a-zA-Z]\w*$/;
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-            return pattern.test(value);
-          },
-        },
-      },
-      tableHeaderList: [],
-      tableSearchInput: null,
       fieldList: [
-        {
-          text: "单行文本", icon: "text-short", tag: "v-text-field",
-          config: {
-            cols: 4,
-            rules: [],
-            attributes: { class: "jh-v-input", dense: true, "single-line": true, filled: true }
-          }
-        },
-        {
-          text: "多行文本", icon: "text-long", tag: "v-textarea",
-          config: {
-            cols: 12,
-            rules: [],
-            attributes: { class: "jh-v-input", dense: true, "single-line": true, filled: true, rows: 3, }
-          }
-        },
-        {
-          text: "下拉选项", icon: "form-dropdown", tag: "v-select",
-          config: {
-            cols: 4,
-            rules: [],
-            attributes: { class: "jh-v-input", dense: true, "single-line": true, filled: true, clearable: true, ':items': "item.config.constants.constantValue" },
-            constants: { constantKey: null, constantType: "array", constantValue: ['option1', 'option2', 'option3'] },
-          }
-        },
-        {
-          text: "单选", icon: "radiobox-marked", tag: "v-radio-group",
-          config: {
-            cols: 4,
-            rules: [],
-            attributes: {
-              group: { row: true, class: "ml-2 mt-0" },
-              item: { color: "success" }
-            },
-            constants: { constantKey: null, constantType: "array", constantValue: ['option1', 'option2', 'option3'] },
-          }
-        },
-        {
-          text: "多选", icon: "checkbox-marked-outline", tag: "v-checkbox",
-          config: {
-            cols: 4,
-            rules: [],
-            attributes: {
-              group: { class: "d-flex", style: "padding-right: 20px !important;" },
-              item: { class: "shrink mr-2", "hide-details": true, dense: true, color: "success" }
-            },
-            constants: { constantKey: null, constantType: "array", constantValue: ['option1', 'option2', 'option3'] },
-          }
-        },
-        {
-          text: "数字", icon: "numeric-10-box", tag: "v-text-field",
-          config: {
-            rules: [],
-            cols: 4,
-            attributes: { class: "jh-v-input", type: "number", dense: true, "single-line": true, filled: true, min: 0, max: 999999 }
-          }
-        },
-        {
-          text: "时间", icon: "clock-time-eight-outline", tag: "v-date-picker",
-          config: {
-            cols: 4,
-            rules: [],
-            attributes: {
-              fieldAttr: { class: "jh-v-input", dense: true, "single-line": true, filled: true },
-              dataPickerAttr: { color: "success", elevation: "20", startTime: null, endTime: null, },
-              menuAttr: { transition: "scale-transition", "offset-y": true, "min-width": "auto", },
-            }
-          }
-        },
-        {
-          text: "文件", icon: "file-code", tag: "v-file-input",
-          config: {
-            rules: [],
-            cols: 4,
-            attributes: { class: "jh-v-input", dense: true, "single-line": true, filled: true, chips: true, "show-size": true }
-          }
-        },
-        {
-          text: "图片", icon: "image-outline", tag: "v-file-input",
-          config: {
-            rules: [],
-            cols: 4,
-            attributes: { class: "jh-v-input", dense: true, "single-line": true, filled: true, accept: "image/*", chips: true, "show-size": true }
-          }
-        },
-        {
-          text: "区间", icon: "tune-variant", tag: "v-range-slider",
-          config: {
-            rules: [],
-            cols: 4,
-            attributes: { color: "success", "track-color": "green lighten-3", max: 100, min: 0 },
-          }
-        },
-        {
-          text: "比例", icon: "percent-outline", tag: "v-slider",
-          config: {
-            rules: [],
-            cols: 4,
-            attributes: { color: "success", "track-color": "green lighten-3", max: 100, min: 0, },
-
-          }
-        },
-        {
-          text: "开关", icon: "toggle-switch-off-outline", tag: "v-switch",
-          config: {
-            cols: 4,
-            rules: [],
-            attributes: { class: "ml-2 mt-0", color: "success", inset: true, dense: true, "hide-details": true }
-          }
-        },
-        {
-          text: "密码", icon: "lock-outline", tag: "v-otp-input",
-          config: {
-            rules: [],
-            cols: 4,
-            attributes: { color: "success", class: "ml-2 mt-0", length: 6, },
-          }
-        },
-        {
-          text: "搜索", icon: "feature-search-outline", tag: "v-autocomplete",
-          config: {
-            rules: [],
-            cols: 4,
-            attributes: { class: "jh-v-input", dense: true, "single-line": true, filled: true }
-          }
-        },
-        {
-          text: "打分", icon: "star-box", tag: "v-rating",
-          config: {
-            rules: [],
-            cols: 4,
-            attributes: { "background-color": "green lighten-3", "color": "green", size: "32", "background-color": "green lighten-3", color: "success" },
-          }
-        },
-        {
-          text: "JSON编辑器", icon: "star-box", tag: "jh-json-edit",
-          config: {
-            rules: [],
-            cols: 12,
-            attributes: { color: "success" },
-          }
-        },
+        { text: "单行文本", icon: "text-short", tag: "v-text-field" },
+        { text: "多行文本", icon: "text-long", tag: "v-textarea" },
+        { text: "下拉选项", icon: "form-dropdown", tag: "v-select" },
+        { text: "单选", icon: "radiobox-marked", tag: "v-radio-group" },
+        { text: "多选", icon: "checkbox-marked-outline", tag: "v-checkbox" },
+        { text: "数字", icon: "numeric-10-box", tag: "v-text-field" },
+        { text: "时间", icon: "clock-time-eight-outline", tag: "v-date-picker" },
+        { text: "文件", icon: "file-code", tag: "v-file-input" },
+        { text: "图片", icon: "image-outline", tag: "v-file-input" },
+        { text: "区间", icon: "tune-variant", tag: "v-range-slider" },
+        { text: "比例", icon: "percent-outline", tag: "v-slider" },
+        { text: "开关", icon: "toggle-switch-off-outline", tag: "v-switch" },
+        { text: "密码", icon: "lock-outline", tag: "v-otp-input" },
+        { text: "搜索", icon: "feature-search-outline", tag: "v-autocomplete" },
+        { text: "打分", icon: "star-box", tag: "v-rating" },
+        { text: "JSON编辑器", icon: "star-box", tag: "jh-json-edit" },
       ],
       tabIndex: 0,
-      designfieldConfigList: [],
-      viewConfigList: [],
       tableFieldList: [],
-      activeViewField: null,
       activeField: null,
-
-      pageConfig: {
-        showSelect: { label: "行选择", value: true },
-        singleSelect: { label: "是否单选", value: false },
-        showSearch: { label: "表格搜索", value: true },
-        headActionList: [],
-        rowActionList: []
-      },
-      demoSelected: [],
       activeBtnItem: null,
       activeTh: null,
       activeData: null,
       // json数据
-      dataString: null,
+      pageJsonContent: {},
       actionContent: null,
       pageContent: null,
       headContent: null,
       priKey: null,
       tableHeaderListKey: "",
       headPlusBtnUid: null,
-      //===//<$ common.dataString | stringToVar | safe $>
+      tableRowSelect: [],
     }),
     computed: {
-      //===//<$ common.computed | methodFormat | safe $>
-      // 无用的
-      tableShowHeaderList() {
-        return this[`${this.tableHeaderListKey}`].filter(item => item.shown === true);
-      },
       tableHiddenHeaderList() {
         let hiddenFieldList = [];
         // table的隐藏字段
@@ -646,7 +167,7 @@
           }
         }
         // 表单的隐藏字段
-        if (this.tabIndex > 1 && this.tabHasForm) {
+        if (this.tabIndex > 1 && this.tabIsActionContent) {
           const existFieldList = this.pickerFormField(this.actionContent[this.tabIndex - 2]);
           hiddenFieldList = this.tableFieldList.filter(item => {
             return !existFieldList.includes(item.Field);
@@ -654,40 +175,58 @@
         }
         return hiddenFieldList;
       },
-      activeFieldConfig() {
-        return this.designfieldConfigList.find(item => item.uid === this.activeField);
+      // 当前激活字段的常量数据
+      activeFieldConstants() {
+        console.log("activeFieldConstants", this.modelKey)
+        if (this.modelKey) {
+          console.log("activeFieldConstants", this.constantObj)
+          return this.constantObj[this.modelKey] || [];
+        }
+        return [];
       },
-      activeViewFieldConfig() {
-        return this.viewConfigList.find(item => item.uid === this.activeViewField);
+      activeFieldLabel() {
+        if (this.activeField) {
+          const fieldInput = this.activeField.value.find(item => item.tag && item.tag === 'v-text-field' || item.tag === 'v-select');
+          return fieldInput.attrs["prefix"];
+        }
+        return null;
       },
+      modelKey() {
+        if (this.activeField) {
+          const fieldInput = this.activeField.value.find(item => item.attrs && item.attrs["v-model"]);
+          return fieldInput.attrs["v-model"].split(".")[1];
+        }
+        return null;
+      },
+      // 表单字段数据输入类型
       tagList() {
         return this.fieldList.map(item => item.tag);
       },
-      pageConfigFilter() {
-        const { headActionList, rowActionList, ...config } = this.pageConfig;
-        return config;
-      },
-      tabHasForm() {
+      // 是否包含表单
+      tabIsActionContent() {
         if (this.tabIndex < 2) {
           return false;
         }
         return JSON.stringify(this.actionContent[this.tabIndex - 2]).includes("v-form");
-      }
+      },
+      // 表单字段的显示状态
+      activeFieldShowStatus() {
+        let status = false;
+        if (this.activeField) {
+          status = JSON.stringify(this.actionContent).includes(this.activeField.uid);
+        }
+        console.log("activeFieldShowStatus", status);
+        return status;
+      },
     },
     watch: {
-      //===//<$ common.watch | methodFormat | safe $>
-      'activeFieldConfig.fieldName'(value) {
-        if (value && Object.keys(this.activeFieldConfig.config).includes("constants")) {
-          this.activeFieldConfig.config.constants.constantKey = value;
+      tabIndex(value) {
+        if (value !== 1) {
+          this.rowSelectChange = [];
+          this.rowSelectSingleChange = [];
+          this.dataTableHasSearchChange = [];
         }
       },
-      'activeFieldConfig.tag'(value) {
-        if (value) {
-          const activeFieldConfig = this.fieldList.find(item => item.tag === value);
-          this.designfieldConfigList.find(item => item.uid === this.activeField).config = { ...activeFieldConfig.config, cols: this.activeFieldConfig.config.cols, rules: this.activeFieldConfig.config.rules };
-        }
-      },
-      // this.priKey = fieldList.find(item => item.Key === 'PRI').Field;
       priKey() {
         this.tableFieldList = this.tableFieldList.map(item => {
           if (item.Field === this.priKey) {
@@ -725,32 +264,25 @@
     async created() {
       await this.getPageConfig();
       await this.getDbFieldList();
-      //===//<$ common.createdString | createdString | safe $>
     },
     mounted() {
     },
     methods: {
-      saveConfig() {
+      async saveConfig() {
         switch (this.tabIndex) {
           case 0:
-            this.saveTableField();
+            await this.saveTableField();
+            this.getDbFieldList();
             break;
           case 1:
             this.savePageContent();
             break;
           default:
-            this.saveDrawerContent();
+            this.saveActionContent();
             break;
         }
       },
-      isFormCol(value) {
-        if (Array.isArray(value)) {
-          return value.every(item => {
-            return item.tag === 'v-col' && item.value.some(item => ['v-text-field', 'v-textarea', 'v-select'].includes(item.tag));
-          });
-        }
-        return false;
-      },
+
       // 数据表操作 start
       addNewTableField() {
         this.tableFieldList.push({
@@ -761,6 +293,119 @@
           Default: null,
         });
       },
+      // 数据表操作 end
+      closePropertyContainer() {
+        this.activeBtnItem = null;
+        this.activeTh = null;
+        this.activeData = null;
+        this.activeField = null;
+      },
+      // 提取表单中的字段
+      pickerFormField(item) {
+        let fieldList = [];
+        if (item.tag && this.tagList.includes(item.tag)) {
+          fieldList.push(this.modelKey);
+        }
+        if (item.value && Array.isArray(item.value)) {
+          item.value.forEach(value => {
+            fieldList.push(...this.pickerFormField(value));
+          });
+        }
+        return fieldList;
+      },
+      // 自动计算操作列的宽度
+      resetActionWidth() {
+        this[`${this.tableHeaderListKey}`].find((item, index) => {
+          if (item.value === 'action') {
+            let element = document.getElementsByTagName('td')[index];
+            console.log(element.children);
+            item.width = 0;
+            for (let i = 0; i < element.children.length; i++) {
+              item.width += element.children[i].offsetWidth;
+            }
+            console.log("action width", item.width);
+            return true;
+          }
+          return false;
+        })
+      },
+
+      // 获取数据库字段列表
+      async getDbFieldList() {
+        const result = await window.appAxios({
+          packageType: "getFieldListRequest",
+          data: {
+            appData: {
+              appId: this.appId,
+              webPageId: this.webPageId,
+              // pageFile: this.pageFile,
+            },
+          }
+        })
+        const { fieldList, error } = result.data.appData;
+        this.tableFieldList = fieldList;
+        this.priKey = fieldList.find(item => item.Key === 'PRI').Field;
+      },
+      // 获取页面配置 json
+      async getPageConfig() {
+        const designFieldConfigList = await window.appAxios({
+          packageType: "getFieldConfigRequest",
+          data: {
+            appData: {
+              appId: this.appId,
+              webPageId: this.webPageId,
+              pageJsonPath: this.jsonPath,
+              // pageFile: this.pageFile,
+            },
+          }
+        })
+        this.pageJsonContent = designFieldConfigList.data.appData;
+        if (this.pageJsonContent.error) {
+          return;
+        }
+        this.tickTab();
+        this.actionContent = this.pageJsonContent.actionContent;
+        this.headContent = this.pageJsonContent.headContent;
+        this.pageContent = this.pageJsonContent.pageContent;
+      },
+      tickTab() {
+        const pageContentTabs = this.pageJsonContent.pageContent.filter(item => item.tag.startsWith('jh-'));
+        const actionContentTabs = this.pageJsonContent.actionContent.filter(item => item.tag.startsWith('jh-'));
+        const headContentTabs = this.pageJsonContent.headContent.filter(item => item.tag.startsWith('jh-'));
+      },
+      // 设计环节页面的切换
+      setPageStep(index) {
+        this.activeTh = null;
+        this.activeBtnItem = null;
+        this.activeData = null;
+        this.activeField = null;
+
+        this.tabIndex = index;
+      },
+      onStart() {
+      },
+      onEnd() {
+      },
+      // 移除选项
+      removeOption(option) {
+        if (!this.modelKey) {
+          return;
+        }
+        this.constantObj[this.modelKey] = this.constantObj[this.modelKey].filter(item => typeof option === 'string' ? item !== option : item.text !== option.text);
+        this.constantObj = _.cloneDeep(this.constantObj);
+      },
+      // 添加新的选项
+      addNewOption() {
+        if (!this.modelKey) {
+          return;
+        }
+        if (!this.constantObj[this.modelKey]) {
+          this.constantObj[this.modelKey] = [];
+        }
+        this.constantObj[this.modelKey].push({ text: "新选项", value: "新选项" });
+        this.constantObj = _.cloneDeep(this.constantObj);
+      },
+      // 保存数据库字段列表
       async saveTableField() {
         // fieldName 不能为空
         // fieldType 不能为空
@@ -803,424 +448,32 @@
           }
         })
       },
-      // 数据表操作 end
-      closePropertyContainer() {
-        this.activeBtnItem = null;
-        this.activeTh = null;
-        this.activeData = null;
-        if (this.activeDom) {
-          this.activeDom.classList.remove("activeDom");
-          console.log("清空activeDom 1");
-          this.activeDom = null;
-        }
-      },
-      // 字段的隐藏和显示
-      fieldShownChange(event) {
-        console.log(event);
-        if (event) {
-          const needPush = this.tableHiddenHeaderList.find(item => item.Field === this.activeTh.value);
-          console.log("needPush", this.tableHiddenHeaderList)
-          if (needPush) {
-            this[`${this.tableHeaderListKey}`].push({
-              text: needPush.Comment,
-              value: needPush.Field,
-              type: "v-text-field",
-              width: needPush.Field === 'action' ? 120 : 80,
-              sortable: true,
-              align: needPush.Field === 'action' ? "center" : "left",
-              class: "",
-              cellClass: "",
-              fixed: false,
-              shown: true,
-            });
-          }
-        } else {
-          this[`${this.tableHeaderListKey}`] = this[`${this.tableHeaderListKey}`].filter(item => item.value !== this.activeTh.value);
-        }
-        console.log("needPush", this[`${this.tableHeaderListKey}`])
-      },
-      isChildElement(parentElementClass, childElement) {
-        if (!parentElementClass) {
-          return false;
-        }
-        var parentElement = document.querySelector("." + parentElementClass);
-        if (!parentElement) {
-          return false;
-        }
-        if (parentElement.contains(childElement)) {
-          return true;
-        }
-        var parent = childElement.parentElement;
-        if (parent) {
-          return this.isChildElement(parentElementClass, parent);
-        }
-        return false;
-      },
-      getWeNeedDom(dom) {
-        if (!dom || dom.classList.contains("jh-page-body-container") || this.isChildElement("designPageHead", dom)) {
-          return false;
-        }
-        if (this.isChildElement("designContainerCardLeft", dom)) {
-          console.dir(dom.localName, dom);
-          if (!dom.classList.contains("v-btn") &&
-            dom.localName !== 'td' &&
-            dom.localName !== 'th' &&
-            !dom.classList.contains("v-input") &&
-            !(dom.attributes.role && dom.attributes.role.value === 'button')
-          ) {
-            return this.getWeNeedDom(dom.parentNode);
-          } else {
-            if (this.activeDom) {
-              console.log("清空activeDom 2");
-              this.activeDom.classList.remove("activeDom");
-            }
-            this.activeDom = dom;
-            this.activeDom.classList.add("activeDom");
-            return true;
-          }
-        } else {
-          return false;
-        }
-      },
-      async doUiAction(uiActionId, uiActionData) {
-        console.log("doUiAction", uiActionId, uiActionData);
-        if (uiActionId.toLowerCase().includes("delete")) {
-          return;
-        }
-        if (uiActionId.toLowerCase().includes("create")) {
-          return;
-        }
-        if (uiActionId.toLowerCase().includes("update")) {
-          return;
-        }
-        try {
-          switch (uiActionId) {
-            //===//<$ common.doUiAction | doUiActionFormat | safe $>
-            default:
-              console.error("[doUiAction] uiActionId not find", { uiActionId });
-              break;
-          }
-        } catch (error) {
-          throw error;
-        } finally {
-          window.jhMask && window.jhMask.hide();
-        }
-      },
-      pickerFormField(item) {
-        let fieldList = [];
-        const formItemTag = ["v-text-field", "v-select", "v-textarea"];
-        if (item.tag && formItemTag.includes(item.tag)) {
-          let field = item.attrs["v-model"].split(".");
-          field = field[field.length - 1];
-          fieldList.push(field);
-        }
-        if (item.value && Array.isArray(item.value)) {
-          item.value.forEach(value => {
-            fieldList.push(...this.pickerFormField(value));
-          });
-        }
-        return fieldList;
-      },
-      // 自动计算操作列的宽度
-      resetActionWidth() {
-        this[`${this.tableHeaderListKey}`].find((item, index) => {
-          if (item.value === 'action') {
-            let element = document.getElementsByTagName('td')[index];
-            console.log(element.children);
-            item.width = 0;
-            for (let i = 0; i < element.children.length; i++) {
-              item.width += element.children[i].offsetWidth;
-            }
-            console.log("action width", item.width);
-            return true;
-          }
-          return false;
-        })
-      },
-      removeById(obj, idToRemove) {
-        if (Array.isArray(obj)) {
-          for (let i = 0; i < obj.length; i++) {
-            if (obj[i] && typeof obj[i] === 'object') {
-              if (obj[i].uid === idToRemove) {
-                obj.splice(i, 1);
-                i--;  // Decrease index to handle the changed array
-              } else {
-                this.removeById(obj[i].value, idToRemove);
+      // 保存抽屉的设计
+      async saveActionContent() {
+        window.vtoast.loading("正在保存抽屉配置");
+        await window.appAxios({
+          packageType: "updatePageContent",
+          data: {
+            appData: {
+              pageId: this.pageId,
+              appId: this.appId,
+              webPageId: this.webPageId,
+              webPageName: this.webPageName,
+              actionData: {
+                constantObj: this.constantObj,
+                actionContent: this.actionContent,
+                jsonPath: this.jsonPath,
               }
-            }
-          }
-        }
-      },
-      removeBtn() {
-        this.removeById(this.pageContent, this.activeBtnItem.uid);
-        if (this.activeBtnItem.type === 'rowAction') {
-          // 自动设定action宽度
-          this.resetActionWidth();
-        }
-        this.activeBtnItem = null;
-      },
-      rowSelect(value) {
-        if (this.pageConfig.singleSelect.value) {
-          this.demoSelected = [value];
-        } else {
-          if (this.demoSelected.includes(value)) {
-            this.demoSelected.splice(this.demoSelected.findIndex(item => item === value), 1);
-          } else {
-            this.demoSelected.push(value);
-          }
-        }
-      },
-      // 列顺序调换
-      tdMove(header, arrow) {
-        let arr = this[`${this.tableHeaderListKey}`];
-        let index = arr.findIndex(item => item.value === header.value);
-        if (Math.abs(arrow) === 1) {
-          let targetIndex = Math.max(Math.min(index + arrow, arr.length - 1), 0);
-          // 位置互换
-          [arr[index], arr[targetIndex]] = [arr[targetIndex], arr[index]];
-          this.activeTh.index = arr.findIndex(item => item.value === header.value) + 1;
-        }
-        if (Math.abs(arrow) === 999) {
-          arr.splice(index, 1);
-          arrow === -999 ? arr.unshift(header) : arr.push(header);
-          this.activeTh.index = arr.findIndex(item => item.value === header.value) + 1;
-        }
-        this[`${this.tableHeaderListKey}`] = _.cloneDeep(arr);
-        console.log("this.activeDom", this.activeDom);
-        // if (!this.activeDom.classList.constants("activeDom")) {
-        //   this.activeDom.classList.add("activeDom");
-        // }
-      },
-      // 当前按钮颜色变动
-      btnColorChange(event) {
-        if (this.activeBtnItem.tag === 'v-btn') {
-          console.log("改变按钮颜色")
-          this.activeBtnItem.attrs.color = event;
-          document.querySelector(`[uid=${this.activeBtnItem.uid}]`) && document.querySelector(`[uid=${this.activeBtnItem.uid}]`).classList.add("activeDom");
-        } else {
-          const regex = /(\w+--text)/g;
-          this.activeBtnItem.attrs.class = this.activeBtnItem.attrs.class.replace(regex, event + '--text');
-          this.activeBtnItem.value[0].attrs.class = this.activeBtnItem.value[0].attrs.class.replace(regex, event + '--text');
-        }
-      },
-      // 选中列 \ 选中表单字段
-      setActiveTh(field) {
-        document.querySelector(`button.activeDom`) && document.querySelector(`button.activeDom`).classList.remove("activeDom");
-        if (this.tabIndex === 1) {
-          let thItem;
-          if (field.value && field.text) {
-            thItem = field;
-          } else {
-            thItem = {
-              text: field.Comment,
-              value: field.Field,
-              type: "v-text-field",
-              width: 80,
-              sortable: true,
-              class: "",
-              cellClass: "",
-              fixed: false,
-              shown: false,
-            };
-          }
-          this.activeTh = thItem;
-          this.activeTh.index = this[`${this.tableHeaderListKey}`].findIndex(item => item.value === thItem.value) + 1;
-          this.activeBtnItem = null;
-          this.activeData = null;
-          console.log("setActiveTh", this.activeTh)
-        }
-        if (this.tabIndex > 1 && this.tabHasForm) {
-        }
-      },
-      // 选中单元格
-      setActiveData(header, item) {
-        document.querySelector(`button.activeDom`) && document.querySelector(`button.activeDom`).classList.remove("activeDom");
-        if (header.value === 'action') {
-          return;
-        }
-        this.activeTh = null;
-        this.activeBtnItem = null;
-        this.activeData = header;
-        this.activeData.dataType = 'text';
-      },
-      // 选中按钮
-      setActiveBtn(item) {
-        console.log("选中按钮", item)
-        document.querySelector(`button.activeDom`) && document.querySelector(`button.activeDom`).classList.remove("activeDom");
-        this.activeTh = null;
-        this.activeData = null;
-        this.activeBtnItem = item;
-        if (this.activeBtnItem.tag === 'v-btn') {
-          this.activeBtnItem.color = this.activeBtnItem.attrs.color;
-        } else {
-          const regex = /(\w+--text)/g;
-          const match = this.activeBtnItem.attrs.class.match(regex);
-          this.activeBtnItem.color = match && match[0].split("--")[0];
-        }
-      },
-      // 表头增加按钮
-      insertBeforeById(obj, idToFind, newData) {
-        if (Array.isArray(obj)) {
-          const find = obj.some(item => {
-            if (item.uid === idToFind) {
-              console.log("insertBeforeById", obj, idToFind, newData);
-              obj.splice(obj.indexOf(item), 0, newData);
-              return true;
-            }
-          })
-          if (!find) {
-            obj.forEach(item => {
-              this.insertBeforeById(item.value, idToFind, newData);
-            })
-          }
-        }
-      },
-      addNewHeadBtn(uid) {
-        const itemBtn = {
-          uid: `tag_id_${Math.random().toString(36).substr(2, 16)}`,
-          tag: "v-btn",
-          color: "success",
-          attrs: {
-            color: "success",
-            class: "mr-2",
-            small: true,
-            "@click": 'doUiAction("startAddItem")',
+            },
           },
-          value: ["文字"],
-        };
-        this.insertBeforeById(this.pageContent, uid, itemBtn);
-        console.log(this.pageContent);
-        this.setActiveBtn(itemBtn)
-      },
-      activeBtnItemTypeChange(value) {
-        const actionType = this.constants[this.activeBtnItem.type].find(item => item.value === value);
-        if (this.activeBtnItem.tag === 'v-btn') {
-          this.activeBtnItem.value[0] = actionType.text;
-        } else {
-          this.activeBtnItem.value[1] = actionType.text;
-        }
-        this.activeBtnItem.attrs["@click"] = actionType.value;
-      },
-      async getDbFieldList() {
-        const result = await window.appAxios({
-          packageType: "getFieldListRequest",
-          data: {
-            appData: {
-              appId: this.appId,
-              webPageId: this.webPageId,
-              // pageFile: this.pageFile,
-            },
+          callback: (value) => {
+            if (value.appData.isEnd) {
+              window.vtoast.success("运行成功");
+            }
           }
         })
-        console.log("getDbFieldList res", result)
-        const { fieldList, error } = result.data.appData;
-        this.tableFieldList = fieldList;
-        console.log("getFieldListResponse", fieldList)
-        this.priKey = fieldList.find(item => item.Key === 'PRI').Field;
       },
-      async getPageConfig() {
-        const designFieldConfigList = await window.appAxios({
-          packageType: "getFieldConfigRequest",
-          data: {
-            appData: {
-              appId: this.appId,
-              webPageId: this.webPageId,
-              pageJsonPath: this.jsonPath,
-              // pageFile: this.pageFile,
-            },
-          }
-        })
-        const { actionContent, pageContent, headContent, error } = designFieldConfigList.data.appData;
-        if (error) {
-          return;
-        }
-        console.log("getFieldConfigResponse", actionContent, pageContent, headContent)
-        this.actionContent = actionContent;
-        this.headContent = headContent;
-        this.initActionContent();
-        this.initPageContent(pageContent);
-      },
-      initActionContent() {
-        this.actionContent.map(item => {
-          this.tabItems.push({ text: item.value[0].value[0].value[0].value[0], icon: "dock-right" });
-        });
-        console.log(this.designfieldConfigList)
-      },
-      initPageContent(pageContent) {
-        const loopFun = (content) => {
-          content.forEach((pageItemContent) => {
-            if (pageItemContent.tag === 'v-data-table') {
-              this.tableHeaderListKey = pageItemContent.attrs[":headers"];
-              this[`${this.tableHeaderListKey}`].forEach(item => {
-                item.shown = true;
-                item.fixed = item.class === 'fixed' || item.cellClass === 'fixed';
-              })
-            }
-            if (pageItemContent.value && Array.isArray(pageItemContent.value) && pageItemContent.value.length) {
-              loopFun(pageItemContent.value);
-            }
-          })
-        }
-        loopFun(pageContent);
-        console.log(pageContent);
-        this.pageContent = pageContent;
-      },
-      setPageStep(index) {
-        this.tabIndex = index;
-      },
-      selectfieldType(item) {
-        this.designfieldConfigList.push({ ..._.cloneDeep(item), uid: this.designfieldConfigList.length + 1, fieldType: item.tag === 'v-textarea' ? 'text' : (item.config.attributes.type === 'num' ? 'int(11)' : 'varchar(255)') });
-      },
-      selectTableField(item) {
-        this.designfieldConfigList.push({
-          uid: this.designfieldConfigList.length + 1, fieldType: item.Type, fieldName: item.Field, text: item.Comment || item.Field, tag: 'v-text-field', disabled: true,
-          config: {
-            cols: 4, rules: [], attributes: { class: "jh-v-input", dense: true, "single-line": true, filled: true }
-          }
-        });
-      },
-      selectViewField(item) {
-        if (item.shown) {
-          return;
-        }
-        this.viewConfigList.push({
-          uid: this.viewConfigList.length + 1, fieldType: item.Type, fieldName: item.Field, text: item.Comment || item.Field, tag: 'v-text-field', disabled: true,
-          config: {
-            cols: 4, rules: [], attributes: { class: "jh-v-input", dense: true, "single-line": true, filled: true }
-          }
-        });
-        this.tableFieldList.find(field => field.Field === item.Field).shown = true;
-      },
-      removeViewItem(item) {
-        if (item.uid === this.activeViewField) {
-          this.activeViewField = null;
-        }
-        this.viewConfigList = this.viewConfigList.filter(field => field.uid !== item.uid);
-        this.tableFieldList.find(field => field.Field === item.fieldName).shown = false;
-      },
-      removeItem(item) {
-        if (item.uid === this.activeField) {
-          this.activeField = null;
-        }
-        this.designfieldConfigList = this.designfieldConfigList.filter(field => field.uid !== item.uid);
-      },
-      onStart() {
-      },
-      onEnd() {
-        console.log(this.designfieldConfigList.map(item => item.uid))
-      },
-      removeOption(option) {
-        this.activeFieldConfig.config.constants.constantValue = this.activeFieldConfig.config.constants.constantValue.filter(item => item !== option);
-      },
-      addNewOption() {
-        this.activeFieldConfig.config.constants.constantValue.push("");
-      },
-      async saveViewConfig() {
-        console.log("this[`${this.tableHeaderListKey}`]", this.viewConfigList);
-      },
-      saveDrawerContent() {
-        console.log("saveDrawerContent", this.actionContent[this.tabIndex - 2].value);
-      },
+      // 保存页面的配置
       async savePageContent() {
         // 验证数据
         // 1. 要把 header 重新覆盖下
@@ -1243,7 +496,10 @@
                 header: newHeader,
                 headerKey: this.tableHeaderListKey,
                 pageContent,
-                jsonPath: this.jsonPath
+                headContent: this.headContent,
+                jsonPath: this.jsonPath,
+                hasHelpDrawer: this.hasHelpDrawer,
+                rootPath: `${this.projectPath}/`
               }
             },
           },
@@ -1255,8 +511,6 @@
         })
 
       },
-
-      //===//<$ common.methods | methodFormat | safe $>
     }
   })
 </script>
@@ -1274,8 +528,14 @@
     line-height: 1.45;
   }
 
+  .page-tabs-item {
+    min-height: calc(100vh - 120px) !important;
+    width: 100%;
+    border-radius: 5px;
+  }
+
   .designContainerCardLeft {
-    flex: 1;
+    display: block;
   }
 
   .designContainerCardLeft>* {

@@ -17,9 +17,9 @@ import { AppProvider } from "./layout/appProvider";
 import PageWebview from "./layout/pageWebview";
 import { PathUtil } from "./util/pathUtil";
 import AppManager from "./core/appManager";
-import { JhPanelFromHtml } from "./jhProvider/JhPanelFromHtml";
-import { JhPanelFromPosition } from "./jhProvider/JhPanelFromPosition";
 import { JhPanelUserJson } from "./jhProvider/JhPanelUserJson";
+import { JhPanelFromPosition } from "./jhProvider/JhPanelFromPosition";
+import { JhPanelReadJson } from "./jhProvider/JhPanelReadJson";
 
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
@@ -27,9 +27,10 @@ export function activate(context: vscode.ExtensionContext) {
   PathUtil.extensionContext = context;
   const core: AppCore = new AppCore();
 
-  new JhPanelFromHtml(context);
+  // new JhPanelFromHtml(context);
   new JhPanelFromPosition(context);
-  new JhPanelUserJson(context);
+  // new JhPanelUserJson(context);
+  new JhPanelReadJson(context);
 
   // @ts-ignore
   // eslint-disable-next-line @typescript-eslint/no-unsafe-call
@@ -102,7 +103,9 @@ export function activate(context: vscode.ExtensionContext) {
       } else {
         // @ts-ignore
         // eslint-disable-next-line @typescript-eslint/no-unsafe-call
-        const ui = await JianghuKnexManager.client(currDatabase)(TableEnum._ui).where("uiActionId", pageId.actionId).first();
+        const ui = await JianghuKnexManager.client(currDatabase)(TableEnum._ui)
+          .where("uiActionId", pageId.actionId as string)
+          .first();
         // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
         const uiActionConfig = JSON.parse(ui.uiActionConfig || "{}");
         const before = uiActionConfig.before
@@ -125,7 +128,7 @@ export function activate(context: vscode.ExtensionContext) {
     })
   );
   context.subscriptions.push(
-    vscode.commands.registerCommand("constructionPlanView.replaceSample", async uri => {
+    vscode.commands.registerCommand("constructionPlanView.replaceSample", uri => {
       const { pageId, pageName, currDatabase }: { pageId: any; pageName: string; currDatabase: Knex.MySqlConnectionConfig } = uri;
       if (pageName === "UiAction") {
         uiAnnotation.activate(context, { pageId, actionId: pageId.actionId, pageName, currDatabase });

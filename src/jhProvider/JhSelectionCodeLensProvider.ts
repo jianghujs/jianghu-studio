@@ -20,16 +20,7 @@ export class JhSelectionCodeLensProvider implements vscode.CodeLensProvider {
     if (JhSelectionCodeLensProvider.currentLine !== undefined) {
       const line = document.lineAt(JhSelectionCodeLensProvider.currentLine);
       const lineText = line.text.trim();
-      const notTips =
-        lineText.includes("v-slot") ||
-        lineText.startsWith("//") ||
-        lineText.startsWith("/*") ||
-        lineText.startsWith("*") ||
-        lineText.startsWith("*/") ||
-        lineText.startsWith("<!--") ||
-        lineText.startsWith("</") ||
-        lineText.startsWith("<style") ||
-        lineText.startsWith("<script");
+      const notTips = lineText.includes("v-slot") || lineText.startsWith("//") || lineText.startsWith("/*") || lineText.startsWith("*") || lineText.startsWith("*/") || lineText.startsWith("<!--") || lineText.startsWith("</") || lineText.startsWith("<style") || lineText.startsWith("<script");
       if (lineText.startsWith("<") && !notTips) {
         const range = new vscode.Range(JhSelectionCodeLensProvider.currentLine, 0, JhSelectionCodeLensProvider.currentLine, 0);
         const command = {
@@ -39,7 +30,7 @@ export class JhSelectionCodeLensProvider implements vscode.CodeLensProvider {
         };
         const command2 = {
           title: "可视化设计",
-          command: "jhExtension.showDesignPanel",
+          command: "jhExtension.openPageDesignFromJson",
           arguments: [range.start, lineText],
         };
         const lens = new vscode.CodeLens(range, command);

@@ -1,5 +1,8 @@
 {
-  "printWidth": 200,
+  "[html]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "printWidth": 500,
   "eslintIntegration": true,
   "stylelintIntegration": true,
   "semi": true,
