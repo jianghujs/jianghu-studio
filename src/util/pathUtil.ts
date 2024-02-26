@@ -90,7 +90,8 @@ export class PathUtil {
     const pageDir = path.dirname(pagePath as string);
     const pageName = path.basename(pagePath as string);
     const isPage = pageName.endsWith(".html") && pageDir.endsWith("/view/page");
-    return isPage;
+    const isJson = pageName.endsWith(".js") && pageDir.endsWith("/view/init-json/page");
+    return isPage || isJson;
   }
 
   public static checkIsJhProject(document?: any, projectPath?: string): boolean {

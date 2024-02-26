@@ -43,12 +43,8 @@ export class JhPanel {
     this.activeUriPath = document.uri.path;
     const isJhProject = PathUtil.checkIsJhProject(document);
 
-    if (!(document.languageId === "html" && isJhProject)) {
+    if (!isJhProject) {
       void vscode.commands.executeCommand("setContext", "openJianghuDesign", false);
-      // if (JhPanel.jhPanel) {
-      //   JhPanel.jhPanel.dispose();
-      //   JhPanel.jhPanel = undefined;
-      // }
       return;
     }
     // 打开HTML文件时，显示你的按钮
