@@ -59,14 +59,28 @@ export default class AppCore {
         }
         break;
       }
+      case "getTables": {
+        void this.getTables(uri, panel);
+        break;
+      }
+      // 选择工作目录
+      case "vscodeToast": {
+        const {
+          appData: { message },
+        } = body;
+        if (message) {
+          void vscode.window.showInformationMessage(message as string);
+        }
+        break;
+      }
       // 读取数据库现有字段
       case "getFieldListRequest": {
         void this.getFieldListRequest(body, uri, panel);
         break;
       }
       // 读取页面的配置文件
-      case "getFieldConfigRequest": {
-        this.getFieldConfigRequest(body, uri, panel);
+      case "getPageConfigRequest": {
+        this.getPageConfigRequest(body, uri, panel);
         break;
       }
       // 打开设计页面
@@ -83,7 +97,7 @@ export default class AppCore {
       case "updatePageContent": {
         if (body.appData) {
           const { webPageId, actionData } = body.appData;
-          void this.updatePageConfig(actionData, webPageId as string, uri.appDir);
+          void this.updatePageConfigJson(actionData, webPageId as string, uri.appDir);
           await this.buildPageFromJson(body, uri.appDir as string, panel, webPageId as string, "updatePageConfigResponse");
         }
         const returnBody = { ...body, packageType: "updatePageConfigResponse", appData: { isEnd: true } };
@@ -126,6 +140,16 @@ export default class AppCore {
       default:
         break;
     }
+  }
+
+  private updatePageConfigJson(actionData: any, webPageId: string, appDir: any) {
+    const { pageJsonContent } = actionData;
+    const resJsonPath = `${appDir}/app/view/init-json/page/${webPageId}.js`;
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+    let pageConfigString = `const content = ${pageJsonContent.replace(/"__FUN__(.*?)__FUN__"/g, (match: any, p1: any) => p1).replace(/\\n/g, "\n")}; module.exports = content;`;
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+    pageConfigString = prettier.format(pageConfigString, { parser: "flow" });
+    fs.writeFileSync(resJsonPath, pageConfigString);
   }
 
   private updatePageConfig(actionData: any, webPageId: string, appDir: any) {
@@ -215,6 +239,30 @@ export default class AppCore {
     }
   }
 
+  private getTables(uri: any, panel: vscode.WebviewPanel) {
+    const { currDatabase: database } = uri;
+
+    // 根据webPageId创建数据库表
+    const knex = KnexManager.client(database as Knex.MySqlConnectionConfig);
+
+    if (!knex) {
+      // 异常提示
+      Logger.showError("数据库连接失败");
+      return;
+    }
+
+    void knex.raw("SHOW TABLES").then(tables => {
+      console.log("SHOW TABLES", tables);
+      const returnBody = {
+        packageType: "getTablesResponse",
+        appData: {
+          tables: tables[0],
+        },
+      };
+      void panel.webview.postMessage(returnBody);
+    });
+  }
+
   private async getFieldListRequest(body: any, uri: any, panel: vscode.WebviewPanel) {
     const { appData } = body;
     const { currDatabase: database } = uri;
@@ -256,7 +304,7 @@ export default class AppCore {
     }
   }
 
-  private getFieldConfigRequest(body: any, uri: any, panel: vscode.WebviewPanel) {
+  private getPageConfigRequest(body: any, uri: any, panel: vscode.WebviewPanel) {
     const { pageJsonPath } = body.appData;
     if (!pageJsonPath || !fs.existsSync(pageJsonPath as string)) {
       if (panel) {
@@ -265,8 +313,13 @@ export default class AppCore {
       }
       return;
     }
+    // 读取临时文件内容
+    const content = fs.readFileSync(pageJsonPath as string, "utf8");
+    const newFilePath = (pageJsonPath as string).replace(".js", `.${+new Date()}.js`);
+    fs.writeFileSync(newFilePath, content);
     // js中是 module.exports = content; 这里需要把 content 转换为 json
-    void import(pageJsonPath).then((pageConfig: any) => {
+    void import(newFilePath).then((pageConfig: any) => {
+      fs.unlinkSync(newFilePath);
       if (!pageConfig) {
         // 回消息
         if (panel) {
@@ -275,6 +328,23 @@ export default class AppCore {
         }
         return;
       }
+      // 表达式和函数在传递到页面的时候，就没了
+      pageConfig = JSON.parse(
+        JSON.stringify(
+          pageConfig,
+          (key, value) => {
+            if (typeof value === "function") {
+              // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+              return `__FUN__${value.toString()}__FUN__`;
+            }
+            if (value instanceof RegExp) {
+              return `__FUN__${value.toString()}__FUN__`;
+            }
+            return value;
+          },
+          2
+        )
+      );
       // 回消息
       if (panel) {
         const returnBody = {
@@ -305,6 +375,7 @@ export default class AppCore {
         if (panel) {
           void panel.webview.postMessage(returnBody);
         }
+        void vscode.window.showInformationMessage(`${data}`);
       });
       child.stderr.on("data", data => {
         // 创建失败；重新运行
@@ -313,10 +384,10 @@ export default class AppCore {
       child.on("close", code => {
         console.log(`buildPageFromJson child process exited with code ${code}`);
         // 格式化下处理
-        const htmlPath = `${appFolder}/app/view/page/${webPageId}.html`;
-        const textA = fs.readFileSync(htmlPath, "utf8");
+        // const htmlPath = `${appFolder}/app/view/page/${webPageId}.html`;
+        // const textA = fs.readFileSync(htmlPath, "utf8");
         // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-call
-        fs.writeFileSync(htmlPath, prettier.format(textA, { parser: "html" }));
+        // fs.writeFileSync(htmlPath, prettier.format(textA, { parser: "html" }));
         resolve(true);
       });
     });

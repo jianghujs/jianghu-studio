@@ -1,7 +1,10 @@
 {% block htmlHead %}
-<style>
-  /* css */
-</style>
+<link href="../lib/jsoneditor/jsoneditor.css" rel="stylesheet">
+<link href="../lib/codemirror/codemirror.min.css" rel="stylesheet">
+<link href="../lib/codemirror/darcula.css" rel="stylesheet">
+<script src="../lib/jsoneditor/jsoneditor.js"></script>
+<script src="../lib/codemirror/codemirror.min.js"></script>
+<script src="../lib/codemirror/mode/javascript/javascript.js"></script>
 {% endblock %}
 
 {% extends 'template/jhsTemplate.html'%}
@@ -24,7 +27,7 @@
               </v-btn>
             </v-bottom-navigation>
             <v-spacer></v-spacer>
-            <v-btn color="success" style="width: 150px;" class="mr-3" @click="saveConfig">保存{{tabItems[tabIndex].text}}设计</v-btn>
+            <v-btn color="success" style="width: 150px;" class="mr-3" @click="saveConfig">保存{{tabItems[tabIndex].text}}</v-btn>
           </v-card>
         </div>
         <!-- 表单设计 -->
@@ -32,36 +35,669 @@
           <!-- 页面设计 -->
           <v-tabs-items v-model="tabIndex" class="page-tabs-item">
             <v-tab-item :key="0" :value="0" class="pa-4">
-              <template v-for="(item, key) of pageJsonContent">
-                <template v-if="['pageContent', 'actionContent', 'headContent'].includes(key)"></template>
-                <v-row v-else-if="typeof item === 'string'">
-                  <v-col class="d-flex align-center">
-                    <span style="text-align: right; display: inline-block; min-width: 100px; padding-right: 20px;">{{key}}:</span>
-                    <v-text-field v-model="pageJsonContent[key]" class="jh-v-input" dense single-line filled style="flex: 1;"></v-text-field>
-                  </v-col>
-                </v-row>
-                <div v-else-if="Array.isArray(item)">
-                  <div style="padding: 12px;">{{key}}: {{item}}</div>
-                </div>
-                <div v-else>
-                  <div style="padding: 12px;">{{key}}: {{item}}</div>
-                </div>
-              </template>
+              <v-form ref="baseConfigForm">
+                <template v-for="(item, key) of pageJsonContent">
+                  <template v-if="['pageContent', 'actionContent', 'headContent', 'common'].includes(key)"></template>
+                  <v-row v-else>
+                    <v-col class="d-flex align-top">
+                        <span style="text-align: right; display: inline-block; min-width: 200px; padding-right: 20px; padding-top: 5px;">
+                          {{pageConfigLabel[key]}}（{{key}}）:
+                          <template v-if="Array.isArray(item)">
+                            <br>
+                            <v-btn small color="black" dark dense @click="inputNewData(item, key)">新增数据</v-btn>
+                          </template>
+                        </span>
+                        <template v-if="typeof item === 'string'">
+                          <v-select :items="designConstants[key]" outlined dense v-model="pageJsonContent[key]" class="jh-v-input" v-if="designConstants.hasOwnProperty(key)"></v-select>
+                          <v-text-field v-else v-model="pageJsonContent[key]" class="jh-v-input" dense single-line filled style="flex: 1;" :rules="validationRules.requireRules"></v-text-field>
+                        </template>
+                        <div v-else-if="Array.isArray(item)" style="flex: 1;">
+                          <div v-if="item.length">
+                            <div class="d-flex align-top mb-4"  v-for="(item2, index) in item" :key="index" >
+                              <div :id="`pageJsonContent-${key}-${index}-codeMirror`" style="flex: 1;" :ref="`pageJsonContent-${key}-${index}-codeMirror`">
+                              </div>
+                              <v-btn fab small class="elevation-0 ml-2" color="white" @click="removeItem(item, item2, key)"><v-icon>mdi-close</v-icon></v-btn>
+                            </div>
+                          </div>
+                          <div style="padding: 12px 0;" v-else>[]</div>
+                        </div>
+                        <div v-else>
+                          <div style="padding: 12px 0;">{{item}}</div>
+                        </div>
+                    </v-col>
+                  </v-row>
+                </template>
+              </v-form>
             </v-tab-item>
             <v-tab-item :key="1" :value="1" class="pa-4">
-              <template v-for="(item, key) of headContent">
-                <v-card>{{item}}</v-card>
+              <template v-for="(item, key) of common">
+                <v-row>
+                  <v-col class="d-flex align-top">
+                      <span style="text-align: right; display: inline-block; min-width: 300px; padding-right: 20px; padding-top: 5px;">
+                        
+                        <v-tooltip bottom>
+                          <template v-slot:activator="{ on, attrs }">
+                            <span v-bind="attrs" v-on="on" style="cursor: pointer;">
+                              <v-icon size="12" color="error">mdi-help-circle-outline</v-icon>
+                              {{pageCommonConfigLabel[key]}}（{{key}}）:
+                            </span>
+                          </template>
+                          <span v-html="pageConfigHelp[key]">
+                          </span>
+                        </v-tooltip>
+                      </span>
+                      <template v-if="typeof item === 'string'">
+                        <v-select :items="designConstants[key]" outlined dense v-model="pageJsonContent[key]" class="jh-v-input" v-if="designConstants.hasOwnProperty(key)"></v-select>
+                        <v-text-field v-else v-model="pageJsonContent[key]" class="jh-v-input" dense single-line filled style="flex: 1;" :rules="validationRules.requireRules"></v-text-field>
+                      </template>
+                      <div v-else-if="Array.isArray(item)" style="flex: 1;">
+                        <div v-if="item.length">
+                          <div class="d-flex align-top"  v-for="(item2, index) in item" :key="index" >
+                            <div :id="`common-${key}-${index}-codeMirror`"  :ref="`common-${key}-${index}-codeMirror`">
+                            </div>
+                            <v-btn fab small class="elevation-0 ml-2" color="white" @click="removeItem(item, item2, key)"><v-icon>mdi-close</v-icon></v-btn>
+                          </div>
+                        </div>
+                        <div style="padding: 12px 0;" v-else>[]</div>
+                      </div>
+                      <div v-else style="flex: 1;" :id="`common-${key}-codeMirror`" :ref="`common-${key}-codeMirror`">
+                      </div>
+                  </v-col>
+                </v-row>
               </template>
             </v-tab-item>
             <v-tab-item :key="2" :value="2" class="pa-4">
-              <template v-for="(item, key) of pageContent">
-                <v-card>{{item}}</v-card>
-              </template>
+              <div class="d-flex">
+                <div class="designContainerCardLeft">
+                  <div>
+                    <div class="headConent d-flex">
+                      <div class="titleContent" @click="setActiveEditItem(titleContent, 'titleContent', -1, `titleContent`)" :class="{'isEditDom': 'titleContent' === activeEditType}">
+                        <span class="boxTip">页面标题</span>
+                        <v-chip dense small color="light-green lighten-4">页面标题：{{titleContent.value}}</v-chip>
+                        <v-chip dense small color="light-green lighten-4" v-if="titleContent.helpBtn"><v-icon size="13" class="success--text mt-1">mdi-help-circle-outline</v-icon>帮助</v-chip>
+                      </div>
+                      <div class="serverSearchContent" style="text-align: right;" @click="setActiveEditItem(serverSearchContent, 'serverSearchContent', -1, `serverSearchContent`)" :class="{'isEditDom': 'serverSearchContent' === activeEditType}">
+                        <span class="boxTip">服务端搜索</span>
+                        <v-chip dense small color="light-green lighten-4" v-for="item of serverSearchContent.value">{{item.attrs.prefix}}:{{item.model}}</v-chip>
+                        <v-chip dense small color="light-green lighten-4" v-if="serverSearchContent.searchBtn">{{serverSearchContent.searchBtn.value || '查询'}}</v-chip>
+                      </div>
+                    </div>
+                    <template v-for="(pageContentItem, index) of pageContent">
+                      <div class="dataTableHeader d-flex">
+                        <div class="dataTableHeaderAction" @click="setActiveEditItem(pageContentItem.headActionList, 'dataTableHeaderAction', index, `pageContent.${index}.headActionList`)" :class="{'isEditDom': 'dataTableHeaderAction' === activeEditType}">
+                          <span class="boxTip">表格上方按钮</span>
+                          <v-chip small color="light-green lighten-4" v-for="item of pageContentItem.headActionList" v-if="item.tag === 'v-btn'">{{item.value}}</v-chip>
+                        </div>
+                        <v-spacer></v-spacer>
+                        <div class="dataTableHeaderFilter" @click="setActiveEditItem(pageContentItem.headActionList, 'dataTableHeaderFilter', index, `pageContent.${index}.headActionList`)" :class="{'isEditDom': 'dataTableHeaderFilter' === activeEditType}">
+                          <span class="boxTip">表格筛选</span>
+                          <template v-for="col of pageContentItem.headActionList" v-if="col.tag === 'v-col'">
+                            <v-chip small color="light-green lighten-4" v-for="item of col.value">{{item.attrs.prefix}}:{{item.attrs['v-model']}}</v-chip>
+                          </template>
+                        </div>
+                      </div>
+                      <div class="dataTableContent" :class="{'isEditDom': 'dataTableContent' === activeEditType}" @click.self="setActiveEditItem(pageContentItem, 'dataTableContent')">
+                        <span class="boxTip">表格字段</span>
+                        <template v-for="(tdItem, tdIndex) of pageContentItem.value">
+                          <v-chip class="ma-1" 
+                           :color="activeEditItem && tdItem.value === activeEditItem.value ? 'warning' : 'grey darken-2'" close
+                           :outlined="tdItem.value === 'action' || !(activeEditItem && tdItem.value === activeEditItem.value)"
+                           @click:close="removeTableField(pageContentItem.value, tdIndex)"
+                           @click="setActiveEditItem(tdItem, 'dataTableContentTd', -1, `pageContent.${index}.value.${tdIndex}`)">
+                           {{tdItem.text}}:{{tdItem.value}} 
+                           <template v-if="tdItem.value === 'action'">
+                            ：[<span class="px-3 d-flex align-center">
+                              <v-chip v-for="(rowActionItem, rowActionIndex) of pageContentItem.rowActionList" close small
+                              :color="rowActionItem.color"
+                              :outlined="!(activeEditItem && rowActionItem.text === activeEditItem.text)"
+                              @click.stop="setActiveEditItem(rowActionItem, 'dataTableContentRowAction', rowActionIndex, `pageContent.${index}.rowActionList.${rowActionIndex}`)"
+                              @click:close="removeRowActionBtn(pageContentItem.rowActionList, rowActionIndex)">
+                                <v-icon size="12">{{rowActionItem.icon}}</v-icon>
+                                {{rowActionItem.text}}
+                             </v-chip>
+                             <v-chip small color="success" @click.stop="addRowActionBtn(pageContentItem.rowActionList)">
+                                <v-icon size="12">mdi-plus</v-icon>
+                             </v-chip>
+                            </span>]
+                           </template>
+                          </v-chip>
+                        </template>
+                        <div>
+                          <v-chip class="ma-1" color="success" @click="addTableField(pageContentItem.value)">新增字段<v-icon right>
+                            mdi-plus
+                          </v-icon></v-chip>
+                        </div>
+                      </div>
+                    </template>
+                  </div>
+                </div>
+                <div class="designContainerCard px-2">
+                  <v-row class="ma-0 pa-2">
+                    <v-icon color="success" size="18">mdi-cog</v-icon>
+                    <span style="line-height: 36px; font-size: 14px; font-weight: bold; padding-left: 12px;">{{activeEditType ? activeEditTypeMap[activeEditType] : "页面属性"}}</span>
+                    <v-spacer></v-spacer>
+                    <v-icon size="20" color="red" @click="closePropertyContainer" v-if="activeEditType">mdi-close-circle</v-icon>
+                  </v-row>
+                  <v-divider class="mb-4"></v-divider>
+                  <div v-if="'titleContent' === activeEditType">
+                    <!-- 页面标题 -->
+                    <v-text-field prefix="标题: " outlined dense v-model="activeEditItem.value" :rules="validationRules.requireRules"></v-text-field>
+                    <!-- 字段显隐 -->
+                    <v-row class="ma-0 pa-0 mb-4 align-center">
+                      <div class="switchBox">
+                        <span>显示帮助按钮<v-icon size="14" color="red">mdi-eye</v-icon></span>
+                        <v-spacer></v-spacer>
+                        <v-switch color="success" class="mt-0" dense inset hide-details value  v-model="activeEditItem.helpBtn"></v-switch>
+                      </div>
+                    </v-row>
+                  </div>
+                  <div v-if="'serverSearchContent' === activeEditType">
+                    <!-- 服务端搜索 -->
+                    <div class="d-flex align-center">
+                      <span>搜索字段列表</span>
+                      <v-icon size="14" color="red">mdi-cog</v-icon>
+                      <v-spacer></v-spacer>
+                      <v-btn small @click="addSearchField"><v-icon>mdi-plus</v-icon> 新增字段</v-btn>
+                    </div>
+                    <div v-for="(item, index) of activeEditItem.value" style="background-color: #EEEEEE; border-radius: 5px; padding: 5px;" class="mb-2">
+                      <div class="d-flex"><v-spacer></v-spacer><v-btn icon small color="error" @click="removeSearchField(index)"><v-icon>mdi-close</v-icon></v-btn></div>
+                      <v-text-field prefix="名称: " hide-details outlined dense v-model="item.attrs.prefix" class="jh-v-input bg-white" @input="refreshCodeMirror(`activeEditItem-value-${index}-codeMirror`)" :rules="validationRules.requireRules"></v-text-field>
+                      <v-text-field prefix="绑定值: " hide-details outlined dense v-model="item.model" class="jh-v-input bg-white" @input="refreshCodeMirror(`activeEditItem-value-${index}-codeMirror`)" :rules="validationRules.requireRules"></v-text-field>
+                      <v-select prefix="字段类型: " :items="['v-text-field', 'v-select', 'v-date-picker']" class="jh-v-input bg-white" @change="refreshCodeMirror(`activeEditItem-value-${index}-codeMirror`)" outlined dense v-model="item.tag"></v-select>
+                      <div v-if="item.tag === 'v-select'" class="px-2">
+                          <div class="d-flex align-center"><span>选项</span><v-spacer></v-spacer><v-btn icon dense @click="addNewOption(item)"><v-icon>mdi-plus</v-icon></v-btn></div>
+                          <div v-if="!item.attrs[':items'] || !item.attrs[':items'].length" class="pb-4 pt-2 text-center" style="color: #999999;">暂无选项配置</div>
+                          <div v-else class="d-flex" v-for="(option, index) of item.attrs[':items']">
+                            <v-text-field prefix="选项：" v-if="typeof option === 'string'" class="jh-v-input bg-white" @input="refreshCodeMirror(`activeEditItem-value-${index}-codeMirror`)" outlined dense v-model="item.attrs[':items'][index]"></v-text-field>
+                            <div v-else class="d-flex align-center">
+                              <v-text-field style="flex: 1;" prefix="文字：" outlined dense v-model="item.attrs[':items'][index].text" @input="refreshCodeMirror(`activeEditItem-value-${index}-codeMirror`)" hide-details class="mr-2 jh-v-input bg-white"></v-text-field>
+                              <v-text-field style="flex: 1;" prefix="值：" outlined dense v-model="item.attrs[':items'][index].value" @input="refreshCodeMirror(`activeEditItem-value-${index}-codeMirror`)" hide-details class="jh-v-input bg-white"></v-text-field>
+                            </div>
+                            <v-btn icon dense><v-icon size="16" @click="removeOption(item, index)">mdi-close</v-icon></v-btn>
+                          </div>
+                      </div>
+                      <div class="whiteBox">
+                        <div>字段配置元数据</div>
+                        <div :id="`activeEditItem-value-${index}-codeMirror`" :ref="`activeEditItem-value-${index}-codeMirror`" >
+                        </div>
+                      </div>
+                    </div>
+                    <span>按钮配置<v-icon size="14" color="red">mdi-cog</v-icon></span>
+                    <div style="background-color: #EEEEEE; border-radius: 5px; padding: 5px;" class="mb-2">
+                      <v-text-field prefix="按钮文字: " outlined dense v-model="activeEditItem.searchBtn.value" @input="refreshCodeMirror(`activeEditItem-searchBtn-codeMirror`)" class="jh-v-input bg-white":rules="validationRules.requireRules" hide-details></v-text-field>
+                      <v-text-field prefix="按钮事件: " outlined dense v-model="activeEditItem.searchBtn.attrs['@click']" @input="refreshCodeMirror(`activeEditItem-searchBtn-codeMirror`)" class="jh-v-input bg-white" :rules="validationRules.requireRules" hide-details></v-text-field>
+                      <v-select prefix="按钮颜色: " :items="designConstants.color" outlined dense v-model="activeEditItem.searchBtn.attrs['color']" @change="refreshCodeMirror(`activeEditItem-searchBtn-codeMirror`)" class="jh-v-input bg-white" hide-details></v-select>
+                      <div class="whiteBox">
+                        <div>按钮配置元数据</div>
+                        <div :id="`activeEditItem-searchBtn-codeMirror`" :ref="`activeEditItem-searchBtn-codeMirror`" >
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div v-if="'dataTableHeaderAction' === activeEditType">
+                    <v-btn block small color="success" class="mb-2" @click="addHeadAction(activeEditItem)">新增按钮</v-btn>
+                    <div style="background-color: #EEEEEE; border-radius: 5px; padding: 5px;" class="mb-2" v-for="(item, index) of activeEditItem" v-if="item.tag === 'v-btn'">
+                      <div class="d-flex"><v-spacer></v-spacer><v-btn icon small color="error" @click="removeHeadAction(activeEditItem, index)"><v-icon>mdi-close</v-icon></v-btn></div>
+                      <v-text-field prefix="按钮文字: " outlined dense v-model="item.value" class="jh-v-input bg-white" @input="refreshCodeMirror(`activeEditItem-${index}-codeMirror`)" :rules="validationRules.requireRules" hide-details></v-text-field>
+                      <v-text-field prefix="按钮事件: " outlined dense v-model="item.attrs['@click']" class="jh-v-input bg-white" @input="refreshCodeMirror(`activeEditItem-${index}-codeMirror`)" :rules="validationRules.requireRules" hide-details></v-text-field>
+                      <v-select prefix="按钮颜色: " :items="designConstants.color" outlined dense v-model="item.attrs['color']" @input="refreshCodeMirror(`activeEditItem-${index}-codeMirror`)" class="jh-v-input bg-white" hide-details></v-select>
+                      <div class="whiteBox">
+                        <div>按钮配置元数据</div>
+                        <div :id="`activeEditItem-${index}-codeMirror`" :ref="`activeEditItem-${index}-codeMirror`">
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div v-if="'dataTableHeaderFilter' === activeEditType">
+                    <v-btn block small color="success" v-if="!activeEditItem.some(e => e.tag === 'v-col')" class="mb-2" @click="addFilterField(activeEditItem)">新增筛选字段</v-btn>
+                    <template v-for="(colItem, colIndex) of activeEditItem" v-if="colItem.tag === 'v-col'">
+                      <div v-for="(item, index) of colItem.value" style="background-color: #EEEEEE; border-radius: 5px; padding: 5px;" class="mb-2">
+                        <div class="d-flex"><v-spacer></v-spacer><v-btn icon small color="error" @click="removeFilterField(activeEditItem, colIndex)"><v-icon>mdi-close</v-icon></v-btn></div>
+                        <v-text-field prefix="名称: " hide-details outlined dense v-model="item.attrs.prefix" @input="refreshCodeMirror(`activeEditItem-${colIndex}-value-${index}-codeMirror`)" class="jh-v-input bg-white" :rules="validationRules.requireRules"></v-text-field>
+                        <v-text-field prefix="绑定值: " hide-details outlined dense v-model="item.attrs['v-model']" @input="refreshCodeMirror(`activeEditItem-${colIndex}-value-${index}-codeMirror`)" class="jh-v-input bg-white" :rules="validationRules.requireRules"></v-text-field>
+                        <v-select prefix="字段类型: " :items="['v-text-field', 'v-select', 'v-date-picker']" @change="refreshCodeMirror(`activeEditItem-${colIndex}-value-${index}-codeMirror`)" class="jh-v-input bg-white" outlined dense v-model="item.tag"></v-select>
+                        <div v-if="item.tag === 'v-select'" class="px-2">
+                            <div class="d-flex align-center"><span>选项</span><v-spacer></v-spacer><v-btn icon dense @click="addNewOption(item)"><v-icon>mdi-plus</v-icon></v-btn></div>
+                            <div v-if="!item.attrs[':items'] || !item.attrs[':items'].length" class="pb-4 pt-2 text-center" style="color: #999999;">暂无选项配置</div>
+                            <div v-else class="d-flex" v-for="(option, index) of item.attrs[':items']">
+                              <v-text-field prefix="选项：" v-if="typeof option === 'string'" class="jh-v-input bg-white"  @input="refreshCodeMirror(`activeEditItem-${colIndex}-value-${index}-codeMirror`)" outlined dense v-model="item.attrs[':items'][index]"></v-text-field>
+                              <div v-else class="d-flex align-center">
+                                <v-text-field style="flex: 1;" prefix="文字：" outlined dense v-model="item.attrs[':items'][index].text"   @input="refreshCodeMirror(`activeEditItem-${colIndex}-value-${index}-codeMirror`)" hide-details class="mr-2 jh-v-input bg-white"></v-text-field>
+                                <v-text-field style="flex: 1;" prefix="值：" outlined dense v-model="item.attrs[':items'][index].value"  @input="refreshCodeMirror(`activeEditItem-${colIndex}-value-${index}-codeMirror`)" hide-details class="jh-v-input bg-white"></v-text-field>
+                              </div>
+                              <v-btn icon dense><v-icon size="16" @click="removeOption(item, index)">mdi-close</v-icon></v-btn>
+                            </div>
+                        </div>
+                        <div class="whiteBox">
+                          <div>字段配置元数据</div>
+                          <div :id="`activeEditItem-${colIndex}-value-${index}-codeMirror`" :ref="`activeEditItem-${colIndex}-value-${index}-codeMirror`">
+                          </div>
+                        </div>
+                      </div>
+                    </template>
+                  </div>
+                  <div v-if="'dataTableContent' === activeEditType">
+                    <div style="background-color: #EEEEEE; border-radius: 5px; padding: 5px;" class="mb-2">
+                      <div class="switchBox bg-white">
+                        <span>是否白色表格内容</span><v-spacer></v-spacer>
+                        <v-switch color="success" class="mt-0" dense inset hide-details value v-model="activeEditItem.attrs[':dark']" @change="refreshCodeMirror(`activeEditItem-attrs-codeMirror`)"></v-switch>
+                      </div>
+                      <div class="switchBox bg-white">
+                        <span>是否开启紧凑模式</span><v-spacer></v-spacer>
+                        <v-switch color="success" class="mt-0" dense inset hide-details value v-model="activeEditItem.attrs[':dense']" @change="refreshCodeMirror(`activeEditItem-attrs-codeMirror`)"></v-switch>
+                      </div>
+                      <div class="switchBox bg-white">
+                        <span>是否隐藏底部分页</span><v-spacer></v-spacer>
+                        <v-switch color="success" class="mt-0" dense inset hide-details value v-model="activeEditItem.attrs[':hide-default-footer']" @change="refreshCodeMirror(`activeEditItem-attrs-codeMirror`)"></v-switch>
+                      </div>
+                      <div class="switchBox bg-white">
+                        <span>是否隐藏表格头</span><v-spacer></v-spacer>
+                        <v-switch color="success" class="mt-0" dense inset hide-details value v-model="activeEditItem.attrs[':hide-default-header']" @change="refreshCodeMirror(`activeEditItem-attrs-codeMirror`)"></v-switch>
+                      </div>
+                      <div class="switchBox bg-white">
+                        <span>是否开启行选择</span><v-spacer></v-spacer>
+                        <v-switch color="success" class="mt-0" dense inset hide-details value v-model="activeEditItem.attrs[':show-select']" @change="refreshCodeMirror(`activeEditItem-attrs-codeMirror`)"></v-switch>
+                      </div>
+                      <div class="switchBox bg-white">
+                        <span>是否开启单选模式</span><v-spacer></v-spacer>
+                        <v-switch color="success" class="mt-0" dense inset hide-details value v-model="activeEditItem.attrs[':single-select']" @change="refreshCodeMirror(`activeEditItem-attrs-codeMirror`)"></v-switch>
+                      </div>
+                      <div class="switchBox bg-white">
+                        <span>是否开启行展开功能</span><v-spacer></v-spacer>
+                        <v-switch color="success" class="mt-0" dense inset hide-details value v-model="activeEditItem.attrs[':show-expand']" @change="refreshCodeMirror(`activeEditItem-attrs-codeMirror`)"></v-switch>
+                      </div>
+                      <div class="switchBox bg-white">
+                        <span>是否开启单行展开限制</span><v-spacer></v-spacer>
+                        <v-switch color="success" class="mt-0" dense inset hide-details value v-model="activeEditItem.attrs[':single-expand']" @change="refreshCodeMirror(`activeEditItem-attrs-codeMirror`)"></v-switch>
+                      </div>
+                      <v-text-field prefix="手机模式最大尺寸: " hide-details outlined dense @input="refreshCodeMirror(`activeEditItem-attrs-codeMirror`)" v-model="activeEditItem.attrs[':mobile-breakpoint']" class="jh-v-input bg-white" :rules="validationRules.requireRules"></v-text-field>
+                      <v-select prefix="行选择绑定值: " :items="tableFieldListConvert" class="jh-v-input bg-white"  @change="refreshCodeMirror(`activeEditItem-attrs-codeMirror`)" outlined dense v-model="activeEditItem.attrs['item-key']"></v-select>
+                      <div class="whiteBox">
+                        <div>表格属性配置元数据</div>
+                        <div :id="`activeEditItem-attrs-codeMirror`" :ref="`activeEditItem-attrs-codeMirror`">
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div v-if="'dataTableContentRowAction' === activeEditType && activeEditItem">
+                    <v-text-field prefix="按钮名称: " hide-details outlined dense v-model="activeEditItem.text" class="jh-v-input bg-white" @input="refreshCodeMirror(`activeEditItem-codeMirror`)" :rules="validationRules.requireRules"></v-text-field>
+                    <v-text-field prefix="按钮图标: " hide-details outlined dense v-model="activeEditItem.icon" class="jh-v-input bg-white" @input="refreshCodeMirror(`activeEditItem-codeMirror`)" :rules="validationRules.requireRules"></v-text-field>
+                    <v-select prefix="按钮颜色: " :items="designConstants.color" class="jh-v-input bg-white" outlined dense v-model="activeEditItem.color" @change="refreshCodeMirror(`activeEditItem-codeMirror`)"></v-select>
+                    <v-select prefix="按钮事件: " :items="doUiActionList" class="jh-v-input bg-white" outlined dense v-model="activeEditItem.click" @change="refreshCodeMirror(`activeEditItem-codeMirror`)"></v-select>
+                    <div class="whiteBox">
+                      <div>行内操作按钮元数据</div>
+                      <div :id="`activeEditItem-codeMirror`" :ref="`activeEditItem-codeMirror`">
+                      </div>
+                    </div>
+                  </div>
+                  <div v-if="'dataTableContentTd' === activeEditType">
+                    <div style="background-color: #EEEEEE; border-radius: 5px; padding: 5px;" class="mb-2">
+                      <template v-if="activeEditItem">
+                        <v-text-field prefix="列的名称: " hide-details outlined dense v-model="activeEditItem.text" class="jh-v-input bg-white" @input="refreshCodeMirror(`activeEditItem-codeMirror`)" :rules="validationRules.requireRules"></v-text-field>
+                        <v-select prefix="列绑定值: " :items="tableFieldListConvert" class="jh-v-input bg-white" outlined dense v-model="activeEditItem.value" @change="onTableFieldChange($event, activeEditItem, `activeEditItem-codeMirror`)"></v-select>
+                        <v-text-field prefix="列的宽度: " hide-details outlined dense v-model="activeEditItem.width" class="jh-v-input bg-white" @input="refreshCodeMirror(`activeEditItem-codeMirror`)" :rules="validationRules.requireRules"></v-text-field>
+                        <div class="switchBox bg-white">
+                          <span>列是否排序</span><v-spacer></v-spacer><v-switch color="success" class="mt-0" dense inset hide-details value @change="refreshCodeMirror(`activeEditItem-codeMirror`)" v-model="activeEditItem.sortable"></v-switch>
+                        </div>
+                        <div class="switchBox bg-white">
+                          <span>列是否固定</span><v-spacer></v-spacer><v-switch color="success" class="mt-0" dense inset hide-details value @change="onTableFieldFixedChange($event, activeEditItem, `activeEditItem-codeMirror`)" 
+                          :input-value="activeEditItem.class && activeEditItem.class !== ''"></v-switch>
+                        </div>
+                        <div class="switchBox bg-white">
+                          <span>列的顺序</span><v-spacer></v-spacer>
+                          <div class="d-flex">
+                            <v-btn @click="tdMove(activeEditItem, -999)" color="gray" small class="px-2 mr-1" style="min-width: 35px;"><v-icon size="14">mdi-arrow-collapse-left</v-icon></v-btn>
+                            <v-btn @click="tdMove(activeEditItem, -1)" color="gray" small class="px-2 mr-1" style="min-width: 35px;"><v-icon size="14">mdi-arrow-left</v-icon></v-btn>
+                            <v-spacer></v-spacer>
+                            <v-btn @click="tdMove(activeEditItem, 1)" color="gray" small class="px-2 mr-1" style="min-width: 35px;"><v-icon size="14">mdi-arrow-right</v-icon></v-btn>
+                            <v-btn @click="tdMove(activeEditItem, 999)" color="gray" small class="px-2" style="min-width: 35px;"><v-icon size="14">mdi-arrow-collapse-right</v-icon></v-btn>
+                          </div>
+                        </div>
+                        <div class="whiteBox" v-if="activeEditItem.value === 'action'">
+                          <div class="pt-2 d-flex">
+                            <span>按钮列表</span>
+                            <v-spacer></v-spacer>
+                            <v-tooltip bottom>
+                              <template v-slot:activator="{ on, attrs }">
+                                <span v-bind="attrs" v-on="on" style="cursor: pointer;">
+                                  <v-icon size="12" color="error">mdi-help-circle-outline</v-icon>
+                                  参考案例
+                                </span>
+                              </template>
+                              <span v-html="pageConfigHelp['rowBtn']"></span>
+                            </v-tooltip>
+                          </div>
+                          <div :id="`pageContent-0-rowActionList-codeMirror`"  :ref="`pageContent-0-rowActionList-codeMirror`">
+                          </div>
+                        </div>
+                        <div class="whiteBox" v-else>
+                          <div class="pt-2 d-flex">
+                            <span>数据格式（任意格式；空内容则直接显示原内容）</span>
+                            <v-spacer></v-spacer>
+                            <v-tooltip bottom>
+                              <template v-slot:activator="{ on, attrs }">
+                                <span v-bind="attrs" v-on="on" style="cursor: pointer;">
+                                  <v-icon size="12" color="error">mdi-help-circle-outline</v-icon>
+                                  参考案例
+                                </span>
+                              </template>
+                              <span v-html="pageConfigHelp['formatter']">
+                              </span>
+                            </v-tooltip>
+                          </div>
+                          <div :id="`activeEditItem-formatter-codeMirror`"  :ref="`activeEditItem-formatter-codeMirror`" data-type="text/html">
+                          </div>
+                        </div>
+                      </template>
+                      <div class="whiteBox">
+                        <div>表格字段配置元数据</div>
+                        <div :id="`activeEditItem-codeMirror`" :ref="`activeEditItem-codeMirror`">
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </v-tab-item>
             <v-tab-item :key="3" :value="3" class="pa-4">
-              <template v-for="(item, key) of actionContent">
-                <v-card>{{item}}</v-card>
-              </template>
+              <div class="d-flex">
+                <div class="designContainerCardLeft">
+                  <div>
+                    <template v-for="(item, index) of actionContent">
+                      <div class="drawerBox" @click="setActiveEditItem(item, 'drawerBox', index, `actionContent.${index}`)"
+                        :class="{'isEditDom': activeEditType === 'drawerBox' && activeEditItem.index === index}" 
+                        v-if="typeof item === 'object'">
+                        <div class="changeToCodeBox d-flex align-center">
+                          <v-spacer></v-spacer>
+                          <v-btn-toggle dense v-model="showActionContentCodeIndex[index]" color="success" @change="clearCodeMirror(`actionContent-${index}-codeMirror`, showActionContentCodeIndex[index] !== `${index}_1`)">
+                            <v-btn small class="px-1" :key="`${index}_0`" :value="`${index}_0`" style="font-size: 12px;" outlined>设计</v-btn>
+                            <v-btn small class="px-1" :key="`${index}_1`" :value="`${index}_1`" style="font-size: 12px;" outlined>源代码</v-btn>
+                          </v-btn-toggle>
+                        </div>
+                        <div v-if="showActionContentCodeIndex[index] === `${index}_1`">
+                          <div :id="`actionContent-${index}-codeMirror`" :ref="`actionContent-${index}-codeMirror`">
+                          </div>
+                        </div>
+                        <div v-else>
+                          <v-row :no-gutters="true" align="center">
+                            <span class="text-h7 font-weight-bold pa-4"> 名称：【{{item.title}}】 </span>
+                          </v-row>
+                          <v-divider class="jh-divider mb-2"></v-divider>
+                          <div class="d-flex align-center">
+                            <div class="text-h7 font-weight-bold pa-4">
+                              Tab标签：
+                            </div>
+                            <v-chip v-for="contentItem of item.contentList">{{contentItem.label}}</v-chip>
+                            <v-spacer></v-spacer>
+                            <v-btn small @click="addNewTabItem(item.contentList)"> <v-icon>mdi-plus</v-icon>新增标签项</v-btn>
+                          </div>
+                          <div style="font-size: 12px; color: #999999;" class="ml-5">⚠️：该内容只有多个标签的情况下，才会在页面中显示</div>
+                          <v-divider class="jh-divider my-2"></v-divider>
+                          <template v-for="(contentItem, contentItemIndex) of item.contentList">
+                            <v-form :lazy-validation="true" v-if="typeof contentItem === 'object' && contentItem.type === 'form'">
+                              <div class="mt-5 d-flex align-center">
+                                <span class="text-h7 font-weight-bold pa-4">{{item.contentList.length > 1 ? 'Tab标签[' + contentItem.label + ']的' : ''}}内容：</span>
+                                <v-spacer></v-spacer>
+                                <v-btn v-if="item.contentList.length > 1" small color="error" @click="removeTabItem(item.contentList, contentItemIndex)"> 
+                                  <v-icon>mdi-close</v-icon>移除Tab[{{contentItem.label}}]
+                                </v-btn>
+                              </div>
+                              <div style="border: 1px dotted #CCC; border-radius: 5px;" class="pa-2 mb-4 pb-6">
+                                <v-row class="mt-0 px-4">
+                                  <draggable
+                                    class="dragArea"
+                                    v-model="designfieldConfigList"
+                                    touchStartThreshold="50"
+                                    chosen-class="chosen"
+                                    force-fallback="true"
+                                    group="uid"
+                                    animation="300"
+                                    @change="draggableChange($event, contentItem.formItemList)"
+                                    @start="onStart"
+                                    @end="onEnd">
+                                    <transition-group style="display: flex; flex-wrap: wrap;">
+                                      <v-col :cols="colItem[':cols'] || 12" :sm="colItem[':sm'] || 12" :md="colItem[':md'] || 4" 
+                                        v-for="(colItem, colIndex) of contentItem.formItemList" :key="colIndex" 
+                                        @click.stop="setActiveEditItem(colItem, 'drawerBoxFormCol', index, `actionContent.${index}.contentList.${contentItemIndex}.formItemList.${colIndex}`)" 
+                                        :class="{'isEditDom': activeEditType === 'drawerBoxFormCol' && activeEditItem.index === index && activeEditItem.model === colItem.model}" 
+                                        >
+                                        <div class="d-flex align-center"  style="cursor: move;">
+                                          <span class="jh-input-label"> {{colItem.label}} </span>
+                                          <v-spacer></v-spacer>
+                                          <v-icon size="16" color="success">mdi-cursor-move</v-icon>
+                                        </div>
+                                        <vue-json-editor v-if="colItem.tag === 'jh-json-editor'" :value="{}" v-bind="convertAttr(colItem.attrs || {})" class="jh-v-input" dense single-line filled></vue-json-editor>
+                                        <v-menu v-else-if="colItem.tag === 'v-date-picker'" class="jh-v-input" transition="scale-transition" offset-y min-width="auto">
+                                          <template v-slot:activator="{on, attrs}">
+                                          <v-text-field v-bind="attrs" v-on="on" class="jh-v-input" dense single-line filled readonly></v-text-field>
+                                          </template>
+                                          <v-date-picker color="success" elevation="20"></v-date-picker>
+                                        </v-menu>
+                                        <component v-else :is="colItem.tag" v-bind="convertAttr(colItem.attrs || {})" :readonly="colItem.tag !== 'v-file-input'"></component>
+                                      </v-col>
+                                    </transition-group>
+                                  </draggable>
+                                </v-row>
+                                <v-row class="ma-4 pa-0">
+                                  <v-spacer></v-spacer>
+                                  <v-btn small @click="addNewFormField(contentItem.formItemList)"> <v-icon>mdi-plus</v-icon>添加字段 </v-btn>
+                                </v-row>
+                              </div>
+                              <v-row style="border: 1px dotted #CCC; border-radius: 5px;" class="ma-0 mt-5 pa-4">
+                                <v-spacer></v-spacer>
+                                <v-btn v-for="(btnItem, btnIndex) of contentItem.action" :small="btnItem.attrs ? btnItem.attrs[':small'] : true" :color="btnItem.attrs ? btnItem.attrs.color : 'success'"
+                                @click.stop="setActiveEditItem(btnItem, 'drawerBoxActionBtn', index, `actionContent.${index}.contentList.${contentItemIndex}.action.${btnIndex}`)" 
+                                class="ml-2"
+                                :class="{'isEditDom': activeEditType === 'drawerBoxActionBtn' && activeEditItem.index === index && activeEditItem.attrs['@click'] === btnItem.attrs['@click'] && activeEditItem.value === btnItem.value}" 
+                                >{{btnItem.value}}</v-btn>
+                                <v-btn class="ml-2" small @click.stop="addDrawerBtn(contentItem.action)"><v-icon>mdi-plus</v-icon></v-btn>
+                              </v-row>
+                            </v-form>
+                            <div class="mt-5" v-else>
+                              <div class="d-flex align-center">
+                                <span class="text-h7 font-weight-bold pa-4">{{item.contentList.length > 1 ? 'Tab标签[' + contentItem.label + ']的' : ''}}内容：</span>
+                                <v-spacer></v-spacer>
+                                <v-btn v-if="item.contentList.length > 1" small color="error" @click="removeTabItem(item.contentList, contentItemIndex)"> <v-icon>mdi-close</v-icon>移除Tab[{{contentItem.label}}]</v-btn>
+                              </div>
+                              <div data-type="text/html"
+                              :id="`actionContent-${index}-contentList-${contentItemIndex}-codeMirror`" 
+                              :ref="`actionContent-${index}-contentList-${contentItemIndex}-codeMirror`" 
+                              style="border: 1px dotted #CCC; border-radius: 5px;" class="pa-2">
+                              </div>
+                            </div>
+                          </template>
+                        </div>
+                        
+                      </div>
+                      <div v-if="typeof item === 'string'" class="drawerBox" @click="setActiveEditItem(item, 'drawerBox', index, `actionContent.${index}`)" :class="{'isEditDom': activeEditType === 'drawerBox' && activeEditItem.index === index}">
+                        <div>
+                          <v-spacer></v-spacer>
+                          <v-btn small color="error" @click="removeTabItem(item.contentList, contentItemIndex)"> <v-icon>mdi-close</v-icon>移除Tab</v-btn>
+                        </div>
+                        <div :id="`actionContent-${index}-codeMirror`" :ref="`actionContent-${index}-codeMirror`">
+                        </div>
+                      </div>
+                    </template>
+                  </div>
+                </div>
+                <div class="designContainerCard">
+                  <v-row class="ma-0 pa-2">
+                    <v-icon color="success" size="18">mdi-cog</v-icon>
+                    <span style="line-height: 36px; font-size: 14px; font-weight: bold; padding-left: 12px;">{{activeEditType ? activeEditTypeMap[activeEditType] : "属性面板"}}</span>
+                    <v-spacer></v-spacer>
+                    <v-icon size="20" color="red" @click="closePropertyContainer" v-if="activeEditType">mdi-close-circle</v-icon>
+                  </v-row>
+                  <v-divider class="mb-4"></v-divider>
+                  <div v-if="!activeEditType" style="text-align: center; line-height: 50px; color: #999999;">
+                    暂未选中待调整元素
+                  </div>
+                  <template v-if="'drawerBox' === activeEditType">
+                    <div style="padding: 5px;" class="mb-2 ml-2">
+                      <div class="mb-4">
+                        <div>容器类型: <v-tooltip bottom>
+                          <template v-slot:activator="{ on, attrs }">
+                            <v-icon color="warning" v-bind="attrs" style="cursor: pointer;" v-on="on" size="14">mdi-help-circle-outline</v-icon>
+                          </template>
+                          <span>
+                            请参考vuetify2.0相关文档；<br>
+                            容器类型：v-dialog（弹窗）、v-navigation-drawer（抽屉）、v-snackbar（提示框）、v-overlay（遮罩）、v-bottom-sheet（底部弹出窗）
+                          </span>
+                        </v-tooltip></div>
+                        <div>
+                          <v-select :items="domList" item-value="tag" class="jh-v-input bg-white" @change="onDrawerTypeChange" outlined dense v-model="activeEditItem.tag"></v-select>
+                        </div>
+                      </div>
+                      <div class="mb-4">
+                        <div>容器的Key: <v-tooltip bottom>
+                          <template v-slot:activator="{ on, attrs }">
+                            <v-icon color="warning" v-bind="attrs" style="cursor: pointer;" v-on="on" size="14">mdi-help-circle-outline</v-icon>
+                          </template>
+                          <span>
+                            key的值，用于抽屉的相关变量的前缀； <br> 如：key: '{{activeEditItem.key}}'，则抽屉的变量为：{{activeEditItem.key}}Item、{{activeEditItem.key}}ActionData、is{{activeEditItem.key}}DrawerShown、{{activeEditItem.key}}DrawerTab等
+                          </span>
+                        </v-tooltip></div>
+                        <div>
+                          <v-text-field hide-details outlined dense v-model="activeEditItem.key" class="jh-v-input bg-white mr-2" :rules="validationRules.requireRules" style="flex: 1;"></v-text-field>
+                        </div>
+                      </div>
+                      <div class="mb-4">
+                        <div>容器的名称：</div>
+                        <div>
+                          <v-text-field hide-details outlined dense v-model="activeEditItem.title" class="jh-v-input bg-white mr-2" :rules="validationRules.requireRules" style="flex: 1;"></v-text-field>
+                        </div>
+                      </div>
+                      <div>
+                        <div>容器属性配置：<v-tooltip bottom>
+                          <template v-slot:activator="{ on, attrs }">
+                            <v-icon color="warning" v-bind="attrs" style="cursor: pointer;" v-on="on" size="14">mdi-help-circle-outline</v-icon>
+                          </template>
+                          <span>
+                            请参考vuetify2.0相关容器属性进行配置，如：{ ':dense': true, ':hide-details': true, ':width': 200 } 等
+                          </span>
+                        </v-tooltip></div>
+                        <div :id="`activeEditItem-attrs-codeMirror`" :ref="`activeEditItem-attrs-codeMirror`">
+                        </div>
+                      </div>
+                      <div>
+                        <div>容器标题的后方插槽：<v-tooltip bottom>
+                          <template v-slot:activator="{ on, attrs }">
+                            <v-icon color="warning" v-bind="attrs" style="cursor: pointer;" v-on="on" size="14">mdi-help-circle-outline</v-icon>
+                          </template>
+                          <span>
+                            headSlot标题的插槽内容；支持html内容
+                          </span>
+                        </v-tooltip></div>
+                        <div :id="`activeEditItem-headSlot-codeMirror`" :ref="`activeEditItem-headSlot-codeMirror`" data-type="text/html">
+                        </div>
+                      </div>
+
+                    </div>
+                  </template>
+                  <template v-if="'drawerBoxFormCol' === activeEditType">
+                    <div style="padding: 5px;" class="mb-2 ml-2">
+                      <div>
+                        <v-select prefix="字段绑定Key：" :items="tableFieldListConvert" @change="refreshCodeMirror(`activeEditItem-codeMirror`)" class="jh-v-input bg-white" outlined dense v-model="activeEditItem.model"></v-select>
+                      </div>
+                    </div>
+                    <div style="padding: 5px;" class="mb-2 ml-2">
+                      <div>
+                        <v-text-field prefix="字段文字：" hide-details outlined dense v-model="activeEditItem.label" class="jh-v-input bg-white" @input="refreshCodeMirror(`activeEditItem-codeMirror`)" :rules="validationRules.requireRules"></v-text-field>
+                      </div>
+                    </div>
+                    <div style="border-radius: 5px; border: 1px solid #eee;" class="ma-3 mr-1 d-flex align-center">
+                      <span class="ml-4" style="color: #007220;">表单占比：</span>
+                      <v-spacer></v-spacer>
+                      <v-btn-toggle dense v-model="activeEditItem[':md']" @change="refreshCodeMirror(`activeEditItem-codeMirror`)" color="success">
+                        <v-btn small v-for="col in [4,6,8,12]" class="px-1" :key="col" :value="col" style="font-size: 12px;" outlined>{{parseInt(col/12*100)}}%</v-btn>
+                      </v-btn-toggle>
+                    </div>
+                    <div class="whiteBox">
+                      <v-select prefix="字段类型: " :items="fieldList" item-value="tag" class="jh-v-input bg-white" @change="refreshCodeMirror(`activeEditItem-codeMirror`)" outlined dense v-model="activeEditItem.tag"></v-select>
+                      <div v-if="activeEditItem.tag === 'v-select'" class="px-2">
+                        <div class="d-flex align-center"><span>选项</span><v-spacer></v-spacer><v-btn icon dense @click="addNewOption(activeEditItem)"><v-icon>mdi-plus</v-icon></v-btn></div>
+                        <div v-if="!activeEditItem.attrs[':items'] || !activeEditItem.attrs[':items'].length" class="pb-4 pt-2 text-center" style="color: #999999;">暂无选项配置</div>
+                        <div v-else class="d-flex" v-for="(option, index) of activeEditItem.attrs[':items']">
+                          <v-text-field prefix="选项：" v-if="typeof option === 'string'" class="jh-v-input bg-white" @input="refreshCodeMirror(`activeEditItem-codeMirror`)" outlined dense v-model="activeEditItem.attrs[':items'][index]"></v-text-field>
+                          <div v-else class="d-flex align-center">
+                            <v-text-field style="flex: 1;" prefix="文字：" outlined dense v-model="activeEditItem.attrs[':items'][index].text" @input="refreshCodeMirror(`activeEditItem-codeMirror`)" hide-details class="mr-2 jh-v-input bg-white"></v-text-field>
+                            <v-text-field style="flex: 1;" prefix="值：" outlined dense v-model="activeEditItem.attrs[':items'][index].value" @input="refreshCodeMirror(`activeEditItem-codeMirror`)" hide-details class="jh-v-input bg-white"></v-text-field>
+                          </div>
+                          <v-btn icon dense><v-icon size="16" @click="removeOption(activeEditItem, index)">mdi-close</v-icon></v-btn>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="whiteBox">
+                      <div>表单字段元数据<v-tooltip bottom>
+                        <template v-slot:activator="{ on, attrs }">
+                          <v-icon color="warning" v-bind="attrs" style="cursor: pointer;" v-on="on" size="14">mdi-help-circle-outline</v-icon>
+                        </template>
+                        <span>
+                          表单字段元数据
+                        </span>
+                      </v-tooltip></div>
+                      <div :id="`activeEditItem-codeMirror`" :ref="`activeEditItem-codeMirror`" style="border: 1px dotted #CCC; border-radius: 5px;" class="pa-2">
+                      </div>
+                    </div>
+                    <div class="d-flex align-center mt-4">
+                      <v-spacer></v-spacer>
+                      <v-btn small color="error" @click="removeActiveEditItem"> <v-icon>mdi-close</v-icon>移除字段</v-btn>
+                    </div>
+                  </template>
+                  <template v-if="'drawerBoxActionBtn' === activeEditType">
+                    <div style="padding: 5px;" class="mb-2 ml-2">
+                      <div>
+                        <div>按钮名称<v-tooltip bottom>
+                          <template v-slot:activator="{ on, attrs }">
+                            <v-icon color="warning" v-bind="attrs" style="cursor: pointer;" v-on="on" size="14">mdi-help-circle-outline</v-icon>
+                          </template>
+                          <span>
+                            按钮的文字内容
+                          </span>
+                        </v-tooltip></div>
+                        <div class="mb-4">
+                          <v-text-field hide-details outlined dense v-model="activeEditItem.value" class="jh-v-input bg-white mr-2" :rules="validationRules.requireRules" style="flex: 1;"></v-text-field>
+                        </div>
+                        <div>按钮事件流<v-tooltip bottom>
+                          <template v-slot:activator="{ on, attrs }">
+                            <v-icon color="warning" v-bind="attrs" style="cursor: pointer;" v-on="on" size="14">mdi-help-circle-outline</v-icon>
+                          </template>
+                          <span>
+                            只能识别js文件中的doUiAction事件流程；
+                          </span>
+                        </v-tooltip></div>
+                        <div class="mb-4">
+                          <v-select :items="doUiActionList" class="jh-v-input bg-white" outlined dense v-model="activeEditItem.attrs['@click']"></v-select>
+                        </div>
+                        <div>按钮颜色<v-tooltip bottom>
+                          <template v-slot:activator="{ on, attrs }">
+                            <v-icon color="warning" v-bind="attrs" style="cursor: pointer;" v-on="on" size="14">mdi-help-circle-outline</v-icon>
+                          </template>
+                          <span>
+                            只能识别js文件中的doUiAction事件流程；
+                          </span>
+                        </v-tooltip></div>
+                        <div class="mb-4">
+                          <v-select :items="designConstants.color" class="jh-v-input bg-white" outlined dense v-model="activeEditItem.attrs['color']"></v-select>
+                        </div>
+                        <div class="mt-5">按钮元数据<v-tooltip bottom>
+                          <template v-slot:activator="{ on, attrs }">
+                            <v-icon color="warning" v-bind="attrs" style="cursor: pointer;" v-on="on" size="14">mdi-help-circle-outline</v-icon>
+                          </template>
+                          <span>
+                            按钮元数据
+                          </span>
+                        </v-tooltip></div>
+                        <div :id="`activeEditItem-codeMirror`" :ref="`activeEditItem-codeMirror`" style="border: 1px dotted #CCC; border-radius: 5px;" class="pa-2">
+                        </div>
+                        <div class="d-flex align-center mt-4">
+                          <v-spacer></v-spacer>
+                          <v-btn small color="error" @click="removeActiveEditItem"> <v-icon>mdi-close</v-icon> 移除按钮</v-btn>
+                        </div>
+                      </div>
+                    </div>
+                  </template>
+                </div>
+              </div>
             </v-tab-item>
           </v-tabs-items>
           <!-- 右侧属性、配置面板 -->
@@ -80,8 +716,9 @@
 </script>
 <div id="app"></div>
 {% endblock %}
-
 {% block vueScript %}
+{% include 'component/vueJsonEditor.html' %}
+
 <script src="../lib/js/Sortable.min.js"></script>
 <script src="../lib/js/vuedraggable.umd.min.js"></script>
 <script>
@@ -103,8 +740,94 @@
       hasHelpDrawer: "<$ hasHelpDrawer $>",
       // pageFile: "<$ pageFile $>",
       webPageName: "<$ webPageName $>",
-      tabItems: [{ text: "基础信息", icon: "database-cog" }, { text: "头部设计", icon: "database-cog" }, { text: "页面设计", icon: "database-cog" }, { text: "抽屉设计", icon: "database-cog" },],
+      tabItems: [{ text: "基础信息", icon: "database-cog" }, { text: "页面数据", icon: "database-cog" }, { text: "页面设计", icon: "database-cog" }, { text: "关联界面设计", icon: "database-cog" },],
       tableTabIndex: "0",
+      tableData: [{}],
+      pageConfigLabel: {
+        pageType: "页面类型",
+        pageId: "页面ID",
+        table: "数据表",
+        pageName: "页面名称",
+        resourceList: "资源列表",
+        drawerList: "抽屉列表",
+        includeList: "引入列表",
+      },
+      pageCommonConfigLabel: {
+        data: "Data数据",
+        dataExpression: "表达式Data数据",
+        watch: "监听",
+        computed: "计算数据",
+        doUiAction: "事件流",
+        methods: "方法",
+      },
+      activeEditTypeMap: {
+        searchField: "搜索字段",
+        searchBtn: "搜索按钮",
+        pageTitle: "页面标题",
+        titleContent: "标题内容",
+        serverSearchContent: "服务端搜索",
+        dataTableHeaderAction: "表格上方按钮",
+        dataTableHeaderFilter: "表格筛选",
+        dataTableContentTd: "表格字段",
+        dataTableContent: "表格属性",
+        drawerBoxFormCol: "抽屉表单字段",
+        drawerBox: "关联界面(抽屉、弹窗、遮罩)",
+        drawerBoxActionBtn: "抽屉按钮",
+      },
+      pageConfigHelp: {
+        dataExpression: "⚠️ 表达式类型的数据，要用双引号包裹起来，否则容易被JSON的解析删除",
+        doUiAction: `⚠️ 事件流程，格式如下 <br>{ <br>&nbsp;&nbsp;getTableData: ['getTableData'], <br>&nbsp;&nbsp;startCreateItem: ['prepareCreateFormData', 'openCreateDrawer'], <br>}<br>
+         中括号中的方法必须定义，否则会报错<br>如果是系统内置的可以用，否则必须在下方 【methods】 中定义`,
+        methods: `⚠️ 自定义方法，格式如下<br>
+        {<br>
+        &nbsp;&nbsp; getTableData: function() {<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;// 获取表格数据<br>
+          &nbsp;&nbsp;},<br>
+          &nbsp;&nbsp;startCreateItem: function() {<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;// 打开新增抽屉<br>
+            &nbsp;&nbsp;},<br>
+        }`,
+        formatter: `1: 标签配置：[<br>
+            {<br>
+              &nbsp;&nbsp;tag: "v-chip", <br>
+              &nbsp;&nbsp;value: 'xxxx', <br>
+              &nbsp;&nbsp;attrs: { <br>
+                &nbsp;&nbsp;&nbsp;&nbsp;'v-if': 'item.classType',<br>
+                &nbsp;&nbsp;&nbsp;&nbsp;':color': 'constantObj.classTypeColor[item.classType]', <br>
+                &nbsp;&nbsp;&nbsp;&nbsp;small: true,<br>
+                &nbsp;&nbsp;}<br>
+          }, <br>
+          ]<br>
+          2: 表达式：{{ dayjs(item.value).format() }}, <br>
+          3: 字符串/数字：xxx, <br>
+          4: html标签：&lt;div&gt;文字{{item}}&lt;/div&gt;`,
+        rowBtn: `[<br>
+        &nbsp;&nbsp;{<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;text: "编辑",<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;icon: "mdi-note-edit-outline",<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;color: "success",<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;click: 'doUiAction("startUpdateItem", item)',<br>
+          &nbsp;&nbsp;},<br>
+           <br>
+           &nbsp;&nbsp;{<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;text: "删除",<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;icon: "mdi-trash-can-outline",<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;color: "error",<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;click: 'doUiAction("deleteItem", item)',<br>
+            &nbsp;&nbsp;<br>},<br>]
+          `
+      },
+      validationRules: {
+        requireRules: [(v) => !!v || "必填"],
+        jsonFormat: [(v) => !!v || "必填", (v) => {
+          try {
+            JSON.parse(v);
+            return true;
+          } catch (error) {
+            return "格式错误";
+          }
+        }]
+      },
 
       // END 表格的配置项目
       designConstants: {
@@ -118,6 +841,8 @@
         doUiAction: [],
         dataType: [{ text: '纯文本', value: 'text' }, { text: '时间类型', value: 'dateTime' }, { text: '内容转换', value: 'parse' }],
         color: ["success", "error", "warning", "info", "primary", "secondary", "accent"],
+        pageType: ['jh-page'],
+        table: [],
       },
 
       fieldList: [
@@ -136,7 +861,16 @@
         { text: "密码", icon: "lock-outline", tag: "v-otp-input" },
         { text: "搜索", icon: "feature-search-outline", tag: "v-autocomplete" },
         { text: "打分", icon: "star-box", tag: "v-rating" },
-        { text: "JSON编辑器", icon: "star-box", tag: "jh-json-edit" },
+        { text: "JSON编辑器", icon: "star-box", tag: "jh-json-editor" },
+      ],
+      domList: [
+        { text: "v-dialog（弹窗）", tag: "v-dialog" },
+        { text: "jh-create-drawer（新增数据抽屉）", tag: "jh-create-drawer" },
+        { text: "jh-update-drawer（更新数据抽屉）", tag: "jh-update-drawer" },
+        { text: "jh-drawer（普通抽屉）", tag: "jh-update-drawer" },
+        { text: "v-snackbar（提示框）", tag: "v-snackbar" },
+        { text: "v-overlay（遮罩）", tag: "v-overlay" },
+        { text: "v-bottom-sheet（底部弹出窗）", tag: "v-bottom-sheet" },
       ],
       tabIndex: 0,
       tableFieldList: [],
@@ -144,7 +878,12 @@
       activeBtnItem: null,
       activeTh: null,
       activeData: null,
+      activeEditItem: null,
+      activeEditItemValuePath: null,
+      activeEditType: null,
+      designfieldConfigList: [],
       // json数据
+      common: {},
       pageJsonContent: {},
       actionContent: null,
       pageContent: null,
@@ -153,8 +892,38 @@
       tableHeaderListKey: "",
       headPlusBtnUid: null,
       tableRowSelect: [],
+      defaultUiAction: {
+        getTableData: ['getTableData'],
+        startCreateItem: ['prepareCreateFormData', 'openCreateDrawer'],
+        createItem: ['prepareCreateValidate', 'confirmCreateItemDialog', 'prepareDoCreateItem', 'doCreateItem', 'closeCreateDrawer', 'getTableData'],
+        startUpdateItem: ['prepareUpdateFormData', 'openUpdateDrawer'],
+        updateItem: ['prepareUpdateValidate', 'confirmUpdateItemDialog', 'prepareDoUpdateItem', 'doUpdateItem', 'closeUpdateDrawer', 'getTableData'],
+        deleteItem: ['prepareDeleteFormData', 'confirmDeleteItemDialog', 'prepareDoDeleteItem', 'doDeleteItem', 'getTableData'],
+      },
+      editorList: {},
+      showActionContentCodeIndex: ['0_0', '1_0'],
+      // ----
+
+      // ----
     }),
     computed: {
+      doUiActionList() {
+        const doUiActionMap = this.common ? this.common.doUiAction : [];
+        return [...Object.keys(doUiActionMap), ...Object.keys(this.defaultUiAction)].map(item => {
+          return `doUiAction('${item}')`
+        });
+      },
+      tableFieldListConvert() {
+        return this.tableFieldList.map(item => {
+          return item.Field;
+        });
+      },
+      serverSearchContent() {
+        return this.headContent ? this.headContent.find(item => item.tag === 'jh-search') : {};
+      },
+      titleContent() {
+        return this.headContent ? this.headContent.find(item => item.tag === 'jh-page-title') : {};
+      },
       tableHiddenHeaderList() {
         let hiddenFieldList = [];
         // table的隐藏字段
@@ -226,6 +995,13 @@
           this.rowSelectSingleChange = [];
           this.dataTableHasSearchChange = [];
         }
+        // 清空所有编辑器
+        for (const key in this.editorList) {
+          this.editorList[key] &&
+            this.editorList[key].display.wrapper &&
+            this.editorList[key].display.wrapper.parentNode &&
+            (this.editorList[key].display.wrapper.parentNode.innerHTML = "");
+        }
       },
       priKey() {
         this.tableFieldList = this.tableFieldList.map(item => {
@@ -237,52 +1013,484 @@
           return item;
         });
       },
-      activeTh: {
+      activeEditItem: {
         deep: true,
-        handler(value) {
-          console.log("activeTh", value);
-          if (!value) {
-            return;
-          }
-          this[`${this.tableHeaderListKey}`] = this[`${this.tableHeaderListKey}`].map(item => {
-            if (item.value === value.value) {
-              item = value;
-              item.class = item.cellClass = value.fixed ? "fixed" : "";
+        handler(value, oldValue) {
+          this.$forceUpdate();
+          if (value === oldValue) return;
+          const aString = this.getJsonString(value);
+          const bString = this.getJsonString(oldValue);
+          if (aString === bString) return;
+          console.log("watch::activeEditItem", value);
+          for (const key in this.editorList) {
+            if (key.startsWith('activeEditItem-')) {
+              this.refreshActiveEditItemEditorValue(key);
             }
-            return item;
-          });
-          if (value.itemKey) {
-            // this[`${this.tableHeaderListKey}`] itemKey 是唯一的
-            this[`${this.tableHeaderListKey}`] = this[`${this.tableHeaderListKey}`].map(item => {
-              item.itemKey = item.value === value.value;
-              return item;
-            });
           }
         }
       },
     },
     async created() {
-      await this.getPageConfig();
+      await this.getTables();
       await this.getDbFieldList();
+      await this.getPageConfig();
+      setInterval(this.createCodeMirror, 100);
     },
     mounted() {
     },
     methods: {
       async saveConfig() {
-        switch (this.tabIndex) {
-          case 0:
-            await this.saveTableField();
-            this.getDbFieldList();
-            break;
-          case 1:
-            this.savePageContent();
-            break;
-          default:
-            this.saveActionContent();
-            break;
+        // const validStatus = this.$refs.baseConfigForm.validate();
+        console.log("savePageBaseConfig", this.pageJsonContent);
+        this.savePageContent();
+        window.vtoast.success("数据保存成功");
+      },
+      async validatePageConfig() {
+      },
+      addNewTabItem(contentList) {
+        contentList.splice(contentList.length, 0, { label: "标签的内容", tag: 'div', value: ["标签的内容可以是JH定义的JSON格式，也可以是纯html代码字符串。"] });
+      },
+      removeTabItem(contentList, contentItemIndex) {
+        contentList.splice(contentItemIndex, 1);
+      },
+      addRowActionBtn(rowActionList) {
+        rowActionList.splice(rowActionList.length, 0, {
+          text: "按钮",
+          icon: "mdi-note-edit-outline",
+          color: "success",
+          click: '按钮事件',
+        });
+      },
+      removeRowActionBtn(rowActionList, rowActionIndex) {
+        rowActionList.splice(rowActionIndex, 1);
+      },
+      clearCodeMirror(key, clear = false) {
+        if (clear) {
+          document.getElementById(key) && (document.getElementById(key).innerHTML = "");
+          delete this.editorList[key];
+        }
+      },
+      addNewFormField(formItemList) {
+        formItemList.splice(formItemList.length, 0, {
+          label: "字段名称",
+          model: "字段Key",
+          tag: "v-text-field",
+          rules: "validationRules.requireRules",
+          "attrs": {
+            ":class": "jh-v-input",
+            ":dense": true,
+            ":single-line": true,
+            ":filled": true,
+            ":hide-details": true
+          },
+          ":cols": 12,
+          ":sm": 12,
+          ":md": 4,
+        })
+      },
+      onDrawerTypeChange(event) {
+      },
+      refreshCodeMirror(key) {
+        let targetValuePath = this.getValueFromPath(key);
+        if (targetValuePath) {
+          this.setCodeMirrorValue(key, targetValuePath);
+        }
+        this.$forceUpdate();
+      },
+      onActiveEditItemChange() {
+        this.$forceUpdate();
+        Object.keys(this.editorList).forEach(item => {
+          if (item.startsWith('activeEditItem-')) {
+            this.refreshActiveEditItemEditorValue(item);
+          }
+        })
+      },
+      // 更新编辑器的值
+      refreshActiveEditItemEditorValue(key) {
+        let targetValuePath = this.getValueFromPath(key);
+        if (targetValuePath) {
+          this.setCodeMirrorValue(key, targetValuePath);
+        }
+      },
+      getValueFromPath(key, isSet = false) {
+        let keyList = key.split('-');
+        keyList = keyList.filter(item => item !== 'codeMirror');
+        let targetValue = this;
+        keyList.forEach((item, index) => {
+          try {
+            if (isSet && index === keyList.length - 1) return;
+            if (!targetValue) return;
+            if (typeof targetValue === 'string') return;
+            if (isNaN(Number(item))) {
+              targetValue = targetValue[item];
+            } else {
+              targetValue = targetValue[Number(item)];
+            }
+          } catch (err) { }
+        })
+        if (isSet) {
+          return {
+            targetValue,
+            lastKey: isNaN(Number(keyList[keyList.length - 1])) ? keyList[keyList.length - 1] : Number(keyList[keyList.length - 1])
+          };
+        }
+        return targetValue;
+      },
+      parseToCodeMirrorValue(valueText) {
+        if (valueText === null || valueText === undefined) {
+          return "";
+        }
+        if (typeof valueText === 'string') {
+          return valueText;
+        }
+        return JSON.stringify(valueText, (_, value) => {
+          if (typeof value === "function") {
+            return `__FUN__${value.toString().replace(/"/g, "'")}__FUN__`;
+          }
+          if (value instanceof RegExp) {
+            return `__FUN__${value.toString().replace(/"/g, "'")}__FUN__`;
+          }
+          return value;
+        }, 2).replace(/"__FUN__(.*?)__FUN__"/g, function (match, p1) {
+          return p1;
+        }).replace(/\\n/g, "\n");
+      },
+      setCodeMirrorValue(key, value) {
+        if (this.editorList[key].hasFocus()) return;
+        const cursor = this.editorList[key].getCursor();
+        this.editorList[key].setValue(typeof value !== 'object' ? `${value}` : this.parseToCodeMirrorValue(value));
+        if (typeof value !== 'object') {
+          this.editorList[key].setCursor({ line: cursor.line, ch: cursor.ch + 1 });
+        } else {
+          this.editorList[key].setCursor(cursor);
+        }
+      },
+      createCodeMirror() {
+        const customCodeMirror = Object.keys(this.$refs).filter(item => item.includes('-codeMirror'));
+        if (customCodeMirror.length) {
+          customCodeMirror.forEach(key => {
+            let element = document.getElementById(key);
+            if (element && this.editorList.hasOwnProperty(key)) {
+              if (element.childNodes.length > 0 && element.childNodes[0].classList.contains('CodeMirror')) {
+                return;
+              }
+            }
+            if (!element) return;
+            element.innerHTML = "";
+            const mode = element.dataset.type || 'javascript';
+            const targetValue = this.getValueFromPath(key);
+            const valueText = _.cloneDeep(targetValue || {});
+            var editor = CodeMirror(element, {
+              mode,
+              lineNumbers: true,
+              autoCloseBrackets: true,
+              matchBrackets: true,
+              showCursorWhenSelecting: true,
+              theme: "darcula",
+              tabSize: 2,
+              value: this.parseToCodeMirrorValue(valueText)
+            });
+            editor.on("change", () => {
+              try {
+                const value = editor.getValue();
+                let newValue = null;
+                try {
+                  if (mode === 'text/html') {
+                    newValue = value.replace(/{/g, '\{').replace(/}/g, '\}').replace(/\[/g, '\\[').replace(/\]/g, '\\]');
+                  } else {
+                    newValue = isNaN(Number(value)) ? eval('(' + value + ')') : Number(value);
+                  }
+                } catch (err) {
+                  console.error("数据异常", mode, value);
+                  return;
+                }
+                const {
+                  targetValue,
+                  lastKey
+                } = this.getValueFromPath(key, true);
+                if (typeof targetValue === 'string') {
+                  return;
+                }
+                // 如果值没有变化，则不做任何操作
+                const aString = this.getJsonString(targetValue[lastKey]);
+                if (value === aString) {
+                  console.log("no change")
+                  return;
+                }
+
+                if (!newValue && newValue !== 0 && newValue !== false) {
+                  delete targetValue[lastKey];
+                  return;
+                }
+
+                // 新值是数组
+                if (newValue && Array.isArray(newValue)) {
+                  newValue = newValue.filter(item => item && item !== 'null' && item !== 'undefined');
+                  // 旧的也是数组
+                  if (Array.isArray(targetValue[lastKey])) {
+                    targetValue[lastKey].length = 0;
+                    targetValue[lastKey].push(...newValue);
+                  } else {
+                    // 类型变了
+                    if (key !== 'activeEditItem-codeMirror') {
+                      targetValue[lastKey] = newValue;
+                    }
+                  }
+                } else {
+                  // 新值是对象\旧的也是对象
+                  if (newValue && typeof newValue === 'object' && !Array.isArray(targetValue[lastKey]) && typeof targetValue[lastKey] === 'object') {
+                    Object.assign(targetValue[lastKey], newValue);
+                    for (const key2 in targetValue[lastKey]) {
+                      if (!Object.hasOwnProperty.call(newValue, key2)) {
+                        delete targetValue[lastKey][key2];
+                      }
+                    }
+                  } else {
+                    // 新值是其他
+                    if (key !== 'activeEditItem-codeMirror') {
+                      targetValue[lastKey] = newValue;
+                    }
+                  }
+                }
+              } catch (error) {
+                console.error(error)
+              }
+              if (key.startsWith('activeEditItem-')) {
+                this.onActiveEditItemChange();
+              }
+              console.log("this.pageJsonContent", this.pageJsonContent);
+            });
+            this.editorList[key] = editor;
+          })
+        }
+      },
+      getJsonString(json) {
+        if (json === null || json === undefined) {
+          return json;
+        }
+        if (typeof json === 'string') {
+          return json;
+        }
+        const aString = JSON.stringify(json, (_, value) => {
+          if (typeof value === "function") {
+            return value.toString();
+          }
+          if (value instanceof RegExp) {
+            return value.toString();
+          }
+          if (value instanceof BigInt) {
+            return `${value}`;
+          }
+          return value;
+        }, 2)
+        return aString;
+      },
+      setActiveEditItem(item, editType, index, valuePath) {
+        if (this.activeEditItem) {
+          const aString = this.getJsonString(this.activeEditItem);
+          const bString = this.getJsonString(item);
+          if (bString === aString) {
+            console.log("activeEditItem no change")
+            return;
+          }
+        }
+        this.activeEditItem = item;
+        this.activeEditType = editType;
+        this.activeEditItemValuePath = valuePath;
+        if (index > -1) {
+          this.activeEditItem['index'] = index;
+        }
+        for (const key in this.editorList) {
+          if (this.editorList[key].display.wrapper.parentNode) {
+            this.editorList[key].display.wrapper.parentNode.innerHTML = "";
+          }
+        }
+      },
+      addSearchField() {
+        if (this.headContent.length === 1) {
+          this.headContent.push({
+            tag: 'jh-search',
+            attrs: { cols: 12, sm: 6, md: 8 },
+            value: [
+            ],
+            searchBtn: {
+              tag: 'v-btn',
+              value: "查询",
+              attrs: {
+                color: "success",
+                "@click": "doUiAction('getTableData')"
+              }
+            }
+          })
+        }
+        this.headContent[1].value.push({ tag: "v-text-field", model: "serverSearchWhereLike.xxx", attrs: { prefix: '前缀' } })
+      },
+      removeActiveEditItem() {
+        if (this.activeEditItemValuePath) {
+          let target = this;
+          const list = this.activeEditItemValuePath.split('.');
+          this.closePropertyContainer();
+          list.forEach((item, index) => {
+            const itemValue = isNaN(Number(item)) ? item : Number(item);
+            if (index === list.length - 1) {
+              console.log(target[itemValue])
+              if (Array.isArray(target)) {
+                target.splice(itemValue, 1);
+              } else if (typeof target === 'object') {
+                delete target[itemValue];
+              }
+            } else {
+              target = target[itemValue];
+            }
+          })
         }
       },
 
+      draggableChange(event, formItemList) {
+        const { moved: { newIndex, oldIndex } } = event;
+        formItemList.splice(newIndex, 0, formItemList.splice(oldIndex, 1)[0]);
+      },
+      removeSearchField(index) {
+        this.headContent[1].value.splice(index, 1);
+      },
+      addHeadAction(headActionList) {
+        headActionList.splice(0, 0, { tag: 'v-btn', value: '新按钮', attrs: { color: 'success', class: 'mr-2', '@click': 'methods方法', small: true } });
+        this.onActiveEditItemChange();
+      },
+      removeHeadAction(headActionList, index) {
+        headActionList.splice(index, 1);
+        this.onActiveEditItemChange();
+      },
+      convertAttr(attrs) {
+        let result = {};
+        for (let key in attrs) {
+          if (key.startsWith(':') && key !== ':items') {
+            // 如果属性名以 ':' 开头，我们需要动态计算它的值
+            let expr = attrs[key];
+            if (expr) {
+              if (typeof expr === 'boolean') {
+                result[key.slice(1)] = expr;
+              } else if (typeof expr === 'number') {
+                result[key.slice(1)] = expr;
+              } else if (typeof expr === 'object') {
+                result[key.slice(1)] = expr;
+              } else if (expr === 'true' || expr === 'false') {
+                result[key.slice(1)] = expr === 'true';
+              } else if (!isNaN(Number(expr))) {
+                result[key.slice(1)] = Number(expr);
+              } else if (expr.startsWith("{")) {
+                result[key.slice(1)] = eval('(' + expr + ')');
+              } else {
+                result[key.slice(1)] = expr;
+              }
+            }
+          } else if (!key.startsWith('@') && key !== 'v-bind' && key !== ':items') {
+            // 否则，我们直接使用它的值
+            result[key] = attrs[key];
+          }
+        }
+        return result;
+      },
+      addFilterField(headActionList) {
+        headActionList.splice(headActionList.length - 1, 0, {
+          tag: 'v-col',
+          attrs: { cols: '12', sm: '6', md: '4', class: 'pa-0' },
+          value: [
+            { tag: 'v-text-field', attrs: { prefix: '筛选', 'v-model': 'searchInput', class: 'jh-v-input', ':dense': true, ':filled': true, ':single-line': true } },
+          ],
+        });
+        this.onActiveEditItemChange();
+      },
+      addDrawerBtn(action) {
+        action.splice(action.length, 0, {
+          tag: "v-btn",
+          value: "新按钮",
+          attrs: {
+            color: "success",
+            ':small': true,
+            '@click': "xxx"
+          }
+        })
+      },
+      removeFilterField(headActionList, index) {
+        headActionList.splice(index, 1);
+        this.onActiveEditItemChange();
+      },
+      addTableField(header) {
+        header.splice(header.length, 0, { text: `字段${header.length + 1}`, value: `value${header.length + 1}`, type: "v-text-field", width: 80, sortable: true, class: "", cellClass: "", formatter: [] });
+      },
+      removeTableField(header, index) {
+        header.splice(index, 1);
+        this.activeEditItem = null;
+        this.activeEditType = null;
+        this.activeEditItemValuePath = null;
+      },
+      onTableFieldChange(event, item, valuePath) {
+        item.text = this.tableFieldList.find(field => field.Field === event).Comment;
+        this.refreshCodeMirror(valuePath);
+      },
+      onTableFieldFixedChange(event, item, valuePath) {
+        item.class = event ? 'fixed' : '';
+        item.cellClass = event ? 'fixed' : '';
+        this.refreshCodeMirror(valuePath);
+      },
+      // 列顺序调换
+      tdMove(header, arrow) {
+        let arr = this.pageContent[0].value;
+        let index = arr.findIndex(item => item.value === header.value);
+        if (Math.abs(arrow) === 1) {
+          let targetIndex = Math.max(Math.min(index + arrow, arr.length - 1), 0);
+          // 位置互换
+          [arr[index], arr[targetIndex]] = [arr[targetIndex], arr[index]];
+        }
+        if (Math.abs(arrow) === 999) {
+          arr.splice(index, 1);
+          arrow === -999 ? arr.unshift(header) : arr.push(header);
+        }
+        this.pageContent[0].value = _.cloneDeep(arr);
+        this.activeEditItem = this.pageContent[0].value.find(item => item.value === this.activeEditItem.value);
+      },
+      inputNewData(item, key) {
+        if (Array.isArray(item)) {
+          if (key === 'includeList') {
+            item.push({ type: "引入类型< js | css | html | vueComponent >", path: '引入文件路径' });
+          }
+          if (key === 'drawerList') {
+            item.push({ key: '数据名称', title: '抽屉名称', contentList: ["内容列表"] });
+          }
+          if (key === 'resourceList') {
+            item.push({
+              actionId: 'action id; E.g: selectXXXByXXX',
+              resourceType: 'resource类型; <service | sql>',
+              resourceData: 'resource数据; { "service": "auth", "serviceFunction": "passwordLogin" } or  { "table": "${tableName}", "action": "select" }',
+              resourceHook: { "before": [{ "service": "xx", "serviceFunction": "xxx" }], "after": [] },
+              desc: ''
+            });
+          }
+        }
+      },
+      removeItem(item, item2, key) {
+        item.splice(item.findIndex(e => JSON.stringify(e) === JSON.stringify(item2)), 1);
+      },
+      onItemInput($event, item, index) {
+        try {
+          item[index] = JSON.parse($event);
+        } catch (error) {
+          console.log("onItemInput", error);
+          this.vscodeToast("数据格式错误");
+        }
+      },
+      vscodeToast(message) {
+        window.appAxios({
+          isVoid: true,
+          packageType: "vscodeToast",
+          data: {
+            appData: {
+              message,
+            }
+          }
+        })
+      },
       // 数据表操作 start
       addNewTableField() {
         this.tableFieldList.push({
@@ -295,10 +1503,9 @@
       },
       // 数据表操作 end
       closePropertyContainer() {
-        this.activeBtnItem = null;
-        this.activeTh = null;
-        this.activeData = null;
-        this.activeField = null;
+        this.activeEditItem = null;
+        this.activeEditType = null;
+        this.activeEditItemValuePath = null;
       },
       // 提取表单中的字段
       pickerFormField(item) {
@@ -318,18 +1525,27 @@
         this[`${this.tableHeaderListKey}`].find((item, index) => {
           if (item.value === 'action') {
             let element = document.getElementsByTagName('td')[index];
-            console.log(element.children);
             item.width = 0;
             for (let i = 0; i < element.children.length; i++) {
               item.width += element.children[i].offsetWidth;
             }
-            console.log("action width", item.width);
             return true;
           }
           return false;
         })
       },
 
+      async getTables() {
+        const result = await window.appAxios({
+          packageType: "getTables",
+          data: {
+            appData: {
+            },
+          }
+        })
+        const tables = result.data.appData.tables.map(item => Object.values(item)[0]);
+        this.designConstants.table = tables.filter(item => !item.startsWith('_'));
+      },
       // 获取数据库字段列表
       async getDbFieldList() {
         const result = await window.appAxios({
@@ -349,7 +1565,7 @@
       // 获取页面配置 json
       async getPageConfig() {
         const designFieldConfigList = await window.appAxios({
-          packageType: "getFieldConfigRequest",
+          packageType: "getPageConfigRequest",
           data: {
             appData: {
               appId: this.appId,
@@ -364,9 +1580,80 @@
           return;
         }
         this.tickTab();
+        this.common = this.pageJsonContent.common;
         this.actionContent = this.pageJsonContent.actionContent;
         this.headContent = this.pageJsonContent.headContent;
         this.pageContent = this.pageJsonContent.pageContent;
+        // 模板有问题，需要手动添加
+        this.headContent.forEach(item => {
+          if (item.tag === 'jh-search') {
+            if (!item.searchBtn || !item.searchBtn.attrs) {
+              item.searchBtn = {
+                value: "查询",
+                attrs: {
+                  color: "success",
+                  "@click": "doUiAction('getTableData')"
+                }
+              }
+            }
+          }
+        });
+        this.actionContent.forEach(item => {
+          item.contentList && item.contentList.forEach(content => {
+            if (content.type === 'form') {
+              content.formItemList.forEach(formItem => {
+                if (!formItem['attrs']) {
+                  formItem['attrs'] = {};
+                }
+                formItem[':cols'] = 12;
+                formItem[':sm'] = 12;
+                formItem[':md'] = 4;
+                formItem['attrs'][':class'] = 'jh-v-input';
+                formItem['attrs'][':dense'] = true;
+                formItem['attrs'][':single-line'] = true;
+                formItem['attrs'][':filled'] = true;
+                formItem['attrs'][':hide-details'] = true;
+              });
+            }
+          });
+        });
+        this.pageContent.forEach(item => {
+          if (item.tag === 'jh-table') {
+            if (!item.attrs.hasOwnProperty(':dark')) {
+              item.attrs[':dark'] = false;
+            }
+            if (!item.attrs.hasOwnProperty(':dense')) {
+              item.attrs[':dense'] = false;
+            }
+            if (!item.attrs.hasOwnProperty(':hide-default-footer')) {
+              item.attrs[':hide-default-footer'] = false;
+            }
+            if (!item.attrs.hasOwnProperty(':hide-default-header')) {
+              item.attrs[':hide-default-header'] = false;
+            }
+            if (!item.attrs.hasOwnProperty(':mobile-breakpoint')) {
+              item.attrs[':mobile-breakpoint'] = 600;
+            }
+            if (!item.attrs.hasOwnProperty(':show-select')) {
+              item.attrs[':show-select'] = false;
+            }
+            if (!item.attrs.hasOwnProperty(':single-select')) {
+              item.attrs[':single-select'] = false;
+            }
+            if (!item.attrs.hasOwnProperty(':show-expand')) {
+              item.attrs[':show-expand'] = false;
+            }
+            if (!item.attrs.hasOwnProperty(':single-expand')) {
+              item.attrs[':single-expand'] = false;
+            }
+            if (!item.attrs.hasOwnProperty('v-model')) {
+              item.attrs['v-model'] = 'tableSelected';
+            }
+            if (!item.attrs.hasOwnProperty('item-key')) {
+              item.attrs['item-key'] = this.tableFieldList[0].Field;
+            }
+          }
+        });
       },
       tickTab() {
         const pageContentTabs = this.pageJsonContent.pageContent.filter(item => item.tag.startsWith('jh-'));
@@ -379,7 +1666,6 @@
         this.activeBtnItem = null;
         this.activeData = null;
         this.activeField = null;
-
         this.tabIndex = index;
       },
       onStart() {
@@ -387,23 +1673,21 @@
       onEnd() {
       },
       // 移除选项
-      removeOption(option) {
-        if (!this.modelKey) {
-          return;
-        }
-        this.constantObj[this.modelKey] = this.constantObj[this.modelKey].filter(item => typeof option === 'string' ? item !== option : item.text !== option.text);
-        this.constantObj = _.cloneDeep(this.constantObj);
+      removeOption(item, index) {
+        item.attrs[':items'].splice(index, 1);
+        item.attrs[':items'] = [...item.attrs[':items']];
+        this.onActiveEditItemChange();
       },
       // 添加新的选项
-      addNewOption() {
-        if (!this.modelKey) {
-          return;
+      addNewOption(item) {
+        if (!item.attrs[':items']) {
+          item.attrs[':items'] = [];
         }
-        if (!this.constantObj[this.modelKey]) {
-          this.constantObj[this.modelKey] = [];
-        }
-        this.constantObj[this.modelKey].push({ text: "新选项", value: "新选项" });
-        this.constantObj = _.cloneDeep(this.constantObj);
+        item.attrs[':items'].splice(0, 0, {
+          text: "", value: ""
+        });
+        item.attrs[':items'] = [...item.attrs[':items']];
+        this.onActiveEditItemChange();
       },
       // 保存数据库字段列表
       async saveTableField() {
@@ -448,41 +1732,9 @@
           }
         })
       },
-      // 保存抽屉的设计
-      async saveActionContent() {
-        window.vtoast.loading("正在保存抽屉配置");
-        await window.appAxios({
-          packageType: "updatePageContent",
-          data: {
-            appData: {
-              pageId: this.pageId,
-              appId: this.appId,
-              webPageId: this.webPageId,
-              webPageName: this.webPageName,
-              actionData: {
-                constantObj: this.constantObj,
-                actionContent: this.actionContent,
-                jsonPath: this.jsonPath,
-              }
-            },
-          },
-          callback: (value) => {
-            if (value.appData.isEnd) {
-              window.vtoast.success("运行成功");
-            }
-          }
-        })
-      },
       // 保存页面的配置
       async savePageContent() {
         // 验证数据
-        // 1. 要把 header 重新覆盖下
-        const newHeader = this[this.tableHeaderListKey];
-        // 2. 要把 pageContent 重新覆盖下，排除掉 uid
-        // 3. 要最最新的 json。通过命令生成到页面中
-        // parse data
-        const pageContent = _.cloneDeep(this.pageContent);
-        this.removeById(pageContent, this.headPlusBtnUid);
         window.vtoast.loading("正在保存页面配置");
         await window.appAxios({
           packageType: "updatePageContent",
@@ -493,12 +1745,16 @@
               webPageId: this.webPageId,
               webPageName: this.webPageName,
               actionData: {
-                header: newHeader,
-                headerKey: this.tableHeaderListKey,
-                pageContent,
-                headContent: this.headContent,
+                pageJsonContent: JSON.stringify(this.pageJsonContent, (_, value) => {
+                  if (typeof value === "function") {
+                    return `__FUN__${value.toString().replace(/"/g, "'")}__FUN__`;
+                  }
+                  if (value instanceof RegExp) {
+                    return `__FUN__${value.toString().replace(/"/g, "'")}__FUN__`;
+                  }
+                  return value;
+                }, 2),
                 jsonPath: this.jsonPath,
-                hasHelpDrawer: this.hasHelpDrawer,
                 rootPath: `${this.projectPath}/`
               }
             },
@@ -509,15 +1765,137 @@
             }
           }
         })
-
       },
     }
   })
 </script>
 
 <style scoped>
+  .drawerBox {
+    border: 1px dashed #ccc;
+    border-radius: 5px;
+    padding: 10px;
+    background-color: #FFFFFF;
+    box-shadow: 0 1px 20px 0 rgb(0 0 0 / 2%);
+    margin-bottom: 20px;
+  }
+
+  .switchBox {
+    background-color: #EEEEEE;
+    padding: 2px 15px;
+    border-radius: 5px;
+    display: flex;
+    width: 100%;
+    align-items: center;
+    margin: 2px 0;
+  }
+
+  .whiteBox {
+    padding: 15px 5px 15px 15px;
+    border-radius: 5px;
+    width: 100%;
+    margin: 2px 0;
+    background-color: #FFFFFF !important;
+  }
+
+  .switchBox.bg-white {
+    background-color: #FFFFFF !important;
+    color: #666666;
+  }
+
+  .boxTip {
+    position: absolute;
+    display: block;
+    background-color: #EEEEEE;
+    padding: 2px 5px;
+    border-radius: 5px;
+    top: -10px;
+    left: 0px;
+    transform: scale(0.8);
+    font-size: 12px;
+    white-space: nowrap;
+  }
+
+  .headConent .titleContent {
+    max-width: 25vw;
+    min-width: 25vw;
+    border: 1px dashed #ccc;
+    border-radius: 5px;
+    height: 60px;
+    padding: 15px;
+    position: relative;
+  }
+
+  .headConent .serverSearchContent {
+    position: relative;
+    flex: 1;
+    border: 1px dashed #ccc;
+    border-radius: 5px;
+    min-height: 60px;
+    padding: 15px;
+    margin-left: 20px;
+  }
+
+  .dataTableHeader {
+    position: relative;
+    margin-top: 20px;
+  }
+
+  .dataTableHeader .dataTableHeaderAction {
+    position: relative;
+    height: 45px;
+    border: 1px dashed #ccc;
+    border-radius: 5px;
+    padding: 10px 15px;
+    min-width: 100px;
+  }
+
+  .dataTableHeader .dataTableHeaderFilter {
+    position: relative;
+    height: 45px;
+    border: 1px dashed #ccc;
+    border-radius: 5px;
+    padding: 10px 15px;
+    min-width: 300px;
+  }
+
+  .dataTableContent {
+    position: relative;
+    margin-top: 20px;
+    height: 200px;
+    border: 1px dashed #ccc;
+    border-radius: 5px;
+    padding: 15px;
+    min-width: 100px;
+  }
+
+  .v-text-field__prefix {
+    color: #666666;
+    padding-right: 15px;
+  }
+
   body {
     padding: 0 !important;
+  }
+
+  .v-chip.v-size--small {
+    height: 18px;
+    padding: 0 5px;
+    margin: 0 2px;
+  }
+
+  .v-chip.v-size--default {
+    padding: 0 15px;
+    font-size: 12px;
+    margin: 0 2px;
+  }
+
+  .v-chip.v-size--small .v-chip__content {
+    transform: scale(0.9);
+  }
+
+  body .v-application .isEditDom {
+    border: 1px dashed #3f51b5 !important;
   }
 
   .jh-page-body-container>.v-card {
@@ -528,6 +1906,18 @@
     line-height: 1.45;
   }
 
+  .jh-v-input .v-messages-outer,
+  .jh-v-input .v-text-field__details {
+    position: absolute !important;
+    bottom: -1px !important;
+    left: 0px !important;
+  }
+
+  .jh-v-input.error--text .v-input__slot {
+    border-color: red !important;
+    background-color: #fff0f0 !important;
+  }
+
   .page-tabs-item {
     min-height: calc(100vh - 120px) !important;
     width: 100%;
@@ -536,6 +1926,7 @@
 
   .designContainerCardLeft {
     display: block;
+    flex: 1;
   }
 
   .designContainerCardLeft>* {
@@ -543,9 +1934,12 @@
   }
 
   .designContainerCard {
-    max-width: 300px;
-    min-width: 300px;
+    max-width: 25vw;
+    min-width: 25vw;
     margin-left: 20px;
+    flex: 1;
+    border-radius: 0;
+    border-left: 1px solid #EEEEEE;
   }
 
   .designContainer {
@@ -620,7 +2014,18 @@
     background-color: #fbfbfb;
   }
 
-  .rulesBox .theme--light.v-btn-toggle .v-btn.v-btn--active {}
+  .v-text-field--outlined>.v-input__control>.v-input__slot {
+    background: #F2F2F2;
+    border: 1px solid #F2F2F2;
+  }
+
+  .v-text-field--outlined fieldset {
+    border: 0 !important;
+  }
+
+  .page-tabs-item .v-window-item:first .v-input__slot {
+    min-height: 38px !important;
+  }
 
   .rulesBox .theme--light.v-btn-toggle .v-btn {
     border-radius: 4px !important;
@@ -678,6 +2083,10 @@
     right: -40px;
     width: 50px;
     height: 50px;
+  }
+
+  .CodeMirror {
+    flex: 1;
   }
 
   /* customStyle >>>>>> */

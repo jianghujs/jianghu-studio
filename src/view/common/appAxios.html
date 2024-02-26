@@ -23,7 +23,31 @@
       max = Math.floor(max);
       return Math.floor(Math.random() * (max - min) + min);
     };
-
+    loopParse = (value) => {
+      if (Array.isArray(value)) {
+        value.forEach((item, index) => {
+          if (typeof item === 'string') {
+            if (item.indexOf("__FUN__") > -1) {
+              console.log("item", item);
+              value[index] = eval("(" + (item.replace(/__FUN__/g, "")) + ")");
+            }
+          } else {
+            loopParse(item);
+          }
+        })
+      } else if (typeof value === 'object') {
+        for (let key in value) {
+          if (typeof value[key] === 'string') {
+            if (value[key].indexOf("__FUN__") > -1) {
+              console.log("value[key]", value[key]);
+              value[key] = eval("(" + (value[key].replace(/__FUN__/g, "")) + ")");
+            }
+          } else {
+            loopParse(value[key]);
+          }
+        }
+      }
+    };
     /**
      * 向 vscode 发请求
      * exp:
@@ -52,7 +76,7 @@
         let success = false;
         let timeoutHandler;
         // 超时逻辑 5000
-        if (!callback) {
+        if (!callback && !isVoid) {
           timeoutHandler = setTimeout(() => {
             if (!success) {
               window.vtoast.fail(`请求超时, actionId: ${requestBodyToFill && requestBodyToFill.appData.actionId}, packageId: ${packageId}`);
@@ -64,14 +88,17 @@
           resolve(true);
           return;
         }
-        window.addEventListener("message", ({ data }) => {
+        const onMessage = ({ data }) => {
           success = true;
           console.log("onVscodeMessage", data);
           timeoutHandler && clearTimeout(timeoutHandler);
           if (!data) {
+            window.removeEventListener("message", onMessage);
             reject(new Error("请求失败"));
             return;
           }
+
+          loopParse(data.appData);
           // 对 actionId 做持久监听
           if (window.resourceListener[data.appData.actionId]) {
             window.resourceListener[data.appData.actionId](data);
@@ -81,9 +108,11 @@
             callback(data);
           }
           if ((callback && data.appData.isEnd) || !callback) {
+            window.removeEventListener("message", onMessage);
             resolve({ data });
           }
-        });
+        }
+        window.addEventListener("message", onMessage);
       });
     };
     window.jianghuAxios = ({ data, packageType = "messageRequest", callback, isVoid }) => {

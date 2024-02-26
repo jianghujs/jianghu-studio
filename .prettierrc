@@ -11,5 +11,7 @@
   "htmlWhitespaceSensitivity": "ignore",
   "useTabs": false,
   "endOfLine": "auto",
-  "ignorePath": ".gitignore"
+  "ignorePath": ".gitignore",
+  "proseWrap": "never",
+  "singleAttributePerLine": true
 }

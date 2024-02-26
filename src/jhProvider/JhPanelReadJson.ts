@@ -31,7 +31,7 @@ export class JhPanelReadJson extends JhPanel {
     const webPageId = activeFile.split("/").pop()?.split(".")[0] as string;
     const { appId } = PathUtil.getConfigJson(`${projectPath}/config/config.default.js`);
     const currDatabase = AppManager.handlerMap.get(appId as string)?.currDatabase;
-    const jsonPath = `${projectPath}/app/view/init-json/page/${webPageId}Management.js`;
+    const jsonPath = `${projectPath}/app/view/init-json/page/${webPageId}.js`;
     // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-call
     void import(jsonPath).then((pageConfig: any) => {
       void vscode.commands.executeCommand("webviewHandler.openPageDesign", {
