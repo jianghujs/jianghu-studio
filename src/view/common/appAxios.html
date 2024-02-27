@@ -28,7 +28,6 @@
         value.forEach((item, index) => {
           if (typeof item === 'string') {
             if (item.indexOf("__FUN__") > -1) {
-              console.log("item", item);
               value[index] = eval("(" + (item.replace(/__FUN__/g, "")) + ")");
             }
           } else {
@@ -39,7 +38,6 @@
         for (let key in value) {
           if (typeof value[key] === 'string') {
             if (value[key].indexOf("__FUN__") > -1) {
-              console.log("value[key]", value[key]);
               value[key] = eval("(" + (value[key].replace(/__FUN__/g, "")) + ")");
             }
           } else {

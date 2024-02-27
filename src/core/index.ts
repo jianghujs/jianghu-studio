@@ -27,6 +27,8 @@ import * as parser from "@babel/parser";
 import traverse from "@babel/traverse";
 // @ts-ignore
 import generate from "@babel/generator";
+// @ts-ignore
+import { JhPanel } from "../jhProvider/JhPanel";
 
 export default class AppCore {
   public resourceService: ResourceService;
@@ -142,13 +144,34 @@ export default class AppCore {
     }
   }
 
-  private updatePageConfigJson(actionData: any, webPageId: string, appDir: any) {
+  // eslint-disable-next-line @typescript-eslint/require-await
+  private async updatePageConfigJson(actionData: any, webPageId: string, appDir: any) {
     const { pageJsonContent } = actionData;
     const resJsonPath = `${appDir}/app/view/init-json/page/${webPageId}.js`;
+    let configContent = (pageJsonContent as string).replace(/"__FUN__(.*?)__FUN__"/g, (match: any, p1: any) => p1).replace(/\\n/g, "\n");
+    configContent = configContent
+      .replace(/\n/g, "") // 删除换行符
+      .replace(/:\s+/g, ": ") // 在冒号后添加空格
+      .replace(/,\s+/g, ", ") // 在逗号后添加空格
+      .replace(/\{\s+/g, "{") // 删除左大括号后的空格
+      .replace(/\}\s+/g, "}"); // 删除右大括号后的空格
     // eslint-disable-next-line @typescript-eslint/no-unsafe-call
-    let pageConfigString = `const content = ${pageJsonContent.replace(/"__FUN__(.*?)__FUN__"/g, (match: any, p1: any) => p1).replace(/\\n/g, "\n")}; module.exports = content;`;
+    let pageConfigString = `const content = ${configContent}; module.exports = content;`;
+    const pretterConfig = {
+      parser: "flow",
+      printWidth: 180,
+      semi: true,
+      bracketSpacing: true,
+      arrowParens: "avoid",
+      useTabs: false,
+      endOfLine: "auto",
+      singleAttributePerLine: true,
+      editorconfig: {
+        max_line_length: 220,
+      },
+    };
     // eslint-disable-next-line @typescript-eslint/no-unsafe-call
-    pageConfigString = prettier.format(pageConfigString, { parser: "flow" });
+    pageConfigString = prettier.format(pageConfigString, pretterConfig);
     fs.writeFileSync(resJsonPath, pageConfigString);
   }
 

@@ -1,7 +1,4 @@
 {
-  "[html]": {
-    "editor.defaultFormatter": "esbenp.prettier-vscode"
-  },
   "printWidth": 500,
   "eslintIntegration": true,
   "stylelintIntegration": true,
@@ -12,6 +9,5 @@
   "useTabs": false,
   "endOfLine": "auto",
   "ignorePath": ".gitignore",
-  "proseWrap": "never",
   "singleAttributePerLine": true
 }

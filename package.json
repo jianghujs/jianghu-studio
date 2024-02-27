@@ -244,6 +244,7 @@
 		"test": "node ./out/test/runTest.js"
 	},
 	"devDependencies": {
+		"@types/eslint": "^8.56.2",
 		"@types/glob": "^7.2.0",
 		"@types/lodash": "^4.14.182",
 		"@types/mocha": "^9.1.0",
@@ -254,10 +255,7 @@
 		"@typescript-eslint/eslint-plugin": "^5.26.0",
 		"@typescript-eslint/parser": "^5.26.0",
 		"@vscode/test-electron": "^2.1.2",
-		"eslint": "^8.9.0",
-		"eslint-config-prettier": "^8.5.0",
 		"eslint-plugin-import": "^2.26.0",
-		"eslint-plugin-prettier": "^4.0.0",
 		"glob": "^7.2.0",
 		"mocha": "^9.2.1",
 		"typescript": "^4.5.5"
@@ -270,6 +268,9 @@
 		"ajv-formats": "^2.1.1",
 		"cheerio": "^1.0.0-rc.12",
 		"dayjs": "^1.11.2",
+		"eslint": "^8.9.0",
+		"eslint-config-prettier": "^8.10.0",
+		"eslint-plugin-prettier": "^4.0.0",
 		"json5": "^2.2.1",
 		"knex": "^2.1.0",
 		"lodash": "^4.17.21",
@@ -278,7 +279,7 @@
 		"nanoid": "^3.3.1",
 		"nunjucks": "^3.2.3",
 		"open": "^8.0.10",
-		"ts-md5": "^1.2.11",
-		"prettier": "^2.6.2"
+		"prettier": "^2.6.2",
+		"ts-md5": "^1.2.11"
 	}
 }
