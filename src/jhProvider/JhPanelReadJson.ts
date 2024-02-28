@@ -29,8 +29,8 @@ export class JhPanelReadJson extends JhPanel {
 
   private async buildJson(projectPath: string, webPageId: string) {
     return new Promise(resolve => {
-      const commandBasic = "node /Users/benshanyue/fsll/projects/jianghujs-script-util/openjianghu01/002.jianghu-init/jianghu-init/bin/jianghu-init.js";
-      // const commandBasic = "jianghu-init";
+      // const commandBasic = "node /Users/benshanyue/fsll/projects/jianghujs-script-util/openjianghu01/002.jianghu-init/jianghu-init/bin/jianghu-init.js";
+      const commandBasic = "jianghu-init";
       const commandText = `${commandBasic} json --generateType=json --pageType=jh-page --table=${webPageId} -y`;
       const child = spawn(commandText, [], {
         cwd: projectPath,
