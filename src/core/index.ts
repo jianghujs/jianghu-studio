@@ -25,10 +25,7 @@ import * as prettier from "prettier";
 import * as parser from "@babel/parser";
 // @ts-ignore
 import traverse from "@babel/traverse";
-// @ts-ignore
-import generate from "@babel/generator";
-// @ts-ignore
-import { JhPanel } from "../jhProvider/JhPanel";
+import dayjs = require("dayjs");
 
 export default class AppCore {
   public resourceService: ResourceService;
@@ -100,6 +97,7 @@ export default class AppCore {
         if (body.appData) {
           const { webPageId, actionData } = body.appData;
           void this.updatePageConfigJson(actionData, webPageId as string, uri.appDir);
+          this.backOldHtml(uri.appDir as string, webPageId as string);
           await this.buildPageFromJson(body, uri.appDir as string, panel, webPageId as string, "updatePageConfigResponse");
         }
         const returnBody = { ...body, packageType: "updatePageConfigResponse", appData: { isEnd: true } };
@@ -381,6 +379,13 @@ export default class AppCore {
       }
     });
   }
+  private backOldHtml(appFolder: string, webPageId: string) {
+    const htmlPath = `${appFolder}/app/view/page/${webPageId}.html`;
+    // 备份下 htmlPath
+    const htmlPathBak = `${appFolder}/app/view/page/${webPageId}.${dayjs().format("YYYY_MM_DD_HH_mm_ss")}.html`;
+    fs.copyFileSync(htmlPath, htmlPathBak);
+  }
+
   private async buildPageFromJson(body: any, appFolder: string, panel: vscode.WebviewPanel, webPageId: string, packageType: string) {
     // 运行命令 jianghu-init json --generateType=page --pageType=webPageId --file=webPageId -y
     return new Promise(resolve => {
