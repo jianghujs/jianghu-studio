@@ -92,7 +92,8 @@
             </v-tab-item>
             <v-tab-item :key="2" :value="2" class="pa-4">
               <template v-for="(item, key) of common">
-                <v-row>
+                <template v-if="['doUiAction', 'methods'].includes(key)"></template>
+                <v-row v-else>
                   <v-col class="d-flex align-top">
                       <span style="text-align: right; display: inline-block; min-width: 300px; padding-right: 20px; padding-top: 5px;">
                         
@@ -128,6 +129,44 @@
               </template>
             </v-tab-item>
             <v-tab-item :key="3" :value="3" class="pa-4">
+              <template v-for="(item, key) of common">
+                <template v-if="!['doUiAction', 'methods'].includes(key)"></template>
+                <v-row v-else>
+                  <v-col class="d-flex align-top">
+                      <span style="text-align: right; display: inline-block; min-width: 300px; padding-right: 20px; padding-top: 5px;">
+                        
+                        <v-tooltip bottom>
+                          <template v-slot:activator="{ on, attrs }">
+                            <span v-bind="attrs" v-on="on" style="cursor: pointer;">
+                              <v-icon size="12" color="error">mdi-help-circle-outline</v-icon>
+                              {{pageCommonConfigLabel[key]}}（{{key}}）:
+                            </span>
+                          </template>
+                          <span v-html="pageConfigHelp[key]">
+                          </span>
+                        </v-tooltip>
+                      </span>
+                      <template v-if="typeof item === 'string'">
+                        <v-select :items="designConstants[key]" outlined dense v-model="pageJsonContent[key]" class="jh-v-input" v-if="designConstants.hasOwnProperty(key)"></v-select>
+                        <v-text-field v-else v-model="pageJsonContent[key]" class="jh-v-input" dense single-line filled style="flex: 1;" :rules="validationRules.requireRules"></v-text-field>
+                      </template>
+                      <div v-else-if="Array.isArray(item)" style="flex: 1;">
+                        <div v-if="item.length">
+                          <div class="d-flex align-top"  v-for="(item2, index) in item" :key="index" >
+                            <div :id="`common-${key}-${index}-codeMirror`"  :ref="`common-${key}-${index}-codeMirror`">
+                            </div>
+                            <v-btn fab small class="elevation-0 ml-2" color="white" @click="removeItem(item, item2, key)"><v-icon>mdi-close</v-icon></v-btn>
+                          </div>
+                        </div>
+                        <div style="padding: 12px 0;" v-else>[]</div>
+                      </div>
+                      <div v-else style="flex: 1;" :id="`common-${key}-codeMirror`" :ref="`common-${key}-codeMirror`">
+                      </div>
+                  </v-col>
+                </v-row>
+              </template>
+            </v-tab-item>
+            <v-tab-item :key="4" :value="4" class="pa-4">
               <div class="d-flex">
                 <div class="designContainerCardLeft">
                   <div>
@@ -139,6 +178,7 @@
                       </div>
                       <div class="serverSearchContent" style="text-align: right;" @click="setActiveEditItem(serverSearchContent, 'serverSearchContent', -1, `serverSearchContent`)" :class="{'isEditDom': 'serverSearchContent' === activeEditType}">
                         <span class="boxTip">服务端搜索</span>
+                        <v-chip dense small color="light-green lighten-4" @click.stop="addSearchField"><v-icon size="14">mdi-plus</v-icon></v-chip>
                         <v-chip dense small color="light-green lighten-4" v-for="item of serverSearchContent.value">{{item.attrs.prefix}}:{{item.model}}</v-chip>
                         <v-chip dense small color="light-green lighten-4" v-if="serverSearchContent.searchBtn">{{serverSearchContent.searchBtn.value || '查询'}}</v-chip>
                       </div>
@@ -148,6 +188,7 @@
                         <div class="dataTableHeaderAction" @click="setActiveEditItem(pageContentItem.headActionList, 'dataTableHeaderAction', index, `pageContent.${index}.headActionList`)" :class="{'isEditDom': 'dataTableHeaderAction' === activeEditType}">
                           <span class="boxTip">表格上方按钮</span>
                           <v-chip small color="light-green lighten-4" v-for="item of pageContentItem.headActionList" v-if="item.tag === 'v-btn'">{{item.value}}</v-chip>
+                          <v-chip dense small color="light-green lighten-4" @click.stop="addHeadAction(pageContentItem.headActionList)"><v-icon size="14">mdi-plus</v-icon></v-chip>
                         </div>
                         <v-spacer></v-spacer>
                         <div class="dataTableHeaderFilter" @click="setActiveEditItem(pageContentItem.headActionList, 'dataTableHeaderFilter', index, `pageContent.${index}.headActionList`)" :class="{'isEditDom': 'dataTableHeaderFilter' === activeEditType}">
@@ -221,7 +262,6 @@
                         <span>搜索字段列表</span>
                         <v-icon size="14" color="red">mdi-cog</v-icon>
                         <v-spacer></v-spacer>
-                        <v-btn small @click="addSearchField"><v-icon>mdi-plus</v-icon> 新增字段</v-btn>
                       </div>
                       <div v-for="(item, index) of activeEditItem.value" style="background-color: #EEEEEE; border-radius: 5px; padding: 5px;" class="mb-2">
                         <div class="d-flex"><v-spacer></v-spacer><v-btn icon small color="error" @click="removeSearchField(index)"><v-icon>mdi-close</v-icon></v-btn></div>
@@ -259,7 +299,6 @@
                       </div>
                     </div>
                     <div v-if="'dataTableHeaderAction' === activeEditType">
-                      <v-btn block small color="success" class="mb-2" @click="addHeadAction(activeEditItem)">新增按钮</v-btn>
                       <div style="background-color: #EEEEEE; border-radius: 5px; padding: 5px;" class="mb-2" v-for="(item, index) of activeEditItem" v-if="item.tag === 'v-btn'">
                         <div class="d-flex"><v-spacer></v-spacer><v-btn icon small color="error" @click="removeHeadAction(activeEditItem, index)"><v-icon>mdi-close</v-icon></v-btn></div>
                         <v-text-field prefix="按钮文字: " outlined dense v-model="item.value" class="jh-v-input bg-white" @input="refreshCodeMirror(`activeEditItem-${index}-codeMirror`)" :rules="validationRules.requireRules" hide-details></v-text-field>
@@ -431,7 +470,7 @@
                 </div>
               </div>
             </v-tab-item>
-            <v-tab-item :key="4" :value="4" class="pa-4">
+            <v-tab-item :key="5" :value="5" class="pa-4">
               <div class="d-flex">
                 <div class="designContainerCardLeft">
                   <div>
@@ -802,10 +841,18 @@
               <v-card-text>
                 <div class="text-h2 px-4 py-8">
                   <div class="my-2">
-                    <v-text-field prefix="doUiActionCase名称" class="jh-v-input" dense filled single-line v-model="newFiledJson.Field"></v-text-field>
+                    <v-text-field prefix="Case名称：" placeholder="请输入doUiAction case的名称" 
+                    :rules="[...validationRules.requireRules, ...validationRules.acount]"
+                    class="jh-v-input" dense filled single-line v-model="eventActionDialogData.key"></v-text-field>
                   </div>
-                  <div class="my-2">
-                    事件流的列表 +
+                  <div class="my-2 mt-5">
+                    <div v-for="(item, index) of eventActionDialogData.value" :key="index" class="d-flex mb-2">
+                      <v-text-field :prefix="`步骤方法(${index + 1})：`" class="jh-v-input" style="flex: 1;" placeholder="请输入doUiAction case的步骤方法名"
+                        dense filled single-line v-model="eventActionDialogData.value[index]"
+                        :rules="[...validationRules.requireRules, ...validationRules.acount]"></v-text-field>
+                      <v-icon size="14" color="error" @click="eventActionDialogData.value.splice(index, 1)">mdi-close-circle</v-icon>
+                    </div>
+                    <v-btn small color="black" dark @click="eventActionDialogData.value.push(null)"><v-icon>mdi-plus</v-icon>新增步骤</v-btn>
                   </div>
                 </div>
               </v-card-text>
@@ -861,7 +908,14 @@
       hasHelpDrawer: "<$ hasHelpDrawer $>",
       // pageFile: "<$ pageFile $>",
       webPageName: "<$ webPageName $>",
-      tabItems: [{ text: "基础信息", icon: "database-cog" }, { text: "Resource配置", icon: "database-cog" }, { text: "页面数据", icon: "database-cog" }, { text: "页面设计", icon: "database-cog" }, { text: "关联界面设计", icon: "database-cog" },],
+      tabItems: [
+        { text: "基础信息", icon: "database-cog" },
+        { text: "Resource配置", icon: "database-cog" },
+        { text: "页面数据", icon: "database-cog" },
+        { text: "事件流管理", icon: "database-cog" },
+        { text: "页面设计", icon: "database-cog" },
+        { text: "关联界面设计", icon: "database-cog" },
+      ],
       tableData: [{}],
       pageConfigLabel: {
         pageType: "页面类型",
@@ -946,7 +1000,12 @@
           } catch (error) {
             return "格式错误";
           }
-        }]
+        }],
+        acount: [value => {
+          const pattern = /^[a-zA-Z]\w*$/;
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+          return pattern.test(value);
+        }],
       },
 
       // END 表格的配置项目
@@ -1033,24 +1092,17 @@
       },
       // 事件流程
       openEventActionDialog: false,
-      onEventActionSave: null,
+      onEventActionSave: () => { },
       eventActionDialogData: {
         key: "",
-        value: [],
+        value: [""],
       },
+      doUiActionList: [],
       // ----
 
       // ----
     }),
     computed: {
-      doUiActionList() {
-        const doUiActionMap = this.common ? this.common.doUiAction : [];
-        const uiActionList = [...Object.keys(doUiActionMap), ...Object.keys(this.defaultUiAction)].map(item => {
-          return item;
-        });
-        console.log("doUiActionList", uiActionList);
-        return ['新增事件流', ...uiActionList];
-      },
       parseActiveEditItemRules() {
         let rules = [];
         if (this.activeEditItem && this.activeEditItem['rules']) {
@@ -1193,11 +1245,20 @@
       await this.getTables();
       await this.getDbFieldList();
       await this.getPageConfig();
+      this.buildDoUiActionList();
       setInterval(this.createCodeMirror, 100);
     },
     mounted() {
     },
     methods: {
+      buildDoUiActionList() {
+        const doUiActionMap = this.common ? this.common.doUiAction : [];
+        const uiActionList = [...Object.keys(doUiActionMap), ...Object.keys(this.defaultUiAction)].map(item => {
+          return item;
+        });
+        console.log("doUiActionList", uiActionList);
+        this.doUiActionList = ['新增事件流', ...uiActionList];
+      },
       async saveConfig() {
         // const validStatus = this.$refs.baseConfigForm.validate();
         console.log("savePageBaseConfig", this.pageJsonContent);
@@ -1233,9 +1294,21 @@
         console.log("onEventActionChange", event, obj, valueKey, key, hasArgs);
         if (event === '新增事件流') {
           this.onEventActionSave = (eventAction) => {
-            obj[valueKey] = `doUiAction('${eventAction}'${hasArgs ? ', item' : ''})`;;
+            obj[valueKey] = `doUiAction('${this.eventActionDialogData.key}'${hasArgs ? ', item' : ''})`;
+            this.common.doUiAction[this.eventActionDialogData.key] = this.eventActionDialogData.value;
+            this.eventActionDialogData.value.forEach(methodName => {
+              this.common.methods[methodName] = () => { };
+            })
             this.refreshCodeMirror(key);
-            this.onEventActionSave = null;
+            this.openEventActionDialog = false;
+            this.onEventActionSave = () => { };
+            this.buildDoUiActionList();
+            setTimeout(() => {
+              this.eventActionDialogData = {
+                key: "",
+                value: [""],
+              };
+            }, 300)
           }
           this.openEventActionDialog = true;
         } else {
