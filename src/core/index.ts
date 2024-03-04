@@ -58,6 +58,15 @@ export default class AppCore {
         }
         break;
       }
+      case "editCode": {
+        // 在当前编辑器右侧新开一个编辑器
+        const { codeType, code } = body.appData;
+        const fsPath = PathUtil.getExtensionFileAbsolutePath(PathUtil.extensionContext, `src/view/tempEditor.${codeType}`);
+        fs.writeFileSync(fsPath, code as string);
+        const codeUri = vscode.Uri.file(fsPath);
+        void vscode.commands.executeCommand("vscode.open", uri);
+        break;
+      }
       case "getTables": {
         void this.getTables(uri, panel);
         break;

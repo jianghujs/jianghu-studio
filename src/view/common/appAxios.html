@@ -38,7 +38,21 @@
         for (let key in value) {
           if (typeof value[key] === 'string') {
             if (value[key].indexOf("__FUN__") > -1) {
-              value[key] = eval("(" + (value[key].replace(/__FUN__/g, "")) + ")");
+              console.log(key, value[key]);
+              const funcString = value[key].replace(/__FUN__/g, "");
+              const pattern = /^[a-zA-Z0-9]+\((\s*[a-zA-Z]*\s*(,\s*[a-zA-Z]*\s*)*)\)\s*\{\s*.*\s*\}$/;
+              const isVueMethods = pattern.test(funcString);
+              if (isVueMethods) {
+                // let funcName = funcString.substring(0, funcString.indexOf('('));
+                // let paramsAndBody = funcString.substring(funcString.indexOf('(') + 1); // "item) {}"
+                // let params = paramsAndBody.substring(0, paramsAndBody.indexOf(')')); // "item"
+                // let funcBody = paramsAndBody.substring(paramsAndBody.indexOf('{') + 1, paramsAndBody.lastIndexOf('}')); // "{}"
+                // let arrowFuncString = `${funcName} = (${params}) => {${funcBody}}`;
+                // const fun = eval(arrowFuncString);
+                value[key] = value[key].replace(/__FUN__/g, "");
+              } else {
+                value[key] = eval("(" + (value[key].replace(/__FUN__/g, "")) + ")");
+              }
             }
           } else {
             loopParse(value[key]);
@@ -88,15 +102,16 @@
         }
         const onMessage = ({ data }) => {
           success = true;
-          console.log("onVscodeMessage", data);
           timeoutHandler && clearTimeout(timeoutHandler);
           if (!data) {
             window.removeEventListener("message", onMessage);
             reject(new Error("请求失败"));
             return;
           }
-
-          loopParse(data.appData);
+          if (packageType === "getPageConfigRequest") {
+            loopParse(data.appData);
+          }
+          console.log("onVscodeMessage", data);
           // 对 actionId 做持久监听
           if (window.resourceListener[data.appData.actionId]) {
             window.resourceListener[data.appData.actionId](data);
