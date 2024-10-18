@@ -184,6 +184,9 @@
         }
         this.isTableLoading = true;
         const { id, ...data } = this.pageForm;
+        if (id) {
+          delete data.canDesign;
+        }
         await window.appAxios({
           packageType: id ? "messageRequest" : "createPageRequest",
           data: {
