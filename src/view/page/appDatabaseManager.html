@@ -15,10 +15,9 @@
         <div class="jh-page-second-bar px-8">
           <v-row class="align-center" dense>
             <v-col cols="12" xs="12" sm="12" md="8" xl="8">
-              <div class="py-4 font-weight-bold d-flex align-center" style="font-size: 30px;">【{{appId}}】页面管理</div>
+              <div class="py-4 font-weight-bold d-flex align-center" style="font-size: 30px;">【{{appId}}】数据库管理</div>
             </v-col>
             <v-spacer></v-spacer>
-            <v-btn color="success" @click="startAddItem">添加页面</v-btn>
           </v-row>
         </div>
         <!-- <<<<<<<<<<<<< 头部内容 -->
@@ -26,57 +25,83 @@
         <!-- 页面内容 >>>>>>>>>>>>> -->
         <div class="jh-page-body-container px-8">
           <v-card class="rounded-lg pa-4 pt-6">
-            <v-data-table fixed-header :headers="headers" :items="pageList" :search="searchInput"
+            <v-data-table fixed-header :headers="headers" :items="databaseList" :search="searchInput"
               :footer-props="{ itemsPerPageOptions: [20, 40, 60, 100, -1] }" :items-per-page="20" :loading="isTableLoading"
               checkbox-color="success" mobile-breakpoint="0" class="elevation-0 mt-0 mb-xs-4 flex-fill d-flex flex-column">
               <template v-slot:item.action="{ item }">
-                <span role="button" class="success--text font-weight-medium font-size-2 mr-2" @click="startUpdateItem(item)"><v-icon size="16" class="success--text">mdi-note-edit-outline</v-icon>修改</span>
-                <span role="button" class="success--text font-weight-medium font-size-2 mr-2" @click="startViewItem(item)">
-                  <v-icon v-if="!item.runView" size="16" class="success--text">mdi-eye-outline</v-icon>
-                  <v-progress-circular
-                    v-else
-                    indeterminate
-                    color="success"
-                    size="14"
-                    width="2"
-                  ></v-progress-circular>
-                  预览
+                <span role="button" class="success--text font-weight-medium font-size-2 mr-2" @click="viewTableData(item)">
+                  <v-icon size="16" class="success--text">mdi-table</v-icon>查看数据
                 </span>
-                <span role="button" class="success--text font-weight-medium font-size-2 mr-2" :class="{'disabled': !item.canDesign}" @click="startDesignItem(item)"><v-icon size="16" class="success--text">mdi-pencil-ruler</v-icon>设计</span>
-                <span role="button" class="error--text font-weight-medium font-size-2 mr-2" @click="deleteItem(item)"><v-icon size="16" class="error--text">mdi-delete-empty-outline</v-icon>删除</span>
+
               </template>
             </v-data-table>
             <div v-if="logInfo">启动日志：{{logInfo}}</div>
           </v-card>
         </div>
-        <!-- <<<<<<<<<<<<< 页面内容 -->
-        <!-- 抽屉 >>>>>>>>>>>>> --> 
-        <v-navigation-drawer v-if="isFormDrawerShown" v-model="isFormDrawerShown" :permanent="isFormDrawerShown" fixed temporary right width="80%" class="elevation-24">
-          <v-form ref="pageForm" lazy-validation>
-            <!-- 抽屉标题 -->
-            <v-row no-gutters>
-              <span class="text-h7 font-weight-bold pa-4">修改页面信息</span>
-            </v-row>
-            <v-divider class="jh-divider"></v-divider>
-            <v-row class="mt-0 px-4">
-              <v-col cols="12" sm="12" md="4" v-for="item of formFeilds">
-                <span class="jh-input-label d-flex"><span>{{item.text}}</span><v-spacer></v-spacer><span style="font-size: 12px; color: #999999; transform: scale(0.8);" v-if="item.tips">tips: {{item.tips}}</span></span> 
-                <v-select v-if="item.type === 'select'" class="jh-v-input mr-2" dense filled single-line v-model="pageForm[item.value]" :rules="item.rule" :items="constantObj[item.value]"></v-select>
-                <v-text-field v-else class="jh-v-input" dense single-line filled v-model="pageForm[item.value]" :rules="item.rule"></v-text-field>
-              </v-col>
-            </v-row>
-            <!-- 抽屉操作按钮 -->
-            <v-row class="justify-end mx-0 my-8 px-4">
-                <v-btn color="success" @click="doUiAction('startSaveForm')" small>保存</v-btn>
-                <v-btn class="elevation-0 ml-2" @click="isFormDrawerShown = false" small>取消</v-btn>
-            </v-row>
-          </v-form>
-          <!-- 抽屉关闭按钮 -->
-          <v-btn elevation="0" color="success" fab absolute top left small tile class="drawer-close-float-btn" @click="isFormDrawerShown = false">
+
+        <v-navigation-drawer
+          v-model="isTableDataDialogShown"
+          :permanent="isTableDataDialogShown"
+          fixed
+          temporary
+          right
+          width="80%"
+          class="elevation-24"
+        >
+        <v-row class="jh-drawer-header px-4" no-gutters align="center">
+          <span class="text-h7 font-weight-bold py-4">{{ selectedTable ? selectedTable.tableName : '' }} 数据</span>
+          <v-spacer ></v-spacer>
+          <div class="jh-drawer-action-btn-group">
+              
+          </div>
+        </v-row>
+
+        <v-divider class="jh-divider"></v-divider>
+
+          <v-data-table
+            :headers="tableheaders"
+            :items="tableData"
+            :footer-props="{ itemsPerPageOptions: [20, 50, 200, -1], itemsPerPageText: '每页', itemsPerPageAllText: '所有'}"
+            :items-per-page="-1"
+            mobile-breakpoint="0"
+            :loading="isTableLoading"
+            checkbox-color="success"
+            :class="{'zebraLine': true }"
+            height="500"
+            fixed-header
+            class="jh-fixed-table-height elevation-0 mt-0 mb-xs-4"
+          >
+            <!-- 没有数据 -->
+            <template v-slot:loading>
+              <div class="jh-no-data">数据加载中</div>
+            </template>
+            <template v-slot:no-data>
+              <div class="jh-no-data">暂无数据</div>
+            </template>
+            <template v-slot:no-results>
+              <div class="jh-no-data">暂无数据</div>
+            </template>
+            <!-- 表格分页 -->
+            <template v-slot:footer.page-text="pagination">
+              <span>{{pagination.pageStart}}-{{pagination.pageStop}}</span>
+              <span class="ml-1">共{{pagination.itemsLength}}条</span>
+            </template>
+          </v-data-table>
+          <v-btn
+            elevation="0"
+            color="success"
+            fab
+            absolute
+            top
+            left
+            small
+            tile
+            class="drawer-close-float-btn"
+            @click="isTableDataDialogShown = false"
+          >
             <v-icon>mdi-close</v-icon>
           </v-btn>
         </v-navigation-drawer>
-        <!-- <<<<<<<<<<<<< 抽屉 -->
       </v-main>
     </v-app>
 
@@ -103,7 +128,7 @@
       rules: {
         required: value => !!value || 'Required.',
       },
-      pageList: [],
+      databaseList: [],
       searchInput: null,
       isTableLoading: true,
       constantObj: {
@@ -113,18 +138,30 @@
         ],
       },
       headers: [
-        { text: "pageId", tips: "页面文件名", value: "pageId", width: 120, required: true },
-        // { text: "pageFile", tips: "页面文件名，不写则默认pageId", value: "pageFile", width: 140 },
-        { text: "pageName", tips: "菜单中显示的名称", value: "pageName", width: 120, required: true },
-        { text: "pageType", tips: "菜单的显示方式", value: "pageType", width: 120, type: 'select' },
-        { text: "sort", tips: "菜单中的显示排序", value: "sort", width: 120 },
-        { text: "操作人", value: "operationByUser", width: 120, edit: false },
-        { text: "操作时间", value: "operationAt", width: 250, edit: false },
-        { text: '操作', value: 'action', align: 'center', edit: false, sortable: false, width: 300, class: 'fixed', cellClass: 'fixed' },
+        { text: "表名", tips: "数据库表名", value: "tableName", width: 150 },
+        { text: "引擎", tips: "数据库引擎", value: "engine", width: 100 },
+        { text: "行数", tips: "表中的行数", value: "rows", width: 100 },
+        { text: "数据长度", tips: "数据长度(字节)", value: "dataLength", width: 120 },
+        { text: "索引长度", tips: "索引长度(字节)", value: "indexLength", width: 120 },
+        { text: "创建时间", tips: "表的创建时间", value: "createTime", width: 180 },
+        { text: "更新时间", tips: "表的最后更新时间", value: "updateTime", width: 180 },
+        { text: "注释", tips: "表的注释", value: "comment", width: 150 },
+        { text: '操作', value: 'action', align: 'center', sortable: false, width: 150 },
       ],
+
+      tableheaders: [],
       isFormDrawerShown: false,
       pageForm: {},
-      logInfo: null
+      logInfo: null,
+      tables: [],
+      selectedTable: null,
+      tableData: [],
+      tablePagination: {
+        page: 1,
+        itemsPerPage: 10,
+        totalItems: 0,
+      },
+      isTableDataDialogShown: false,
     }),
     computed: {
       formFeilds() {
@@ -136,15 +173,15 @@
     },
 
     created() {
-      this.doUiAction("getPageList");
+      this.doUiAction("getDatabaseList");
     },
     mounted() {
     },
     methods: {
       async doUiAction(uiActionId, uiActionData) {
         switch (uiActionId) {
-          case 'getPageList':
-            await this.getPageList();
+          case 'getDatabaseList':
+            await this.getDatabaseList();
             break;
           case 'startSaveForm':
             this.saveForm();
@@ -200,7 +237,7 @@
         });
         this.pageForm = {};
         this.isFormDrawerShown = false;
-        await this.getPageList();
+        await this.getDatabaseList();
         this.isTableLoading = false;
       },
       async startViewItem(item) {
@@ -231,39 +268,53 @@
         });
         item.runView = false;
       },
-      async getPageList() {
+      async getDatabaseList() {
         this.isTableLoading = true;
         const { data: { appData: { resultData: { rows } } } } = await window.appAxios({
           data: {
             appData: {
-              pageId: "pageManager",
-              actionId: "selectList",
+              pageId: "databaseManager",
+              actionId: "getAllTables",
             },
           }
         });
-        console.log('getPageList', rows);
-        this.pageList = rows;
+        console.log('getDatabaseList', rows);
+        this.databaseList = rows;
         this.isTableLoading = false;
       },
-      async deleteItem(item) {
-        const confirmResult = await window.confirmDialog('删除页面', '确定要删除该页面吗?');
-        if (confirmResult) {
-          try {
-            await window.appAxios({
-              data: {
-                appData: {
-                  pageId: "pageManager",
-                  actionId: "deleteItem",
-                  where: {id: item.id}
-                }
-              }
-            });
-            window.vtoast.success("删除成功");
-            await this.getPageList();
-          } catch (error) {
-            console.error('删除页面失败:', error);
-            window.vtoast.fail("删除失败，请重试");
+
+      async viewTableData(table) {
+        this.selectedTable = table;
+        this.tablePagination.page = 1;
+        await this.getTableData();
+        this.isTableDataDialogShown = true;
+      },
+
+      async getTableData() {
+        const { data: { appData: { resultData } } } = await window.appAxios({
+          data: {
+            appData: {
+              pageId: "databaseManager",
+              actionId: "getTableData",
+              actionData: {
+                tableName: this.selectedTable.tableName,
+                page: this.tablePagination.page,
+                pageSize: this.tablePagination.itemsPerPage,
+              },
+            },
           }
+        });
+        this.tableData = resultData.rows;
+        this.tablePagination.totalItems = resultData.total;
+        
+        // 根据rows的key来设置tableheaders
+        if (this.tableData.length > 0) {
+          this.tableheaders = Object.keys(this.tableData[0]).map(key => ({
+            text: key,
+            value: key
+          }));
+        } else {
+          this.tableheaders = [];
         }
       },
     }

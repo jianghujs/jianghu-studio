@@ -14,6 +14,13 @@ export const ConstantsValue = {
         { label: "页面检查", value: "pageChack", type: "menu" },
       ],
     },
+    {
+      label: "数据库管理",
+      value: "appDatabaseManager",
+      type: "menu",
+      command: "webviewHandler.openAppDatabaseManagerPage",
+      itemMenuList: [],
+    },
 
     // { label: "施工方案", value: "appPlan", type: "menu", command: "webviewHandler.openAppPlanPage" },
     // {

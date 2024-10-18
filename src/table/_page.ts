@@ -20,6 +20,11 @@ export default [
     title: "页面管理",
   },
   {
+    command: "webviewHandler.openAppDatabaseManagerPage",
+    page: "appDatabaseManager",
+    title: "数据库管理",
+  },
+  {
     command: "webviewHandler.openPageDesign",
     page: "pageDesign",
     title: "页面设计",

@@ -13,6 +13,33 @@ export default [
       serviceFunction: "testResource",
     },
   },
+
+  {
+    pageId: "databaseManager",
+    actionId: "getAllTables",
+    desc: "",
+    resourceHook: {},
+    resourceType: "service",
+    appDataSchema: {},
+    resourceData: {
+      service: "database",
+      serviceFunction: "getAllTables",
+    },
+  },
+
+  {
+    pageId: "databaseManager",
+    actionId: "getTableData",
+    desc: "",
+    resourceHook: {},
+    resourceType: "service",
+    appDataSchema: {},
+    resourceData: {
+      service: "database",
+      serviceFunction: "getTableData",
+    },
+  },
+
   {
     pageId: "pageManager",
     actionId: "selectList",
@@ -30,6 +57,15 @@ export default [
     resourceType: "sql",
     appDataSchema: {},
     resourceData: { table: TableEnum._page, operation: "update" },
+  },
+  {
+    pageId: "pageManager",
+    actionId: "deleteItem",
+    desc: "删除 page 配置",
+    resourceHook: {},
+    resourceType: "sql",
+    appDataSchema: {},
+    resourceData: { table: TableEnum._page, operation: "delete" },
   },
   {
     pageId: "pageManager",
