@@ -64,6 +64,9 @@ async function updateDiagnostics(activeEditor: vscode.TextEditor, collection: vs
     while ((match = resourceRegEx.exec(text))) {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       const findPageId = text.substring(match.index - 100, match.index).match(/(?<=pageId([\s\S]*?)('|"))(.*?)(?=('|"))/);
+      if (!match || !match[0] || !findPageId || !findPageId[0]) {
+        continue;
+      }
       // @ts-ignore
       const resourceExists = resourceList.find(e => e.pageId === findPageId[0] && e.actionId === match[0]);
       if (resourceExists) {

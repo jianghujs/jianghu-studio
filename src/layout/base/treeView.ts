@@ -9,13 +9,13 @@
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
 import * as fs from "fs";
-import * as json5 from "json5";
 import * as path from "path";
 import * as vscode from "vscode";
 import { Constants } from "../../common/constants";
 import constructionPlanCore from "../../core";
 import { PathUtil } from "../../util/pathUtil";
 import { EntryItem } from "../tree/entryItem";
+import { execSync } from "child_process";
 
 // 树的内容组织管理
 export class BaseTreeView {
@@ -93,13 +93,59 @@ export class BaseTreeView {
    * @returns
    */
   private getDepsInConfigJs(configPath: string) {
-    const patter = /(connection:)([\s\S]*?)}/g;
-    console.log(configPath);
-    const configArr: any = fs.readFileSync(configPath, "utf-8").match(patter);
-    if (configArr && configArr.length) {
-      // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-      const jsonStr = `{${configArr[0]}}`.replace(/(?:\s*['"]*)?([a-zA-Z0-9]+)(?:['"]*\s*)?:/g, '"$1":').replace(/'/g, '"');
-      return json5.parse(jsonStr).connection;
+    const configData = fs.readFileSync(configPath).toString();
+    const setting: any = {};
+    // 去除注释
+    let fileContent: any = configData.replace(/\/\*[\s\S]*?\*\/|([^:]|^)\/\/.*$/gm, "");
+    // 匹配到 connection 配置的块
+    fileContent = fileContent.match(/connection: {[\s\S]*?}/)?.[0] || "";
+    ["host", "port", "user", "password", "database"].forEach(key => {
+      const regStr = `${key}:\s?(.*)`;
+      const reg = new RegExp(regStr);
+      const matchResult: RegExpMatchArray | null = fileContent.match(reg);
+      if (!matchResult) {
+        return {};
+      }
+      setting[key] = matchResult[1].replace(/'/g, "").replace(/\s+/g, "").replace(/,/g, "").replace(/"/g, "");
+    });
+
+    // 如果配置文件中包含 process.env 则需要读取 .env 文件
+    if (Object.values(setting).join("").includes("process.env")) {
+      const dotenvRequire = configData.match(/require\('dotenv'\).config\({path:\s*(.*)}\)/);
+      const envContent = dotenvRequire ? this.loadDotEnv(dotenvRequire[1], configPath) : {};
+      for (const key in setting) {
+        if (setting[key].includes("process.env")) {
+          const k = setting[key].split(".").pop();
+          setting[key] = envContent[k] || setting[key];
+        }
+      }
     }
+
+    // 如果配置中仍包含 process.env 则说明配置文件中的配置不正确
+    if (Object.values(setting).join("").includes("process.env")) {
+      this.core.error("请检查配置文件 config.local.js 中的数据库连接配置是否正确");
+      process.exit();
+    }
+    return setting;
+  }
+
+  private loadDotEnv(dotenvRequire: string, configPath: string) {
+    // 切换到 config 目录下读取 .env 文件
+    // 记录 pwd
+    const oldPath = process.cwd();
+    const dotenvAbsolutePath: any = dotenvRequire.match(/['"](.*)['"]/);
+    const envFilePath = path.resolve(configPath, "../", dotenvAbsolutePath[1]);
+    // eslint-disable-next-line no-eval
+    const data = fs.readFileSync(envFilePath, "utf-8");
+    const lines = data.split("\n");
+    const env: any = {};
+    for (const line of lines) {
+      const [key, value] = line.split("=");
+      if (key && value) {
+        env[key] = value;
+      }
+    }
+    process.chdir(oldPath);
+    return env;
   }
 }
