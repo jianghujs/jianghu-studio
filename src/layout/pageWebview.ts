@@ -100,9 +100,9 @@ export default abstract class PageWebview {
 
     const extensionPath = context.extensionUri.fsPath;
     // 转换资源路径为 webview 可访问的 URI
-    const libPath = panel.webview.asWebviewUri(vscode.Uri.file(path.join(extensionPath, "src/view/lib")));
+    const httpRootPath = panel.webview.asWebviewUri(vscode.Uri.file(extensionPath));
 
     panel.webview.html = "";
-    panel.webview.html = PathUtil.generatePage(context, page, { pageId: pageId || "", uiActionList, database: database.database }, libPath.toString());
+    panel.webview.html = PathUtil.generatePage(context, page, { pageId: pageId || "", uiActionList, database: database.database, root: httpRootPath.toString() });
   }
 }

@@ -6,12 +6,15 @@ import Logger from "./logger";
 import nunjucks = require("nunjucks");
 
 export class PathUtil {
-  public static generatePage(context: vscode.ExtensionContext, page: string, locals: object = {}, libPath: string): string {
-    const pagePath = this.getExtensionFileAbsolutePath(context, `src/view/page/${page}.html`);
-    const rootPath = this.getExtensionFileAbsolutePath(context, "src/view");
-    Logger.info("pagePath", pagePath);
+  public static generatePage(context: vscode.ExtensionContext, page: string, locals: object = {}): string {
+    const rootPath = this.getExtensionFileAbsolutePath(context, "");
+    const pagePath = this.getExtensionFileAbsolutePath(context, `src/view/page`);
+    const pageFilePath = this.getExtensionFileAbsolutePath(context, `src/view/page/${page}.html`);
+    const viewPath = this.getExtensionFileAbsolutePath(context, "src/view");
+
+    Logger.info("pagePath", pageFilePath);
     // 渲染变量
-    const fileLoader = new nunjucks.FileSystemLoader(rootPath);
+    const fileLoader = new nunjucks.FileSystemLoader(viewPath);
     const option = {
       cache: false,
       tags: { variableStart: "<$", variableEnd: "$>" },
@@ -23,14 +26,24 @@ export class PathUtil {
       env.addFilter(key, filters[key]);
     }
 
-    let html = env.render(pagePath, locals);
+    let html = env.render(pageFilePath, locals);
 
-    html = html.replace(
-      /(href|src)="\.\.\/lib\//g, 
-      `$1="${libPath}/`
-    );
+    // 批量计算替换文件那的相对路径，非相对路径忽略， 如替换 / 或者 ../ 开头这种, 非相对路径忽略
+
+    html = html.replace(/(<link.+?href="|<script.+?src="|<img.+?src="|<v-img.+?src=")(\/|\.\.\/[^"]*)"/g, (m: any, $1: any, relativePath: any) => {
+      // 计算绝对路径（基于 root）
+      // 用当前文件所在的路径 pagePath + relativePath 来计算在项目内的绝对路径
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+      const absolutePath = path.resolve(pagePath, relativePath);
+      const relativePath2 = absolutePath.replace(rootPath, "");
+      // 确保路径格式统一为 `/`
+      // eslint-disable-next-line @typescript-eslint/restrict-plus-operands
+      return $1 + (locals as { root: string }).root + relativePath2 + '"';
+    });
+
     return html;
   }
+
   /**
    * 获取当前所在工程根目录，有3种使用方法：<br>
    * getProjectPath(uri) uri 表示工程内某个文件的路径<br>
