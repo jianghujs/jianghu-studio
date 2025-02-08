@@ -3,6 +3,8 @@ import * as vscode from "vscode";
 import constructionPlanCore from "../core";
 import pageList from "../table/_page";
 import { PathUtil } from "../util/pathUtil";
+import * as path from "path";
+import * as fs from "fs";
 
 export default abstract class PageWebview {
   public static currentPanel: vscode.WebviewPanel | PageWebview | undefined;
@@ -95,7 +97,12 @@ export default abstract class PageWebview {
   ): void {
     panel.title = `${pageName}@${database.database || ""}`;
     const uiActionList = this.core.tableManager.getUiActionList(pageId);
+
+    const extensionPath = context.extensionUri.fsPath;
+    // 转换资源路径为 webview 可访问的 URI
+    const libPath = panel.webview.asWebviewUri(vscode.Uri.file(path.join(extensionPath, "src/view/lib")));
+
     panel.webview.html = "";
-    panel.webview.html = PathUtil.generatePage(context, page, { pageId: pageId || "", uiActionList, database: database.database });
+    panel.webview.html = PathUtil.generatePage(context, page, { pageId: pageId || "", uiActionList, database: database.database }, libPath.toString());
   }
 }
