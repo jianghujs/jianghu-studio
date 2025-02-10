@@ -48,12 +48,16 @@ export default class CommonService extends BaseService {
     const cwd = type === "project" ? `jianghu-init project --type=${value as string}` : "jianghu-init";
     terminalA.sendText(cwd); // 输入命令
   }
-  public getTerminal(dir: string) {
+  public getTerminal(dir: string, name?: string) {
     if (this.terminalTerminal) {
       this.terminalTerminal.dispose();
     }
-    this.terminalTerminal = vscode.window.createTerminal({ name: "模板创建", message: "打开测试终端", cwd: dir });
+    this.terminalTerminal = vscode.window.createTerminal({ name: name || "模板创建", message: "jianghu-init 终端", cwd: dir });
     this.terminalTerminal.show(true);
     return this.terminalTerminal;
+  }
+  public execute({ dir, execute, name }: any) {
+    const terminalA = this.getTerminal(dir as string, name as string);
+    terminalA.sendText(execute as string); // 输入命令
   }
 }

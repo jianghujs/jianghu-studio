@@ -14,6 +14,15 @@ export default [
     },
   },
   {
+    pageId: "designPage",
+    actionId: "selectItem",
+    desc: "测试",
+    resourceHook: {},
+    resourceType: "service",
+    appDataSchema: {},
+    resourceData: { service: "designPage", serviceFunction: "selectItem" },
+  },
+  {
     pageId: "pagePlanEdit",
     actionId: "getResourceList",
     desc: "测试",

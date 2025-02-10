@@ -8,7 +8,9 @@ import constructionPlanCore from "./core";
 import JianghuKnexManager from "./core/jianghuKnexManager";
 import { ConstructionAdvancedPageList } from "./layout/constructionAdvancedPageList";
 import { ConstructionPlanPageList } from "./layout/constructionPlanPageList";
+import { ProjectList } from "./layout/projectList";
 import { ConstructionPlanViewPagePlanList } from "./layout/constructionPlanViewPagePlanList";
+import CommonService from "./service/common";
 import * as htmlDiagnostic from "./layout/htmlDiagnostic";
 import TestWebview from "./layout/pageWebview";
 import * as uiAnnotation from "./layout/uiAnnotation";
@@ -28,7 +30,14 @@ export function activate(context: vscode.ExtensionContext) {
   vscode.window.registerTreeDataProvider("constructionPlanView", new ConstructionPlanViewPagePlanList(core));
   vscode.window.registerTreeDataProvider("constructionPlan", new ConstructionPlanPageList(core));
   vscode.window.registerTreeDataProvider("constructionAdvanced", new ConstructionAdvancedPageList(core));
+  vscode.window.registerTreeDataProvider("projectList", new ProjectList(core));
 
+  context.subscriptions.push(
+    vscode.commands.registerCommand("common.execute", (ctx: any) => {
+      const commonService = new CommonService();
+      commonService.execute(ctx);
+    })
+  );
   context.subscriptions.push(
     vscode.commands.registerCommand("constructionPlan.refreshDb", () => {
       vscode.window.registerTreeDataProvider("constructionPlan", new ConstructionPlanPageList(core));

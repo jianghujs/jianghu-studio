@@ -1,0 +1,127 @@
+{% extends 'template/jhsTemplate.html'%}
+{% block vue_template %}
+<jh-layout-v3>
+  <template slot="breadcrumbsTitle">页面设计
+  </template>
+  <div>
+    <!-- 页面类型 -->
+    <div class="font-bold bg-gray-100 py-2">基础设置</div>
+    <div class="grid grid-cols-3 gap-2">
+      <div>
+        <span class="text-sm">页面类型</span>
+        <v-select class="cus-v-input" v-model="fileContent.pageType" :items="constantObj.pageType" outlined label="页面类型" dense filled single-line></v-select>
+      </div>
+      <div>
+        <span class="text-sm">页面id</span>
+        <v-text-field class="cus-v-input" v-model="fileContent.pageId" label="页面id" outlined dense filled single-line></v-text-field>
+      </div>
+      <div>
+        <span class="text-sm">页面名称</span>
+        <v-text-field class="cus-v-input" v-model="fileContent.pageName" label="页面名称" outlined dense filled single-line></v-text-field>
+      </div>
+    </div>
+    <div class="font-bold bg-gray-100 py-2">面包屑</div>
+    <div class="">
+      <template v-for="(item, index) in fileContent.headContent" :key="index">
+        <div v-if="item?.tag && item.tag === 'jh-page-title'" class="grid grid-cols-3 gap-2">
+          <v-text-field class="" v-model="item.value" prefix="页面标题" outlined dense filled single-line></v-text-field>
+          <!-- 是否显示帮助按钮 -->
+          <v-switch class="!mt-0" v-model="item.helpBtn" label="是否显示帮助按钮" outlined dense filled single-line></v-switch>
+        </div>
+      </template>
+    </div>
+  </div>
+</jh-layout-v3>
+
+{% endblock %} {% block vue_body %}
+
+<script>
+
+  new Vue({
+    el: '#app',
+    template: "#app-template",
+    vuetify: new Vuetify(),
+    data: function () {
+      return {
+        constantObj: {
+          pageType: [
+            "jh-page",
+            "jh-mobile-page",
+            "jh-component"
+          ],
+        },
+        valid: true,
+        projectName: '加载中',
+        pageId: "<$ pageId $>",
+        fileContent: {},
+        loading: false,
+        required: [
+          v => !!v || 'Field is required',
+        ],
+        keyList: [
+          "pageType", "pageId", "pageName", "template", "version", "resourceList", "headContent", "pageContent", "actionContent", "style"
+        ]
+      }
+    },
+    mounted() {
+    },
+    created() {
+      console.log('created=============', this.pageId)
+      this.getPageInfo()
+    },
+    watch: {
+      pageId(val) {
+        console.log('val', val)
+        if (val) {
+          console.log(val)
+          this.getPageInfo();
+        } else {
+          this.resetForm()
+        }
+      }
+    },
+    methods: {
+      async save() {
+        if (!this.$refs.form.validate()) {
+          this.error('请输入必填项');
+          return
+        }
+      },
+      async getPageInfo() {
+        if (!this.pageId) {
+          this.resetForm()
+          return
+        }
+        console.log('getPageInfo', this.pageId)
+        this.loading = true
+        const { data: { appData: { resultData: { fileContent } } } } = await window.constructionPlanAxios({
+          data: {
+            appData: {
+              pageId: "designPage",
+              actionId: "selectItem",
+              actionData: { file: this.pageId },
+            },
+          },
+        });
+        this.fileContent = fileContent;
+
+        setTimeout(() => {
+          this.loading = false
+        }, 300)
+      },
+      validateForm() {
+        for (const key in this.form) {
+          if (!this.form[key] && !['sort'].includes(key)) {
+            return false;
+          }
+        }
+        return true;
+      },
+      resetForm(data = {}) {
+      }
+    }
+  });
+</script>
+<style>
+</style>
+{% endblock %}

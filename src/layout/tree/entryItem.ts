@@ -33,6 +33,18 @@ export class EntryItem extends vscode.TreeItem {
         }
         this.pageId = value;
         break;
+      case "initJson":
+        this.contextValue = "initJsonItem";
+        break;
+      case "initJsonPage":
+        this.contextValue = "initJsonPage";
+        break;
+      case "initJsonComponent":
+        this.contextValue = "initJsonComponent";
+        break;
+      case "commonTool":
+        this.contextValue = "commonToolItem";
+        break;
       case "Resource":
       case "UiAction":
         this.contextValue = "viewList";

@@ -80,6 +80,26 @@
 				"title": ""
 			},
 			{
+				"command": "projectList.initJson",
+				"title": ""
+			},
+			{
+				"command": "projectList.commonTool",
+				"title": ""
+			},
+			{
+				"command": "common.execute",
+				"title": ""
+			},
+			{
+				"command": "pageView.designPage",
+				"title": "设计页面",
+				"icon": {
+					"light": "images/light/edit.svg",
+					"dark": "images/dark/edit.svg"
+				}
+			},
+			{
 				"command": "constructionPlan.pageAdd",
 				"title": "Add Page",
 				"icon": {
@@ -159,6 +179,12 @@
 		},
 		"views": {
 			"jianghu-studio": [
+				{
+					"id": "projectList",
+					"name": "江湖应用",
+					"icon": "images/tool-light.svg",
+					"contextualTitle": "江湖应用"
+				},
 				{
 					"id": "constructionPlan",
 					"name": "施工方案",

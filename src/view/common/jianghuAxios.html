@@ -1,0 +1,88 @@
+<!--
+ * @Author: case 7795958+lipangpang251@user.noreply.gitee.com
+ * @Date: 2022-06-06 13:31:38
+ * @LastEditors: Please set LastEditors
+ * @LastEditTime: 2022-07-11 15:04:38
+ * @FilePath: \framework\src\view\common\jianghuAxios.html
+ * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
+-->
+<!--jianghuAxios.html start-->
+<script>
+  (function () {
+    if (window.callbackMap !== undefined) {
+      return;
+    }
+    window.callbackMap = {};
+
+    window.client = acquireVsCodeApi();
+
+
+    getRandomInt = (min, max) => {
+      min = Math.ceil(min);
+      max = Math.floor(max);
+      return Math.floor(Math.random() * (max - min) + min);
+    };
+
+    /**
+     * 向 vscode 发请求
+     * exp:
+     * jianghuAxios({
+     *  data: {
+            appData: {
+                pageId: 'mysqlConfig',
+                actionId: 'getConfig',
+                actionData: {}
+            }
+        }
+     * })
+     */
+    window.jianghuAxios = ({ data: requestBodyToFill }) => {
+      const packageId = `${Date.now()}_${getRandomInt(1000000, 9999999)}`;
+      const requestBody = {
+        packageId,
+        packageType: "messageRequest",
+        timestamp: new Date().toISOString(),
+        appData: requestBodyToFill.appData,
+      };
+      window.client.postMessage(requestBody);
+      return new Promise(function (resolve, reject) {
+        let success = false;
+        const listener = data => {
+          success = true;
+          delete window.callbackMap[packageId];
+          resolve({ data });
+        };
+        setTimeout(() => {
+          if (!success) {
+            delete window.callbackMap[packageId];
+            window.vtoast.fail(`请求超时, actionId: ${requestBodyToFill.appData.actionId}, packageId: ${packageId}`);
+            reject(new Error("请求超时"));
+          }
+        }, 5000);
+        window.callbackMap[packageId] = listener;
+      });
+    };
+
+    // 处理 vscode 发过来的请求
+    window.resourceListener = {};
+
+    // 监听从 vscode 发过来的消息
+    window.addEventListener("message", ({ data }) => {
+      if (!data) {
+        return;
+      }
+      if (data.packageType === "messageRequest") {
+        if (window.resourceListener[data.appData.actionId]) {
+          window.resourceListener[data.appData.actionId](data);
+        }
+      } else if (data.packageType === "messageResponse") {
+        if (data.packageId && window.callbackMap[data.packageId]) {
+          window.callbackMap[data.packageId](data);
+        }
+      } else {
+        console.warn("Unkown message type!!!", data);
+      }
+    });
+  })();
+</script>
+<!--jianghuAxios.html end-->

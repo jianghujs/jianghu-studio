@@ -5,6 +5,11 @@ export default [
     title: "",
   },
   {
+    command: "pageView.designPage",
+    page: "designPage",
+    title: "设计页面",
+  },
+  {
     command: "constructionPlan.pagePlanEdit",
     page: "pagePlanEdit",
     title: "",
