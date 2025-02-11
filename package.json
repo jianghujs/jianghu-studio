@@ -54,18 +54,32 @@
 			{
 				"command": "constructionPlan.refreshDb",
 				"title": "Refresh",
-				"icon": {
-					"light": "images/light/refresh.svg",
-					"dark": "images/dark/refresh.svg"
-				}
+				"icon": "$(refresh)"
+			},
+			{
+				"command": "projectList.add",
+				"title": "add",
+				"icon": "$(add)"
+			},
+			{
+				"command": "projectList.refreshJson",
+				"title": "刷新",
+				"icon": "$(refresh)"
+			},
+			{
+				"command": "projectList.addJsonPage",
+				"title": "添加页面",
+				"icon": "$(add)"
+			},
+			{
+				"command": "projectList.addJsonComponent",
+				"title": "添加组件",
+				"icon": "$(add)"
 			},
 			{
 				"command": "constructionPlan.templateAdd",
 				"title": "Add Template",
-				"icon": {
-					"light": "images/light/template.svg",
-					"dark": "images/dark/template.svg"
-				}
+				"icon": "$(files)"
 			},
 			{
 				"command": "constructionAdvanced.userManagement",
@@ -94,49 +108,39 @@
 			{
 				"command": "pageView.designPage",
 				"title": "设计页面",
-				"icon": {
-					"light": "images/light/edit.svg",
-					"dark": "images/dark/edit.svg"
-				}
+				"icon": "$(edit)"
 			},
 			{
 				"command": "constructionPlan.pageAdd",
 				"title": "Add Page",
-				"icon": {
-					"light": "images/light/add.svg",
-					"dark": "images/dark/add.svg"
-				}
+				"icon": "$(add)"
 			},
 			{
 				"command": "constructionPlan.pageEdit",
 				"title": "Edit",
-				"icon": {
-					"light": "images/light/edit.svg",
-					"dark": "images/dark/edit.svg"
-				}
+				"icon": "$(edit)"
 			},
 			{
 				"command": "constructionPlanView.copySample",
 				"title": "Copy code sample",
-				"icon": {
-					"light": "images/light/copy.svg",
-					"dark": "images/dark/copy.svg"
-				}
+				"icon": "$(copy)"
 			},
 			{
 				"command": "constructionPlanView.replaceSample",
 				"title": "replace code sample",
-				"icon": {
-					"light": "images/light/find-replace-line.svg",
-					"dark": "images/dark/find-replace-line.svg"
-				}
+				"icon": "$(replace-all)"
 			}
 		],
 		"menus": {
 			"view/title": [
 				{
+					"command": "projectList.add",
+					"when": "view == projectList",
+					"group": "navigation"
+				},
+				{
 					"command": "constructionPlan.refreshDb",
-					"when": "view == constructionPlan",
+					"when": "view == projectList",
 					"group": "navigation"
 				}
 			],
@@ -165,6 +169,21 @@
 					"command": "constructionPlanView.replaceSample",
 					"when": "view == constructionPlanView && viewItem == uiActionItem",
 					"group": "inline"
+				},
+				{
+					"command": "projectList.refreshJson",
+					"when": "view == projectList && viewItem == initJsonItem",
+					"group": "inline"
+				},
+				{
+					"command": "projectList.addJsonPage",
+					"when": "view == projectList && viewItem == initJsonPage",
+					"group": "inline"
+				},
+				{
+					"command": "projectList.addJsonComponent",
+					"when": "view == projectList && viewItem == initJsonComponent",
+					"group": "inline"
 				}
 			]
 		},
@@ -173,7 +192,7 @@
 				{
 					"id": "jianghu-studio",
 					"title": "江湖Studio",
-					"icon": "images/tool-light.svg"
+					"icon": "$(tools)"
 				}
 			]
 		},
@@ -182,19 +201,19 @@
 				{
 					"id": "projectList",
 					"name": "江湖应用",
-					"icon": "images/tool-light.svg",
+					"icon": "$(database)",
 					"contextualTitle": "江湖应用"
 				},
 				{
 					"id": "constructionPlan",
 					"name": "施工方案",
-					"icon": "images/tool-light.svg",
+					"icon": "$(database)",
 					"contextualTitle": "Construction Plan"
 				},
 				{
 					"id": "constructionAdvanced",
 					"name": "系统配置",
-					"icon": "images/tool-light.svg",
+					"icon": "$(database)",
 					"contextualTitle": "Advanced"
 				}
 			],
@@ -221,6 +240,7 @@
 		"@types/mocha": "^9.1.0",
 		"@types/node": "14.x",
 		"@types/nunjucks": "^3.2.1",
+		"@types/prettier": "^3.0.0",
 		"@types/vscode": "^1.67.0",
 		"@typescript-eslint/eslint-plugin": "^5.26.0",
 		"@typescript-eslint/parser": "^5.26.0",
@@ -231,7 +251,6 @@
 		"eslint-plugin-prettier": "^4.0.0",
 		"glob": "^7.2.0",
 		"mocha": "^9.2.1",
-		"prettier": "^2.6.2",
 		"typescript": "^4.5.5"
 	},
 	"dependencies": {
@@ -245,6 +264,7 @@
 		"mysql": "^2.18.1",
 		"nanoid": "^3.3.1",
 		"nunjucks": "^3.2.3",
-		"ts-md5": "^1.2.11"
+		"ts-md5": "^1.2.11",
+		"prettier": "^2.x.x"
 	}
 }

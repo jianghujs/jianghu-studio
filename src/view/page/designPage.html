@@ -1,34 +1,59 @@
 {% extends 'template/jhsTemplate.html'%}
 {% block vue_template %}
 <jh-layout-v3>
-  <template slot="breadcrumbsTitle">页面设计
+  <template slot="breadcrumbsTitle">
+    <div class="w-full flex items-center justify-between">
+      页面设计
+      <!-- 保存按钮 -->
+      <v-btn color="primary" class="ml-3" small @click="save">保存</v-btn>
+    </div>
   </template>
   <div>
     <!-- 页面类型 -->
-    <div class="font-bold bg-gray-100 py-2">基础设置</div>
-    <div class="grid grid-cols-3 gap-2">
-      <div>
-        <span class="text-sm">页面类型</span>
-        <v-select class="cus-v-input" v-model="fileContent.pageType" :items="constantObj.pageType" outlined label="页面类型" dense filled single-line></v-select>
+    <div class="font-bold bg-gray-200 py-1 px-2 my-2">基础设置</div>
+    <div class="grid grid-cols-8 gap-2">
+      <div class="col-span-2 flex items-center">
+        <v-select class="cus-v-input" label="类型" v-model="fileContent.pageType" :items="constantObj.pageType" outlined
+          label="页面类型" dense filled></v-select>
       </div>
-      <div>
-        <span class="text-sm">页面id</span>
-        <v-text-field class="cus-v-input" v-model="fileContent.pageId" label="页面id" outlined dense filled single-line></v-text-field>
+      <div class="col-span-3 flex items-center">
+        <v-text-field class="cus-v-input" v-model="fileContent.pageName" label="pageName" outlined dense
+          filled></v-text-field>
       </div>
-      <div>
-        <span class="text-sm">页面名称</span>
-        <v-text-field class="cus-v-input" v-model="fileContent.pageName" label="页面名称" outlined dense filled single-line></v-text-field>
+      <div class="col-span-3 flex items-center">
+        <v-text-field class="cus-v-input" v-model="fileContent.pageId" label="pageId" outlined dense
+          filled></v-text-field>
+      </div>
+      <div class="col-span-2 flex items-center">
+        <v-text-field class="cus-v-input" v-model="fileContent.version" label="版本" outlined dense filled></v-text-field>
+      </div>
+      <div class="col-span-3 flex items-center">
+        <v-text-field class="cus-v-input" v-model="fileContent.template" label="template" outlined dense
+          filled></v-text-field>
       </div>
     </div>
-    <div class="font-bold bg-gray-100 py-2">面包屑</div>
+    <div class="font-bold bg-gray-200 py-1 px-2 my-2 flex items-center">
+      面包屑
+      <v-switch class="!mt-0 !mb-0 ml-3" v-model="fileContent.jhMenu" label="隐藏菜单" :true-value="false"
+        :false-value="true" outlined dense filled single-line hide-details></v-switch>
+    </div>
     <div class="">
-      <template v-for="(item, index) in fileContent.headContent" :key="index">
+      <div class="border rounded-md p-2 mb-2" v-for="(item, index) in fileContent.headContent" :key="index">
+        <div class="flex justify-between">
+          <v-chip small label color="primary">{{ getTagType('headContent', item.tag) }}</v-chip>
+          <!-- 删除 -->
+          <v-btn icon small @click="fileContent.headContent.splice(index, 1)">
+            <v-icon>mdi-delete</v-icon>
+          </v-btn>
+        </div>
+
         <div v-if="item?.tag && item.tag === 'jh-page-title'" class="grid grid-cols-3 gap-2">
-          <v-text-field class="" v-model="item.value" prefix="页面标题" outlined dense filled single-line></v-text-field>
+          <v-text-field class="" v-model="item.value" prefix="页面标题" outlined dense filled single-line
+            hide-details></v-text-field>
           <!-- 是否显示帮助按钮 -->
           <v-switch class="!mt-0" v-model="item.helpBtn" label="是否显示帮助按钮" outlined dense filled single-line></v-switch>
         </div>
-      </template>
+      </div>
     </div>
   </div>
 </jh-layout-v3>
@@ -49,6 +74,10 @@
             "jh-mobile-page",
             "jh-component"
           ],
+          headConentTagType: {
+            'jh-page-title': '页面标题',
+            'jh-search': '服务端搜索',
+          }
         },
         valid: true,
         projectName: '加载中',
@@ -82,10 +111,23 @@
     },
     methods: {
       async save() {
-        if (!this.$refs.form.validate()) {
-          this.error('请输入必填项');
-          return
-        }
+        // if (!this.$refs.form.validate()) {
+        //   this.error('请输入必填项');
+        //   return
+        // }
+
+        await window.constructionPlanAxios({
+          data: {
+            appData: {
+              pageId: "designPage",
+              actionId: "updateItem",
+              actionData: {
+                file: this.pageId,
+                fileContent: this.fileContent
+              }
+            },
+          },
+        });
       },
       async getPageInfo() {
         if (!this.pageId) {
@@ -118,6 +160,14 @@
         return true;
       },
       resetForm(data = {}) {
+      },
+      getTagType(type, tag) {
+        switch (type) {
+          case 'headContent':
+            return this.constantObj.headConentTagType[tag] || '自定义'
+          default:
+            return ''
+        }
       }
     }
   });

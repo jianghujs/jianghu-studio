@@ -10,16 +10,16 @@
     </div>
     <template v-else>
       <v-main class="d-flex flex-column" style="background-color: #f5f8fa;">
-        <div class="d-flex px-8">
+        <div class="d-flex px-4">
           <div>
-            <div class="appTitle pt-5" style="font-size: 18px; font-weight: bold"><slot name='breadcrumbsTitle'>{{breadcrumbs[1].fullText}}</slot></div>
+            <div class="appTitle pt-3" style="font-size: 18px; font-weight: bold"><slot name='breadcrumbsTitle'>{{breadcrumbs[1].fullText}}</slot></div>
             <slot name='breadcrumbsDesc'></slot>
           </div>
-          <div style="flex: 1" class="pt-2 outSideMain">
+          <div style="flex: 1" class="outSideMain">
             <slot name='serverSearch'></slot>
           </div>
         </div>
-        <div style="flex: 1" class="px-8" >
+        <div style="flex: 1" class="px-4" >
           <slot :isMobile="isMobile"></slot>
         </div>
       </v-main>

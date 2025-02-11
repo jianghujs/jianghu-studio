@@ -23,6 +23,15 @@ export default [
     resourceData: { service: "designPage", serviceFunction: "selectItem" },
   },
   {
+    pageId: "designPage",
+    actionId: "updateItem",
+    desc: "测试",
+    resourceHook: {},
+    resourceType: "service",
+    appDataSchema: {},
+    resourceData: { service: "designPage", serviceFunction: "updateItem" },
+  },
+  {
     pageId: "pagePlanEdit",
     actionId: "getResourceList",
     desc: "测试",

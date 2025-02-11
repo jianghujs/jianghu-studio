@@ -27,33 +27,56 @@ export function activate(context: vscode.ExtensionContext) {
   new TestWebview(core).active(context);
   htmlDiagnostic.activate(context, core);
 
+  // 注册树视图
   vscode.window.registerTreeDataProvider("constructionPlanView", new ConstructionPlanViewPagePlanList(core));
   vscode.window.registerTreeDataProvider("constructionPlan", new ConstructionPlanPageList(core));
   vscode.window.registerTreeDataProvider("constructionAdvanced", new ConstructionAdvancedPageList(core));
   vscode.window.registerTreeDataProvider("projectList", new ProjectList(core));
 
+  // 全局注册命令
   context.subscriptions.push(
-    vscode.commands.registerCommand("common.execute", (ctx: any) => {
-      const commonService = new CommonService();
-      commonService.execute(ctx);
-    })
-  );
-  context.subscriptions.push(
-    vscode.commands.registerCommand("constructionPlan.refreshDb", () => {
-      vscode.window.registerTreeDataProvider("constructionPlan", new ConstructionPlanPageList(core));
-      vscode.window.registerTreeDataProvider("constructionAdvanced", new ConstructionAdvancedPageList(core));
-    })
-  );
-  context.subscriptions.push(
-    vscode.commands.registerCommand("constructionPlan.pageDelete", ({ label, pageId, currDatabase }: { label: string; pageId: string; currDatabase: Knex.MySqlConnectionConfig }) => {
-      // eslint-disable-next-line @typescript-eslint/no-misused-promises
-      CommonUtil.confirm(`Are you want to delete Page ${label} ? `, async () => {
-        // @ts-ignore
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-call
-        await JianghuKnexManager.client(currDatabase)(TableEnum._page).where({ pageId }).delete();
-        void vscode.commands.executeCommand("constructionPlan.refreshDb");
-      });
-    })
+    ...[
+      // 全局执行命令
+      vscode.commands.registerCommand("common.execute", (ctx: any) => {
+        const commonService = new CommonService();
+        commonService.execute(ctx);
+      }),
+      // 一级标签操作刷新 / navigation
+      vscode.commands.registerCommand("constructionPlan.refreshDb", () => {
+        vscode.window.registerTreeDataProvider("projectList", new ProjectList(core));
+        vscode.window.registerTreeDataProvider("constructionPlan", new ConstructionPlanPageList(core));
+        vscode.window.registerTreeDataProvider("constructionAdvanced", new ConstructionAdvancedPageList(core));
+      }),
+      /**
+       * init-json
+       */
+      vscode.commands.registerCommand("projectList.refreshJson", ({ currDatabase }: { currDatabase: any }) => {
+        const { dir } = currDatabase;
+        const commonService = new CommonService();
+        commonService.execute({ dir, execute: "jianghu-init page", name: "添加页面" });
+      }),
+      // init-json add page / inline
+      vscode.commands.registerCommand("projectList.addJsonPage", ({ currDatabase }: { currDatabase: any }) => {
+        const { dir } = currDatabase;
+        const commonService = new CommonService();
+        commonService.execute({ dir, execute: "jianghu-init page", name: "添加页面" });
+      }),
+      // init-json add component / inline
+      vscode.commands.registerCommand("projectList.addJsonComponent", ({ currDatabase }: { currDatabase: any }) => {
+        const { dir } = currDatabase;
+        const commonService = new CommonService();
+        commonService.execute({ dir, execute: "jianghu-init component", name: "添加组件" });
+      }),
+      vscode.commands.registerCommand("constructionPlan.pageDelete", ({ label, pageId, currDatabase }: { label: string; pageId: string; currDatabase: Knex.MySqlConnectionConfig }) => {
+        // eslint-disable-next-line @typescript-eslint/no-misused-promises
+        CommonUtil.confirm(`Are you want to delete Page ${label} ? `, async () => {
+          // @ts-ignore
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+          await JianghuKnexManager.client(currDatabase)(TableEnum._page).where({ pageId }).delete();
+          void vscode.commands.executeCommand("constructionPlan.refreshDb");
+        });
+      }),
+    ]
   );
   context.subscriptions.push(
     vscode.commands.registerCommand("constructionPlanView.copySample", async uri => {

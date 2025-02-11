@@ -51,7 +51,6 @@ export class ProjectList extends BaseTreeView implements vscode.TreeDataProvider
           return childs;
         }
         case "initJsonPage": {
-
           // 扫描项目 init-json 文件夹
           const initJsonPath = path.join(currDatabase.dir, "app/view/init-json/page");
           // 判断文件夹不存在则返回 []
