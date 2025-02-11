@@ -14,8 +14,25 @@ export default class DesignPageService extends BaseService {
     const fileContent = fs.readFileSync(file, "utf-8").toString();
     console.log("fileContent", fileContent);
     // 文本转换成对象
+    const content = eval(fileContent);
+    const pageConfig = JSON.parse(
+      JSON.stringify(
+        content,
+        (key, value) => {
+          if (typeof value === "function") {
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+            return `__FUN__${value.toString()}__FUN__`;
+          }
+          if (value instanceof RegExp) {
+            return `__FUN__${value.toString()}__FUN__`;
+          }
+          return value;
+        },
+        2
+      )
+    );
     // @ts-ignore
-    return { fileContent: eval(fileContent) };
+    return { fileContent: pageConfig };
   }
 
   public async updateItem(ctx: any): Promise<void> {
@@ -23,13 +40,17 @@ export default class DesignPageService extends BaseService {
     console.log("prettier", prettier);
     // 重新格式化 & 保存
     const formatted = prettier.format(`module.exports = ${JSON.stringify(fileContent, null, 2)}`, {
-      printWidth: 120,
+      parser: "flow",
+      printWidth: 180,
+      semi: true,
       bracketSpacing: true,
-      trailingComma: "es5",
       arrowParens: "avoid",
-      proseWrap: "preserve",
-      singleQuote: true,
-      jsxSingleQuote: false,
+      useTabs: false,
+      endOfLine: "auto",
+      singleAttributePerLine: true,
+      editorconfig: {
+        max_line_length: 220,
+      },
     });
 
 
