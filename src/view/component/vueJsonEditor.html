@@ -4,7 +4,7 @@
       <div class="json-title">{{title}}</div>
       <v-btn small depressed color="success" @click="onSave" :disabled="error">{{ locale[lang].save }}</v-btn>
     </div>
-    <div class="jsoneditor-vue" :class="{'jsoneditor-vue-min': type === 'resource'}"></div>
+    <div class="jsoneditor-vue" :style="{height}" :class="{'jsoneditor-vue-min': type === 'resource'}"></div>
   </div>
 </script>
 
@@ -39,7 +39,12 @@
       type: {
         type: String,
         default: 'ui'
-      }
+      },
+      // Add the totalHeight prop
+      height: {
+        type: String,
+        default: 'calc(100vh - 240px)'
+      },
     },
     watch: {
       value: {
@@ -75,39 +80,43 @@
       };
     },
     mounted() {
-      let self = this;
-
-      let options = {
-        mode: this.mode,
-        modes: this.modes, // allowed modes
-        onChange() {
-          try {
-            let json = self.editor.get();
-            self.json = json;
-            self.error = false;
-            self.$emit("json-change", json);
-            self.internalChange = true;
-            self.$emit("input", json);
-            self.$nextTick(function () {
-              self.internalChange = false;
-            });
-          } catch (e) {
-            self.error = true;
-            self.$emit("has-error", e);
-          }
-        },
-        onModeChange() {
-          self.expandAll();
-        }
-      };
-
-      this.editor = new JSONEditor(
-        this.$el.querySelector(".jsoneditor-vue"),
-        options,
-        this.value
-      );
+      this.init();
     },
     methods: {
+      init() {
+        let self = this;
+
+        let options = {
+          mode: this.mode,
+          modes: this.modes, // allowed modes
+          // theme: "bootstrap4",
+          themeColor: "#007bff",
+          onChange() {
+            try {
+              let json = self.editor.get();
+              self.json = json;
+              self.error = false;
+              self.$emit("has-error", false);
+              self.internalChange = true;
+              self.$emit("input", json);
+              self.$nextTick(function () {
+                self.internalChange = false;
+              });
+            } catch (e) {
+              self.error = true;
+              self.$emit("has-error", true);
+            }
+          },
+          onModeChange() {
+            self.expandAll();
+          }
+        };
+        this.editor = new JSONEditor(
+          self.$el.querySelector(".jsoneditor-vue"),
+          options,
+          self.json
+        );
+      },
       expandAll() {
         if (
           this.expandedOnStart &&
@@ -140,35 +149,14 @@
     text-align: left;
   }
 
-  .json-editor-container {
-    display: flex;
-    width: 100%;
+  .jsoneditor-menu a.jsoneditor-poweredBy {
+    display: none;
   }
-
-  .json-editor-container .tree-mode {
-    width: 50%;
+  .jsoneditor-menu {
+    background-color: #4caf50;
+    border-bottom: 1px solid #4caf50;
   }
-
-  .json-editor-container .code-mode {
-    flex-grow: 1;
-  }
-
-  .jsoneditor-vue{
-    height: calc(100vh - 45vh);
-  }
-  .jsoneditor-vue .jsoneditor-outer {
-    min-height: 150px;
-  }
-
-  .jsoneditor-vue div.jsoneditor-tree {
-    min-height: 350px;
-  }
-
-  code {
-    background-color: #f5f5f5;
-  }
-  
-  .jsoneditor-vue-min{
-    height: calc(100vh - 56vh);
+  .jsoneditor {
+    border: thin solid #4caf50;
   }
 </style>

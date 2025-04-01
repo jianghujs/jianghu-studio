@@ -67,6 +67,11 @@
 				"icon": "$(refresh)"
 			},
 			{
+				"command": "projectList.runDev",
+				"title": "dev 模式",
+				"icon": "$(run-all)"
+			},
+			{
 				"command": "projectList.addJsonPage",
 				"title": "添加页面",
 				"icon": "$(add)"
@@ -171,6 +176,11 @@
 					"group": "inline"
 				},
 				{
+					"command": "projectList.runDev",
+					"when": "view == projectList && viewItem == initJsonItem",
+					"group": "inline"
+				},
+				{
 					"command": "projectList.refreshJson",
 					"when": "view == projectList && viewItem == initJsonItem",
 					"group": "inline"
@@ -203,18 +213,6 @@
 					"name": "江湖应用",
 					"icon": "$(database)",
 					"contextualTitle": "江湖应用"
-				},
-				{
-					"id": "constructionPlan",
-					"name": "施工方案",
-					"icon": "$(database)",
-					"contextualTitle": "Construction Plan"
-				},
-				{
-					"id": "constructionAdvanced",
-					"name": "系统配置",
-					"icon": "$(database)",
-					"contextualTitle": "Advanced"
 				}
 			],
 			"explorer": [

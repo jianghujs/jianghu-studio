@@ -1,0 +1,151 @@
+<!--codeMirror.html start-->
+<script type="text/x-template" id="codeMirror">
+  <div class="codeMirror-container" :id="id" :ref="id" :value="formatValue" :options="cmOptions" :style="{height: height}"></div>
+</script>
+
+<script>
+  Vue.component("codeMirror", {
+    template: "#codeMirror",
+    vueComponent: 'codeMirror',
+    mixins: [ window.jianghuUiActionMixins || {} ],
+    vuetify: new Vuetify(),
+    props: {
+      value: {
+        type: [String, Object, Array],
+        default: ''
+      },
+      id: {
+        type: String,
+        default: ''
+      },
+      mode: {
+        type: String,
+        default: 'javascript'
+      },
+      height: {
+        type: String,
+        default: '100%'
+      },
+      format: {
+        type: Boolean,
+        default: true
+      }
+    },
+    data: () => ({
+      formatValue: '',
+      cmOptions: {},
+      editor: null
+    }),
+    computed: {
+      formattedValue() {
+        if (typeof this.value === 'string') {
+          console.log('3333', this.value);
+          return this.value;
+        }
+        if (this.format) {
+          const val = JSON5.stringify(this.value, (key, value) => {
+            if (typeof value === "string" && /\n/.test(value)) {
+              return (
+                "=/*html*/`" +
+                value
+                  .replace(/^"|"$/g, "") // 去掉头尾的双引号
+                  .replace(/\\/g, "\\") // 先确保反斜杠本身不会重复
+                  .replace(/`/g, "\\`")
+                  .replace(/\$\{/g, "$\\{")
+                  .replace(/\n/g, "\n") +
+                "`="
+              );
+            }
+            return value;
+          }, 2);
+          console.log('1111', val);
+          if (val) {
+            return val.replace(/"=\/\*css\*\/`/g, "/*css*/`").replace(/"=\/\*html\*\/`/g, "/*html*/`").replace(/"=`|`="/g, "`").replace(/\\n/g, "\n").replace(/\\/g, "");
+          }
+          console.log('2222', val);
+          return '';
+        } else {
+          console.log('66666');
+          return JSON5.stringify(this.value);
+        }
+      }
+    },
+    destroyed() {
+      if (this.editor && this.editor.toTextArea) {
+        this.editor?.toTextArea();
+      }
+    },
+    watch: {
+      value: {
+        handler(val) {
+          console.log('监听 value', val)
+          this.$nextTick(() => {
+            const formattedValue = this.formattedValue;
+            console.log('formattedValue', val, formattedValue)
+            if (this.editor && formattedValue !== this.editor.getValue() && !_.isEqual(this.value, JSON5.parse(this.editor.getValue()))) {
+              this.editor.setValue(formattedValue);
+            }
+          });
+        },
+        deep: true
+      }
+    },
+    created() {
+      // this.formatValue = this.formattedValue;
+    },
+    mounted() {
+      this.initCodeMirror();
+    },
+    methods: {
+      codemirror(value) {
+        return {
+          tabSize: 2,
+          mode: this.mode,
+          theme: 'darcula',
+          lineNumbers: true,
+          line: true,
+          styleActiveLine: true,
+          lineWrapping: true,
+          foldGutter: true,
+          gutters: ['CodeMirror-linenumbers', 'CodeMirror-foldgutter'],
+          value: value || '',
+          extraKeys: {'Ctrl-Space': 'autocomplete'},
+          matchBrackets: true,
+          autoCloseBrackets: true,
+          styleSelectedText: true,
+          highlightSelectionMatches: {showToken: /\w/, annotateScrollbar: true},
+          inputStyle: 'textarea' // 修改为 textarea 模式
+        }
+      },
+      initCodeMirror() {
+        const container = this.$el;
+        this.editor = CodeMirror(container, this.codemirror(this.formattedValue));
+        
+        // 初始化后强制刷新一次编辑器
+        setTimeout(() => {
+          this.editor.refresh();
+        }, 100);
+        
+        this.editor.on('change', (cm) => {
+          const value = cm.getValue();
+          try {
+            // 尝试解析为JSON
+            if (typeof this.value === 'object') {
+              console.log('value', value)
+              const parsed = JSON5.parse(value);
+              this.$emit('input', parsed);
+            } else {
+              console.log('是字符串', value)
+              this.$emit('input', value);
+            }
+          } catch (e) {
+            // 如果解析失败则发送原始字符串
+            console.log('解析失败', value)
+            this.$emit('input', value);
+          }
+        });
+      },
+    },
+  })
+</script>
+<!--codeMirror.html end-->

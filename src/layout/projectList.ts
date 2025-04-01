@@ -57,7 +57,21 @@ export class ProjectList extends BaseTreeView implements vscode.TreeDataProvider
           if (!fs.existsSync(initJsonPath)) {
             return [];
           }
-          const files = fs.readdirSync(initJsonPath);
+          const getAllFiles = (dir: string): string[] => {
+            let files: string[] = [];
+            const items = fs.readdirSync(dir);
+            items.forEach(item => {
+              const fullPath = path.join(dir, item);
+              if (fs.statSync(fullPath).isDirectory()) {
+                files = files.concat(getAllFiles(fullPath).map(f => path.join(item, f)));
+              } else {
+                files.push(item);
+              }
+            });
+            return files;
+          };
+          const files = getAllFiles(initJsonPath);
+          console.log(files);
           for (const file of files) {
             const item = new EntryItem({ label: file, value: file, currDatabase, type: "initJsonPageFile" }, vscode.TreeItemCollapsibleState.None);
 

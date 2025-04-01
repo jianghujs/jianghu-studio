@@ -1,0 +1,107 @@
+<!--includeList.html start-->
+<script type="text/x-template" id="customTag">
+  <v-navigation-drawer v-model="show" title="页面标题" width="70%" :permanent="show" fixed temporary right class="elevation-24" >
+    <!-- title -->
+    <div class="flex items-center justify-between px-4 py-2 border-b">
+      <span class="text-lg font-bold">
+        <v-text-field v-model="metadata" class="cus-v-input !w-32" placeholder="请输入标题" dense single-line outlined hide-details></v-text-field>
+        [{{ title }}]
+      </span>
+      <div class="inline-flex items-center gap-3">
+        <!-- 保存 -->
+        <v-btn color="success" small @click="save">
+          保存
+        </v-btn>
+        <v-btn color="error" icon @click="$emit('close')">
+          <v-icon>mdi-close</v-icon>
+        </v-btn>
+      </div>
+    </div>
+    <div class="p-4">
+      <!-- 自定义代码编辑器 -->
+      <div class="w-full h-full">
+        <code-mirror v-model="value" :id="id" :mode="'javascript'"></code-mirror>
+      </div>
+    </div>
+  </v-navigation-drawer>
+</script>
+
+<script>
+  Vue.component("customTag", {
+    template: "#customTag",
+    vueComponent: 'customTag',
+    mixins: [ window.jianghuUiActionMixins || {} ],
+    vuetify: new Vuetify(),
+    props: {
+      value: {
+        type: [Object, Array, String],
+        default: () => ''
+      },
+      pageId: {
+        type: String,
+        default: ''
+      },
+      id: {
+        type: String,
+        default: ''
+      },
+      show: {
+        type: Boolean,
+        default: false
+      },
+      title: {
+        type: String,
+        default: ''
+      },
+      key: {
+        type: String,
+        default: ''
+      },
+      metadata: {
+        type: Object,
+        default: () => {}
+      }
+    },
+    data: () => {
+      return {
+        constantObj: {
+          type: ['js', 'css', 'html']
+        },
+        headers: [
+          // { label: 'PageId', value: 'pageId', component: 'input', type: 'text' },
+          { label: 'Type', value: 'type', component: 'select', type: 'text', class: 'w-40', options: ['js', 'css', 'html'] },
+          { label: 'Path', value: 'path', component: 'input', type: 'text' },
+        ],
+        editJsonDialog: false,
+        isPageLoading: false,
+      };
+    },
+    computed: {
+      valueType() {
+        if (typeof this.value === 'string') {
+          return 'string'
+        }
+        return 'object'
+      }
+    },
+    mounted() {
+    },
+    watch: {
+      value: {
+        handler(val) {
+        },
+        deep: true
+      }
+    },
+    async created() {
+      console.log('created', this.pageId)
+    },
+    methods: {
+      async save() {
+        this.$emit('input', this.value)
+        this.$emit('close')
+      }
+    }
+  })
+</script>
+<!--includeList.html end-->

@@ -1,0 +1,142 @@
+<!--includeList.html start-->
+<script type="text/x-template" id="includeList">
+  <div class="grid grid-cols-1 gap-2">
+    <div class="bg-white">
+      <table class="w-full" cellpadding="0" cellspacing="0">
+        <tr>
+          <th class="py-2" v-for="(header, i) in headers" :class="header.class || ''" :key="i">{{ header.label }}</th>
+          <th class="w-10"></th>
+        </tr>
+        <template v-for="(item, index) in value">
+        <tr v-if="typeof item === 'object'">
+          <td class="px-1 py-1" v-for="(column, i) in headers" :key="i">
+            <v-text-field 
+              v-if="column.component === 'input'"
+              v-model="item[column.value]" 
+              class="cus-v-input mr-2" dense single-line outlined
+              :label="column.label"></v-text-field>
+            <v-select 
+                v-if="column.component === 'select'" 
+                v-model="item[column.value]"
+                :items="column.options"   
+                item-text="label"
+                item-value="value"
+                :label="column.label" 
+                dense single-line outlined clearable
+                hide-details="auto">
+            </v-select>
+            <div class="pa-2 h-10 leading-6 border border-gray-200 rounded-sm whitespace-nowrap overflow-hidden text-ellipsis text-left" v-if="column.component === 'pre'">{{item[column.value]}}</div>
+          </td>
+          <td class="px-0.5 text-center">
+            <v-icon aria-hidden="false" @click="value.splice(index, 1)"
+              color="error">
+              mdi-trash-can</v-icon>
+          </td>
+        </tr>
+        <tr v-else>
+          <td class="text-center" style="height: auto;">
+            自定义
+          </td>
+          <td class="px-1 py-1" style="height: auto;">
+            <v-text-field v-model="value[index]" dense single-line outlined hide-details></v-text-field>
+          </td>
+          <td class="px-0.5 text-center">
+            <v-icon aria-hidden="false" @click="value.splice(index, 1)"
+              color="error">
+              mdi-trash-can</v-icon>
+          </td>
+        </tr>
+        </template>
+        <!-- 空显示 -->
+        <tr v-if="value.length === 0">
+          <td colspan="3" class="py-2 text-center" style="height: auto;">
+            暂无资源引入
+          </td>
+        </tr>
+      </table>
+      <!-- <v-btn-toggle v-model="resourceJsonView" color="mr-2" group v-if="resource.list.length > 0">
+        <v-btn small :value="true">
+          JSON预览
+        </v-btn>
+      </v-btn-toggle> -->
+
+
+      <v-overlay :absulate="true" :value="isPageLoading" style="position: absolute;">
+        <v-progress-circular indeterminate size="32"></v-progress-circular>
+      </v-overlay>
+    </div>
+    
+    <!-- 添加 -->
+    <div class="px-2 py-0 mb-2">
+      <div class="flex items-center">
+        <span>快捷操作：</span>
+        <v-btn text color="primary" class="px-1" small @click="addResourceLine(item)" v-for="(item, index) in constantObj.type" :key="index">
+          添加{{ item }}
+        </v-btn>
+      </div>
+    </div>
+  </div>
+</script>
+
+<script>
+  Vue.component("includeList", {
+    template: "#includeList",
+    vueComponent: 'includeList',
+    mixins: [ window.jianghuUiActionMixins || {} ],
+    vuetify: new Vuetify(),
+    props: {
+      value: {
+        type: Array,
+        default: () => []
+      },
+      pageId: {
+        type: String,
+        default: ''
+      }
+    },
+    data: () => {
+      return {
+        constantObj: {
+          type: ['js', 'css', 'html', '自定义']
+        },
+        headers: [
+          // { label: 'PageId', value: 'pageId', component: 'input', type: 'text' },
+          { label: 'Type', value: 'type', component: 'select', type: 'text', class: 'w-40', options: ['js', 'css', 'html'] },
+          { label: 'Path', value: 'path', component: 'input', type: 'text' },
+        ],
+        editJsonDialog: false,
+        isPageLoading: false,
+      };
+    },
+    computed: {
+    },
+    mounted() {
+    },
+    watch: {
+      value: {
+        handler(val) {
+          this.$emit('input', val);
+        },
+        deep: true
+      }
+    },
+    async created() {
+      console.log('created', this.pageId)
+    },
+    methods: {
+      async addResourceLine(type) {
+        console.log('addResourceLine', type)
+        if (type === 'html') {
+          this.value.push({type, path: 'component/xxx.html'})
+        } else if (type === 'js') {
+          this.value.push({type, path: '/<\$ ctx.app.config.appId \$>/public/xxx.js'})
+        } else if (type === 'css') {
+          this.value.push({type, path: '/<\$ ctx.app.config.appId \$>/public/xxx.css'})
+        } else {
+          this.value.push('<script>console.log("自定义")<\/script>');
+        }
+      },
+    }
+  })
+</script>
+<!--includeList.html end-->

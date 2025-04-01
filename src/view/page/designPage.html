@@ -1,4 +1,13 @@
 {% extends 'template/jhsTemplate.html'%}
+{% block htmlHead %}
+<link href="../lib/codemirror/codemirror.min.css" rel="stylesheet">
+<link href="../lib/codemirror/darcula.css" rel="stylesheet">
+<script src="../lib/codemirror/codemirror.min.js"></script>
+<script src="../lib/codemirror/mode/javascript/javascript.js"></script>
+<script src="../lib/codemirror/mode/css/css.js"></script>
+<link href="../lib/jsoneditor/jsoneditor.css" rel="stylesheet">
+<script src="../lib/jsoneditor/jsoneditor.js"></script>
+{% endblock %}
 {% block vue_template %}
 <jh-layout-v3>
   <template slot="breadcrumbsTitle">
@@ -8,58 +17,268 @@
       <v-btn color="primary" class="ml-3" small @click="save">保存</v-btn>
     </div>
   </template>
-  <div>
+  <div class="pb-4">
     <!-- 页面类型 -->
-    <div class="font-bold bg-gray-200 py-1 px-2 my-2">基础设置</div>
-    <div class="grid grid-cols-8 gap-2">
-      <div class="col-span-2 flex items-center">
-        <v-select class="cus-v-input" label="类型" v-model="fileContent.pageType" :items="constantObj.pageType" outlined
-          label="页面类型" dense filled></v-select>
-      </div>
-      <div class="col-span-3 flex items-center">
-        <v-text-field class="cus-v-input" v-model="fileContent.pageName" label="pageName" outlined dense
-          filled></v-text-field>
-      </div>
-      <div class="col-span-3 flex items-center">
-        <v-text-field class="cus-v-input" v-model="fileContent.pageId" label="pageId" outlined dense
-          filled></v-text-field>
-      </div>
-      <div class="col-span-2 flex items-center">
-        <v-text-field class="cus-v-input" v-model="fileContent.version" label="版本" outlined dense filled></v-text-field>
-      </div>
-      <div class="col-span-3 flex items-center">
-        <v-text-field class="cus-v-input" v-model="fileContent.template" label="template" outlined dense
-          filled></v-text-field>
-      </div>
+    <div class="font-bold bg-gray-200 py-1 px-3 my-2 flex items-center justify-between cursor-pointer relative" @click="isBaseSettingExpanded = !isBaseSettingExpanded">
+      <div class="absolute top-0 left-0 w-1 h-full bg-[#4caf50]"></div>
+      <span>基础设置</span>
+      <v-icon>{{ isBaseSettingExpanded ? 'mdi-chevron-up' : 'mdi-chevron-down' }}</v-icon>
     </div>
-    <div class="font-bold bg-gray-200 py-1 px-2 my-2 flex items-center">
-      面包屑
-      <v-switch class="!mt-0 !mb-0 ml-3" v-model="fileContent.jhMenu" label="隐藏菜单" :true-value="false"
-        :false-value="true" outlined dense filled single-line hide-details></v-switch>
+    <v-card class="p-3" v-show="isBaseSettingExpanded">
+      <div class="grid grid-cols-8 gap-2">
+        <div class="col-span-2 flex items-center">
+          <v-select class="cus-v-input" label="类型" v-model="fileContent.pageType" :items="constantObj.pageType" outlined
+             dense filled></v-select>
+        </div>
+        <div class="col-span-3 flex items-center">
+          <v-text-field class="cus-v-input" v-model="fileContent.pageName" label="pageName" outlined dense
+            filled></v-text-field>
+        </div>
+        <div class="col-span-3 flex items-center">
+          <v-text-field class="cus-v-input" v-model="fileContent.pageId" label="pageId" outlined dense
+            filled></v-text-field>
+        </div>
+        <div class="col-span-2 flex items-center">
+          <v-select class="cus-v-input" v-model="fileContent.version" label="版本" outlined dense filled :items="constantObj.version"></v-select>
+        </div>
+        <div class="col-span-3 flex items-center">
+          <v-text-field class="cus-v-input" v-model="fileContent.template" label="template" outlined dense
+            filled></v-text-field>
+        </div>
+  
+        <v-switch class="!mt-0 !mb-0 ml-3" v-model="fileContent.jhMenu" label="隐藏菜单" :true-value="false"
+          :false-value="true" outlined dense filled single-line hide-details></v-switch>
+      </div>
+    </v-card>
+
+    <!-- resourceList -->
+    <div class="font-bold bg-gray-200 py-1 px-3 my-2 flex items-center justify-between cursor-pointer relative" @click="isResourceListExpanded = !isResourceListExpanded">
+      <div class="absolute top-0 left-0 w-1 h-full bg-[#4caf50]"></div>
+      <v-badge color="warning" inline :value="fileContent.resourceList?.length > 0" :content="fileContent.resourceList?.length">
+        <span>resourceList</span>
+      </v-badge>
+      <v-icon>{{ isResourceListExpanded ? 'mdi-chevron-up' : 'mdi-chevron-down' }}</v-icon>
     </div>
-    <div class="">
-      <div class="border rounded-md p-2 mb-2" v-for="(item, index) in fileContent.headContent" :key="index">
-        <div class="flex justify-between">
-          <v-chip small label color="primary">{{ getTagType('headContent', item.tag) }}</v-chip>
-          <!-- 删除 -->
-          <v-btn icon small @click="fileContent.headContent.splice(index, 1)">
-            <v-icon>mdi-delete</v-icon>
+    <resource-list v-show="isResourceListExpanded" v-model="fileContent.resourceList" :pageId="fileContent.pageId"></resource-list>
+    
+    <!-- includeList -->
+    <div class="font-bold bg-gray-200 py-1 px-3 my-2 flex items-center justify-between cursor-pointer relative" @click="isIncludeListExpanded = !isIncludeListExpanded">
+      <div class="absolute top-0 left-0 w-1 h-full bg-[#4caf50]"></div>
+      <v-badge color="primary" inline :value="fileContent.includeList?.length > 0" :content="fileContent.includeList?.length">  
+        <span>includeList</span>
+      </v-badge>
+      <v-icon>{{ isIncludeListExpanded ? 'mdi-chevron-up' : 'mdi-chevron-down' }}</v-icon>
+    </div>
+    <div v-show="isIncludeListExpanded">
+      <include-list v-model="fileContent.includeList" :pageId="fileContent.pageId"></include-list>
+    </div>
+
+    <!-- headContent -->
+    <div class="font-bold bg-gray-200 py-1 px-3 my-2 flex items-center justify-between cursor-pointer relative" @click="isHeadContentExpanded = !isHeadContentExpanded">
+      <div class="absolute top-0 left-0 w-1 h-full bg-[#4caf50]"></div>
+      <div class="flex items-center">
+        <v-badge color="warning" inline :value="fileContent.headContent?.length > 0" :content="fileContent.headContent?.length">
+          <span>面包屑</span>
+        </v-badge>
+      </div>
+      <v-icon>{{ isHeadContentExpanded ? 'mdi-chevron-up' : 'mdi-chevron-down' }}</v-icon>
+    </div>
+    <div v-show="isHeadContentExpanded">
+      <template v-if="fileContent.headContent?.length > 0">
+        <div class="border rounded-md p-2 mb-2 bg-white" v-for="(item, index) in fileContent.headContent" :key="index">
+          <div class="flex justify-between items-center">
+            <v-chip small label color="primary">{{ getTagType('headContent', item.tag) }}</v-chip>
+            <div>
+              <!-- 排序 -->
+              <v-btn icon small @click="moveContent('headContent', index, 'up')">
+                <v-icon>mdi-arrow-up</v-icon>
+              </v-btn>
+              <v-btn icon small @click="moveContent('headContent', index, 'down')">
+                <v-icon>mdi-arrow-down</v-icon>
+              </v-btn>
+              <!-- 编辑 -->
+              <v-btn icon color="warning" small @click="isHeadDrawerExpanded[index] = !isHeadDrawerExpanded[index]">
+                <v-icon>mdi-pencil</v-icon>
+              </v-btn>
+              <!-- 删除 -->
+              <v-btn icon color="error" small @click="fileContent.headContent.splice(index, 1);$forceUpdate()">
+                <v-icon>mdi-trash-can</v-icon>
+              </v-btn>
+            </div>
+          </div>
+        </div>
+      </template>
+      <!-- 添加 -->
+      <div class="px-2 py-0 mb-2">
+        <div class="flex items-center">
+          <span>快捷操作：</span>
+          <v-btn text color="primary" class="px-1" small v-if="!fileContent.headContent?.some(item => item?.tag === 'jh-search')" @click="addContent('headContent', 'jh-search')">
+            添加服务端搜索
+          </v-btn>
+          <v-btn text color="primary" class="px-1" small v-if="!fileContent.headContent?.some(item => item?.tag === 'jh-page-title')" @click="addContent('headContent', 'jh-page-title')">
+            添加页面标题
+          </v-btn>
+          <v-btn text color="primary" class="px-1" small @click="addContent('headContent', 'customTag')">
+            添加自定义
           </v-btn>
         </div>
+      </div>
+    </div>
 
-        <div v-if="item?.tag && item.tag === 'jh-page-title'" class="grid grid-cols-3 gap-2">
-          <v-text-field class="" v-model="item.value" prefix="页面标题" outlined dense filled single-line
-            hide-details></v-text-field>
-          <!-- 是否显示帮助按钮 -->
-          <v-switch class="!mt-0" v-model="item.helpBtn" label="是否显示帮助按钮" outlined dense filled single-line></v-switch>
+    <!-- pageContent -->
+    <div class="font-bold bg-gray-200 py-1 px-3 my-2 flex items-center justify-between cursor-pointer relative" @click="isPageContentExpanded = !isPageContentExpanded">
+      <div class="absolute top-0 left-0 w-1 h-full bg-[#4caf50]"></div>
+      <v-badge color="warning" inline :value="fileContent.pageContent?.length > 0" :content="fileContent.pageContent?.length">  
+        <span>主页面内容</span>
+      </v-badge>
+
+      <v-icon>{{ isPageContentExpanded ? 'mdi-chevron-up' : 'mdi-chevron-down' }}</v-icon>
+    </div>
+    <div v-show="isPageContentExpanded">
+      <template v-if="fileContent.pageContent?.length > 0">
+        <div class="border rounded-md p-2 mb-2 bg-white" v-for="(item, index) in fileContent.pageContent" :key="index">
+          <div class="flex justify-between items-center">
+            <v-chip small label color="primary">{{ getTagType('pageContent', item.tag) }}</v-chip>
+            <div>
+              <!-- 排序 -->
+              <v-btn icon small @click="moveContent('pageContent', index, 'up')">
+                <v-icon>mdi-arrow-up</v-icon>
+              </v-btn>
+              <v-btn icon small @click="moveContent('pageContent', index, 'down')">
+                <v-icon>mdi-arrow-down</v-icon>
+              </v-btn>
+              <!-- 编辑 --> 
+              <v-btn icon color="warning" small @click="isPageDrawerExpanded[index] = !isPageDrawerExpanded[index]">
+                <v-icon>mdi-pencil</v-icon>
+              </v-btn>
+              <!-- 删除 -->
+              <v-btn icon color="error" small @click="fileContent.pageContent.splice(index, 1);$forceUpdate()">
+                <v-icon>mdi-trash-can</v-icon>
+              </v-btn>
+            </div>
+          </div>
+        </div>
+      </template>
+      <!-- 添加 -->
+      <div class="px-2 py-0 mb-2">
+        <div class="flex items-center">
+          <span>快捷操作：</span>
+          <v-btn text color="primary" class="px-1" small v-if="!fileContent.pageContent?.some(item => item?.tag === 'jh-table')" @click="addContent('pageContent', 'jh-table')">
+            添加数据表格
+          </v-btn>
+          <v-btn text color="primary" class="px-1" small @click="addContent('pageContent', 'customTag')">
+            添加自定义
+          </v-btn>
         </div>
       </div>
     </div>
+
+    <!-- actionContent -->
+    <div class="font-bold bg-gray-200 py-1 px-3 my-2 flex items-center justify-between cursor-pointer relative" @click="isActionContentExpanded = !isActionContentExpanded">
+      <div class="absolute top-0 left-0 w-1 h-full bg-[#4caf50]"></div>
+      <v-badge color="warning" inline :value="fileContent.actionContent?.length > 0" :content="fileContent.actionContent?.length">
+        <span>抽屉、弹窗</span>
+      </v-badge>
+      <v-icon>{{ isActionContentExpanded ? 'mdi-chevron-up' : 'mdi-chevron-down' }}</v-icon>
+    </div>
+    <div v-show="isActionContentExpanded">
+      <template v-if="fileContent.actionContent?.length > 0">
+        <div class="border rounded-md p-2 mb-2 bg-white" v-for="(item, index) in fileContent.actionContent" :key="index">
+          <div class="flex justify-between items-center">
+            <v-chip small label color="primary">{{ getTagType('actionContent', item.tag) }}</v-chip>
+            <div>
+              <!-- 排序 -->
+              <v-btn icon small @click="moveContent('actionContent', index, 'up')">
+                <v-icon>mdi-arrow-up</v-icon>
+              </v-btn>
+              <v-btn icon small @click="moveContent('actionContent', index, 'down')">
+                <v-icon>mdi-arrow-down</v-icon>
+              </v-btn>
+              <!-- 编辑 -->
+              <v-btn icon color="warning" small @click="isActionDrawerExpanded[index] = !isActionDrawerExpanded[index]">
+                <v-icon>mdi-pencil</v-icon>
+              </v-btn>
+              <!-- 删除 -->
+              <v-btn icon color="error" small @click="fileContent.actionContent.splice(index, 1);$forceUpdate()">
+                <v-icon>mdi-trash-can</v-icon>
+              </v-btn>
+            </div>
+          </div>
+        </div>
+      </template>
+      <!-- 添加 -->
+      <div class="px-2 py-0 mb-2">
+        <div class="flex items-center">
+          <span>快捷操作：</span>
+          <v-btn text color="primary" class="px-1" small v-if="!fileContent.actionContent?.some(item => item?.tag === 'jh-create-drawer')" @click="addContent('actionContent', 'jh-create-drawer')">
+            添加新增抽屉
+          </v-btn>
+          <v-btn text color="primary" class="px-1" small v-if="!fileContent.actionContent?.some(item => item?.tag === 'jh-update-drawer')" @click="addContent('actionContent', 'jh-update-drawer')">
+            添加编辑抽屉
+          </v-btn>
+          <v-btn text color="primary" class="px-1" small @click="addContent('actionContent', 'jh-drawer')">
+            添加自定义抽屉
+          </v-btn>
+          <v-btn text color="primary" class="px-1" small @click="addContent('actionContent', 'customTag')">
+            添加自定义
+          </v-btn>
+        </div>
+      </div>
+    </div>
+
+    <div class="font-bold bg-gray-200 py-1 px-3 my-2 flex items-center justify-between relative">
+      <div class="absolute top-0 left-0 w-1 h-full bg-[#4caf50]"></div>
+      <span>style</span>
+    </div>
+    <code-mirror v-model="fileContent.style" id="style" mode="css"></code-mirror>
+    
+    <template v-if="fileContent.headContent?.length > 0">
+    <template class="border rounded-md p-2 mb-2 bg-white" v-for="(item, index) in fileContent.headContent">
+      <jh-page-title :title="getTagType('headContent', item.tag)" v-if="item?.tag === 'jh-page-title'" :key="'headContent-'+index" :show="isHeadDrawerExpanded[index]" v-model="fileContent.headContent[index]" @close="isHeadDrawerExpanded[index] = false"></jh-page-title>
+
+      <jh-search :title="getTagType('headContent', item.tag)" v-else-if="item?.tag === 'jh-search'" :key="'headContent-'+index" :show="isHeadDrawerExpanded[index]" v-model="fileContent.headContent[index]" :id="`headContent-${index}-jhSearch`" :version="fileContent.version" @close="isHeadDrawerExpanded[index] = false" :pageType="fileContent.pageType"></jh-search>
+
+      <custom-tag :title="getTagType('headContent', item.tag)" v-else-if="!item?.tag" :show="isHeadDrawerExpanded[index]" :key="'headContent-'+index" v-model="fileContent.headContent[index]" :id="`headContent-${index}-customTag`" @close="isHeadDrawerExpanded[index] = false"></custom-tag>
+    </template>
+    </template>
+
+    <template v-if="fileContent.pageContent?.length > 0">
+    <template class="border rounded-md p-2 mb-2 bg-white" v-for="(item, index) in fileContent.pageContent">
+      <jh-table :title="getTagType('pageContent', item.tag)" v-if="item?.tag === 'jh-table'" :key="'pageContent-'+index" :show="isPageDrawerExpanded[index]" v-model="fileContent.pageContent[index]" @close="isPageDrawerExpanded[index] = false"></jh-table>
+
+      <jh-list :title="getTagType('pageContent', item.tag)" v-else-if="item?.tag === 'jh-list'" :key="'pageContent-'+index" :show="isPageDrawerExpanded[index]" v-model="fileContent.pageContent[index]" @close="isPageDrawerExpanded[index] = false"></jh-list>
+
+      <custom-tag :title="getTagType('pageContent', item.tag)" v-else :show="isPageDrawerExpanded[index]" :key="'pageContent-'+index" v-model="fileContent.pageContent[index]" :id="`pageContent-${index}-customTag`" @close="isPageDrawerExpanded[index] = false"></custom-tag>
+    </template>
+    </template>
+
+    <template v-if="fileContent.actionContent?.length > 0">
+    <template class="border rounded-md p-2 mb-2 bg-white" v-for="(item, index) in fileContent.actionContent">
+
+      <jh-drawer :title="getTagType('actionContent', item.tag)" v-if="['jh-drawer', 'jh-detail-drawer', 'jh-create-drawer', 'jh-update-drawer'].includes(item?.tag)" :key="'actionContent-'+index" :show="isActionDrawerExpanded[index]" v-model="fileContent.actionContent[index]" @close="isActionDrawerExpanded[index] = false"></jh-drawer>
+
+      <custom-tag :title="getTagType('actionContent', item.tag)" v-else :show="isActionDrawerExpanded[index]" :key="'actionContent-'+index" v-model="fileContent.actionContent[index]" :id="`actionContent-${index}-customTag`" @close="isActionDrawerExpanded[index] = false">
+        
+      </custom-tag>
+    </template>
+    </template>
   </div>
 </jh-layout-v3>
 
 {% endblock %} {% block vue_body %}
-
+{% include 'component/codeMirror.html' %}
+{% include 'component/design/jhPageTitle.html' %}
+{% include 'component/design/jhSearch.html' %}
+{% include 'component/design/resourceList.html' %}
+{% include 'component/vueJsonEditor.html' %}
+{% include 'component/design/pageItemTable.html' %}
+{% include 'component/design/includeList.html' %}
+{% include 'component/design/customTag.html' %}
+{% include 'component/design/jhCreateDrawer.html' %}
+{% include 'component/design/jhUpdateDrawer.html' %}
+{% include 'component/design/jhDrawer.html' %}
+{% include 'component/design/jhTable.html' %}
+{% include 'component/design/jhList.html' %}
 <script>
 
   new Vue({
@@ -69,6 +288,11 @@
     data: function () {
       return {
         constantObj: {
+          version: [
+            { text: 'v1', value: ''},
+            { text: 'v2', value: 'v2'},
+            { text: 'v3', value: 'v3'},
+          ],
           pageType: [
             "jh-page",
             "jh-mobile-page",
@@ -77,26 +301,116 @@
           headConentTagType: {
             'jh-page-title': '页面标题',
             'jh-search': '服务端搜索',
+          },
+          pageContentTagType: {
+            'jh-table': '数据表格',
+            'jh-list': '分页列表'
+          },
+          actionContentTagType: {
+            'jh-create-drawer': '创建抽屉',
+            'jh-update-drawer': '编辑抽屉',
+            'jh-drawer': '自定义抽屉',
+            'jh-detail-drawer': '详情抽屉',
+          },
+          defaultContentMap: {
+            'jh-create-drawer': {
+              tag: 'jh-create-drawer',
+              key: 'create',
+              title: '创建抽屉',
+              contentList: [
+              ]
+            },
+            'jh-update-drawer': {
+              tag: 'jh-update-drawer',
+              key: 'update',
+              title: '编辑抽屉',
+              contentList: [
+              ]
+            },
+            'jh-drawer': {
+              tag: 'jh-drawer',
+              key: 'drawer',
+              title: '自定义抽屉',
+              contentList: [
+              ]
+            },
+            'customTag': {
+              tag: 'div',
+              attrs: {},
+              value: ``,
+            },
+            'jh-table': {
+              tag: 'jh-table',
+              attrs: {},
+              headers: []
+            },
+            'jh-page-title': {
+              tag: 'jh-page-title',
+              attrs: {},
+              value: ''
+            },
+            'jh-search': {
+              tag: 'jh-search',
+              value: []
+            }
           }
         },
         valid: true,
         projectName: '加载中',
         pageId: "<$ pageId $>",
-        fileContent: {},
+        fileContent: {
+          pageContent: [],
+          actionContent: [],
+          headContent: [],
+          includeList: [],
+          resourceList: [],
+          _metadata: {},
+        },
         loading: false,
         required: [
           v => !!v || 'Field is required',
         ],
         keyList: [
           "pageType", "pageId", "pageName", "template", "version", "resourceList", "headContent", "pageContent", "actionContent", "style"
-        ]
+        ],
+        isBaseSettingExpanded: true,
+        isResourceListExpanded: false,
+        isIncludeListExpanded: false,
+        isHeadContentExpanded: false,
+        isPageContentExpanded: true,
+        isActionContentExpanded: false,
+        isStyleExpanded: false,
+        isHeadDrawerExpanded: {},
+        isPageDrawerExpanded: {},
+        isActionDrawerExpanded: {},
       }
     },
     mounted() {
     },
-    created() {
-      console.log('created=============', this.pageId)
-      this.getPageInfo()
+    computed: {
+      headContentOptions() {
+        const options = ['自定义']
+        if (!this.fileContent.headContent?.some(item => item?.tag === 'jh-search')) {
+          options.push('服务端搜索')
+        }
+        if (!this.fileContent.headContent?.some(item => item?.tag === 'jh-page-title')) {
+          options.push('页面标题')
+        }
+        return options
+      },
+      pageContentOptions() {
+        const options = ['自定义']
+        if (!this.fileContent.pageContent?.some(item => item?.tag === 'jh-table')) {
+          options.push('数据表格')
+        }
+        if (!this.fileContent.pageContent?.some(item => item?.tag === 'jh-list')) {
+          options.push('分页列表')
+        }
+        return options
+      }
+    },
+    async created() {
+      await this.getPageInfo()
     },
     watch: {
       pageId(val) {
@@ -107,14 +421,35 @@
         } else {
           this.resetForm()
         }
+      },
+      isHeadDrawerExpanded: {
+        handler(val) {
+          console.log('isHeadDrawerExpanded', JSON.stringify(val, null, 2))
+        },
+        deep: true
       }
     },
     methods: {
+      addHeadContent(type) {
+        if (type === '自定义') {
+          this.fileContent.headContent.push({ tag: 'div', attrs: {}, value: `` })
+        } else if (type === '服务端搜索') {
+          this.fileContent.headContent.push({ tag: 'jh-search' })
+        } else if (type === '页面标题') {
+          this.fileContent.headContent.unshift({ tag: 'jh-page-title' })
+        }
+      },
       async save() {
         // if (!this.$refs.form.validate()) {
         //   this.error('请输入必填项');
         //   return
         // }
+        const keyOrderList = ['pageType', 'pageId', 'pageName', 'jhMenu', 'template', 'version', 'resourceList',  'headContent', 'pageContent', 'actionContent', 'includeList','common', 'style']
+
+        const newFileContent = {}
+        for (const key of keyOrderList) {
+          newFileContent[key] = this.fileContent[key]
+        }
 
         await window.constructionPlanAxios({
           data: {
@@ -123,7 +458,7 @@
               actionId: "updateItem",
               actionData: {
                 file: this.pageId,
-                fileContent: this.fileContent
+                fileContent: newFileContent
               }
             },
           },
@@ -134,7 +469,6 @@
           this.resetForm()
           return
         }
-        console.log('getPageInfo', this.pageId)
         this.loading = true
         const { data: { appData: { resultData: { fileContent } } } } = await window.constructionPlanAxios({
           data: {
@@ -145,11 +479,32 @@
             },
           },
         });
+        for (const index in fileContent.headContent) {
+          console.log('set isHeadDrawerExpanded', index)
+          this.$set(this.isHeadDrawerExpanded, index, false)
+        }
+        for (const index in fileContent?.pageContent) {
+          this.$set(this.isPageDrawerExpanded, index, false)
+        }
+        for (const index in fileContent?.actionContent) {
+          this.$set(this.isActionDrawerExpanded, index, false)
+        }
+
+        console.log('fileContent', fileContent)
         this.fileContent = fileContent;
 
         setTimeout(() => {
           this.loading = false
         }, 300)
+      },
+      perfectFileMetadata(fileContent) {
+        for (const key in this.fileContent) {
+          if (['headContent', 'pageContent', 'actionContent'].includes(key)) {
+            for (const index in this.fileContent[key]) {
+              this.fileContent._metadata[`${key}-${index}`] = ''
+            }
+          }
+        }
       },
       validateForm() {
         for (const key in this.form) {
@@ -165,8 +520,35 @@
         switch (type) {
           case 'headContent':
             return this.constantObj.headConentTagType[tag] || '自定义'
+          case 'pageContent':
+            return this.constantObj.pageContentTagType[tag] || '自定义'
+          case 'actionContent':
+            return this.constantObj.actionContentTagType[tag] || '自定义'
           default:
             return ''
+        }
+      },
+      addContent(type, tag) {
+        if (!this.fileContent[type]) {
+          this.fileContent[type] = []
+        }
+        if (!this.constantObj.defaultContentMap[tag]) {
+          throw new Error(`${tag} is not a valid tag`)
+        }
+        this.fileContent[type].push(this.constantObj.defaultContentMap[tag])
+
+        // 同步添加 isxxxDrawerExpanded[]
+        this.$set(this.isPageDrawerExpanded, this.fileContent[type]?.length - 1, false)
+        this.$set(this.isActionDrawerExpanded, this.fileContent[type]?.length - 1, false)
+        this.$set(this.isHeadDrawerExpanded, this.fileContent[type]?.length - 1, false)
+        // 强制刷新
+        this.$forceUpdate()
+      },
+      moveContent(type, index, direction) {
+        if (direction === 'up') {
+          this.fileContent[type].splice(index - 1, 0, this.fileContent[type].splice(index, 1)[0])
+        } else if (direction === 'down') {
+          this.fileContent[type].splice(index + 1, 0, this.fileContent[type].splice(index, 1)[0])
         }
       }
     }

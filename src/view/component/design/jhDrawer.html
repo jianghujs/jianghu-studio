@@ -1,0 +1,294 @@
+<!--jhPageTitle.html start-->
+<script type="text/x-template" id="jhDrawer">
+  <v-navigation-drawer v-model="show" :title="title" width="70%" :permanent="show" fixed temporary right class="elevation-24">
+    <!-- 头部 -->
+    <div class="flex items-center justify-between px-4 py-2 border-b">
+      <span class="text-lg font-bold">{{ title }}</span>
+      <div class="inline-flex items-center gap-3">
+        <template v-for="(item, index) in localValue.headSlot">
+          <!-- <component :is="item.tag" v-bind="item.attrs" :key="index"></component> -->
+        </template>
+        <v-btn color="error" icon @click="$emit('close')">
+          <v-icon>mdi-close</v-icon>
+        </v-btn>
+      </div>
+    </div>
+
+    <!-- 内容区 -->
+    <v-card-text class="pa-4">
+      <!-- key输入框 -->
+      <v-text-field
+        v-model="localValue.key"
+        label="唯一识别key"
+        outlined
+        dense
+        :disabled="(localValue.tag === 'jh-update-drawer' && localValue.key === 'update') || 
+                   (localValue.tag === 'jh-create-drawer' && localValue.key === 'create')"
+        class="mb-4"
+        hide-details
+      ></v-text-field>
+
+      <!-- title输入框 -->
+      <v-text-field
+        v-model="localValue.title"
+        label="抽屉标题"
+        outlined
+        dense
+        class="mb-4"
+        hide-details
+      ></v-text-field>
+
+
+      <div class="mb-4 flex items-center gap-2">
+        <v-tabs v-model="activeTab">
+          <v-tab v-for="(content, contentIndex) in localValue.contentList" v-model="activeTab" :key="contentIndex">
+            <v-text-field v-model="content.label" class="cus-v-input !w-32" placeholder="请输入标题" dense single-line outlined hide-details></v-text-field>
+          </v-tab>
+        </v-tabs>
+        <!-- 增加按钮 -->
+        <v-btn color="primary" v-if="localValue.key != 'create'" small @click="addContent">
+          <v-icon>mdi-plus</v-icon>
+          增加自定义
+        </v-btn>
+        <v-btn color="primary" v-if="localValue.key != 'create'" small @click="addFormContent">
+          <v-icon>mdi-plus</v-icon>
+          增加表单
+        </v-btn>
+      </div>
+      <!-- 表单类型 -->
+      <v-tabs-items v-model="activeTab">
+        <template v-for="(content, contentIndex) in localValue.contentList">
+          <v-tab-item v-if="content.type === 'form'">
+            <div class="flex flex-col gap-2">
+              <table>
+                <tr>
+                  <th class="h-8 w-3 bg-gray-100">序号</th>
+                  <th class="h-8 w-32 bg-gray-100">名称</th>
+                  <th class="h-8 w-32 bg-gray-100">字段</th>
+                  <th class="w-28 bg-gray-100">标签</th>
+                  <th class="w-10 bg-gray-100">栅格</th>
+                  <th class="w-10 text-center bg-gray-100">隐藏</th>
+                  <th class="w-40 bg-gray-100">校验</th>
+                  <th class="w-12 text-center bg-gray-100">操作</th>
+                </tr>
+                <template v-for="(item, index) in content.formItemList">
+                <template v-if="!codeEdit.includes(index)">
+                <tr>
+                  <td class="p-1" rowspan="2">{{ index + 1 }}</td>
+                  <td class="p-1"><v-text-field v-model="localValue.contentList[contentIndex].formItemList[index].label" class="cus-v-input" dense single-line outlined></v-text-field></td>
+                  <td class="p-1"><v-text-field v-model="localValue.contentList[contentIndex].formItemList[index].model" class="cus-v-input" dense single-line outlined></v-text-field></td>
+                  <td class="p-1">
+                    <v-select
+                      v-model="localValue.contentList[contentIndex].formItemList[index].tag"
+                      :items="['v-text-field', 'v-select', 'v-textarea', 'v-radio-group', 'v-checkbox', 'div']"
+                      class="cus-v-input"
+                      dense
+                      single-line
+                      outlined>
+                    </v-select>
+                  </td>
+                  <td class="p-1"><v-text-field v-model="localValue.contentList[contentIndex].formItemList[index].md" class="cus-v-input" dense single-line outlined></v-text-field></td>
+                  <td class="text-center p-1"><v-switch v-model="localValue.contentList[contentIndex].formItemList[index].hidden" class="cus-v-input mt-0" hide-details :true-value="false" :false-value="true" dense></v-switch></td>
+                  <td class="p-1"><v-text-field v-model="localValue.contentList[contentIndex].formItemList[index].rules" class="cus-v-input" dense single-line outlined></v-text-field></td>  
+                  <td rowspan="2" class="text-center">
+                    <v-btn v-if="!codeEdit.includes(index)" color="primary" icon small @click="codeEdit.push(index)">
+                      <v-icon>mdi-code-tags</v-icon>
+                    </v-btn>
+                    <v-btn color="error" icon small @click="content.formItemList.splice(index, 1)">
+                      <v-icon>mdi-trash-can</v-icon>
+                    </v-btn>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="text-center text-gray-500 bg-gray-100">
+                    标题 attrs:
+                  </td>
+                  <td colspan="5">
+                    <code-mirror v-model="localValue.contentList[contentIndex].formItemList[index].attrs" :format="false"></code-mirror>
+                  </td>
+                </tr>
+                </template>
+                <tr v-else>
+                  <td class="p-1" rowspan="2">{{ index + 1 }}</td>
+                  <td colspan="6">
+                    <code-mirror v-model="localValue.contentList[contentIndex].formItemList[index]"></code-mirror>
+                  </td>
+                  <td class="text-center">
+                    <v-btn color="primary" icon small @click="codeEdit.splice(codeEdit.indexOf(index), 1)">
+                      <v-icon>mdi-code-tags</v-icon>
+                    </v-btn>  
+                    <v-btn color="error" icon small @click="localValue.contentList[contentIndex].formItemList.splice(index, 1)">
+                      <v-icon>mdi-trash-can</v-icon>
+                    </v-btn>
+                  </td>
+                </tr>
+                </template>
+              </table>
+
+              <!-- 添加 -->
+              <div class="px-2 py-0 mb-2">
+                <div class="flex items-center">
+                  <span>快捷操作：</span>
+                  <v-btn text color="primary" class="px-1" small @click="localValue.contentList[contentIndex].formItemList.push({model: 'input', label: '输入框', tag: 'v-text-field', rules: 'required'})">
+                    新增表单
+                  </v-btn>
+                  <v-btn text color="primary" class="px-1" small @click="localValue.contentList[contentIndex].formItemList.push({ tag: 'div', value: '<div>自定义内容</div>' })">
+                    新增自定义内容
+                  </v-btn>
+                </div>
+              </div>
+            </div>
+            <!-- 操作按钮 -->
+            <div v-if="content?.action" class="w-full max-w-full overflow-x-hidden overflow-x-auto">
+              <table class="w-full max-w-full">
+                <tr>
+                  <th class="h-8 bg-gray-100 w-1/6 min-w-1/6">tag</th>
+                  <th class="bg-gray-100 w-1/6 min-w-1/6">value</th>
+                  <th class="bg-gray-100 w-3/6 min-w-3/6 max-w-3/6">attrs</th>
+                  <th class="bg-gray-100 w-1/6 min-w-1/6 text-center">操作</th>
+                </tr>
+                <template v-for="(item, index) in content.action">
+                  <tr>
+                    <td class="pb-1">
+                      <v-text-field class="cus-v-input" v-model="localValue.contentList[contentIndex].action[index].tag" dense outlined></v-text-field>
+                    </td>
+                    <td class="pb-1">
+                      <v-text-field class="cus-v-input" v-model="localValue.contentList[contentIndex].action[index].value" dense outlined></v-text-field>
+                    </td>
+                    <td class="p-1">
+                      <code-mirror v-model="localValue.contentList[contentIndex].action[index].attrs"></code-mirror>
+                    </td>
+                    <td class="p-1 text-center">
+                      <v-btn color="primary" icon small @click="localValue.contentList[contentIndex].action.splice(index, 1)">
+                        <v-icon>mdi-trash-can</v-icon>
+                      </v-btn>
+                    </td>
+                  </tr>
+                </template>
+              </table>
+
+              <!-- 添加 -->
+              <div class="px-2 py-0 mb-2">
+                <div class="flex items-center">
+                  <span>快捷操作：</span>
+                  <v-btn text color="primary" class="px-1" small @click="localValue.contentList[contentIndex].action.push({ tag: 'v-btn', value: '按钮', attrs: {} })">
+                    新增按钮
+                  </v-btn>
+                  <v-btn text color="primary" class="px-1" small @click="localValue.contentList[contentIndex].action.push({ tag: 'div', value: '<div>自定义按钮</div>' })">
+                    新增自定义按钮
+                  </v-btn>
+                </div>
+              </div>
+            </div>
+          </v-tab-item>
+
+          <!-- 自定义HTML -->
+          <v-tab-item v-else>
+            <code-mirror v-model="localValue.contentList[contentIndex]"></code-mirror>
+          </v-tab-item>
+        </template>
+      </v-tabs-items>
+    </v-card-text>
+  </v-navigation-drawer>
+</script>
+
+<script>
+Vue.component("jhDrawer", {
+  template: "#jhDrawer",
+  vueComponent: 'jhDrawer',
+  mixins: [window.jianghuUiActionMixins || {}],
+  vuetify: new Vuetify(),
+  props: {
+    value: {
+      type: Object,
+      default: () => ({
+        tag: 'jh-update-drawer',
+        key: "update",
+        attrs: {},
+        title: '详情',
+        headSlot: [],
+        contentList: []
+      })
+    },
+    show: {
+      type: Boolean,
+      default: false
+    },
+    title: {
+      type: String,
+      default: '详情'
+    }
+  },
+  data() {
+    return {
+      localValue: {},
+      formData: {},
+      activeTab: 0,
+      codeEdit: []
+    }
+  },
+  watch: {
+    value: {
+      handler(val) {
+        this.localValue = _.cloneDeep(val);
+      },
+      immediate: true,
+      deep: true
+    },
+    show: {
+      handler(val) {
+        if (val) {
+          this.localValue = _.cloneDeep(this.value);
+          this.initFormData();
+        }
+      },
+      immediate: true
+    }
+  },
+  methods: {
+    initFormData() {
+      const formData = {};
+      this.localValue.contentList.forEach(content => {
+        if (content.type === 'form') {
+          content.formItemList.forEach(item => {
+            if (item.model) {
+              formData[item.model] = '';
+            }
+            if (!item.attrs) {
+              item.attrs = {};
+            }
+          });
+        }
+      });
+      this.formData = formData;
+    },
+    doUiAction(actionId) {
+      this.$emit('action', {
+        actionId,
+        formData: this.formData
+      });
+    },
+    addFormContent() {
+      this.localValue.contentList.push({
+        type: 'form',
+        label: '表单',
+        formItemList: []
+      });
+    },
+    addContent() {
+      this.localValue.contentList.push({
+        type: 'div',
+        label: '内容',
+        value: ''
+      });
+    }
+  }
+});
+</script>
+
+<style>
+.jh-v-input.v-text-field--filled > .v-input__control > .v-input__slot {
+  min-height: 40px !important;
+}
+</style>
+<!--codeMirror.html end-->

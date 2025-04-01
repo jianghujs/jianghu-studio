@@ -1,0 +1,79 @@
+<!--jhPageTitle.html start-->
+<script type="text/x-template" id="jhCreateDrawer">
+  <v-navigation-drawer v-model="show" title="页面标题" width="70%" :permanent="show" fixed temporary right class="elevation-24" >
+    <!-- title -->
+    <div class="flex items-center justify-between px-4 py-2 border-b">
+      <span class="text-lg font-bold">{{ title }}</span>
+      <div class="inline-flex items-center gap-3">
+        <!-- 保存 -->
+        <v-btn color="success" small @click="save">
+          保存
+        </v-btn>
+        <v-btn color="error" icon @click="$emit('close')">
+          <v-icon>mdi-close</v-icon>
+        </v-btn>
+      </div>
+    </div>
+    <div class="grid grid-cols-3 gap-2 p-4">
+    </div>
+
+  </v-navigation-drawer>
+</script>
+
+<script>
+  Vue.component("jhCreateDrawer", {
+    template: "#jhCreateDrawer",
+    vueComponent: 'jhCreateDrawer',
+    mixins: [ window.jianghuUiActionMixins || {} ],
+    vuetify: new Vuetify(),
+    props: {
+      value: {
+        type: Object,
+        default: () => ({})
+      },
+      show: {
+        type: Boolean,
+        default: false
+      },
+      version: {
+        type: String,
+        default: ''
+      },
+      title: {
+        type: String,
+        default: ''
+      }
+    },
+    data: () => ({
+      localValue: {}
+    }),
+    computed: {
+    },
+    watch: {
+      value: {
+        handler(val) {
+          this.localValue = _.cloneDeep(val);
+        },
+        immediate: true
+      },
+      show: {
+        handler(val) {
+          if (val) {
+            this.localValue = _.cloneDeep(this.value);
+          }
+        },
+        immediate: true
+      }
+    },
+    mounted() {
+      console.log('show', this.show)
+    },
+    methods: {
+      save() {
+        this.$emit('input', _.cloneDeep(this.localValue));
+        this.$emit('close')
+      },
+    },
+  })
+</script>
+<!--codeMirror.html end-->

@@ -1,0 +1,216 @@
+<!--jhSearch.html start-->
+<script type="text/x-template" id="jhSearch">
+  <v-navigation-drawer v-model="show" title="页面标题" width="70%" :permanent="show" fixed temporary right class="elevation-24" >
+    <!-- title -->
+    <div class="flex items-center justify-between px-4 py-2 border-b">
+      <div class="flex items-center gap-3">
+        <span class="text-lg font-bold">{{ title }}</span>
+        <v-switch v-model="localValue.searchBtn" :true-value="true" :false-value="false" class="cus-v-input mt-0" label="显示搜索按钮" hide-details dense></v-switch>
+      </div>
+      <div class="inline-flex items-center gap-3">
+        <!-- 保存 -->
+        <v-btn color="success" small @click="save">
+          保存
+        </v-btn>
+        <v-btn color="error" icon @click="$emit('close')">
+          <v-icon>mdi-close</v-icon>
+        </v-btn>
+      </div>
+    </div>
+    <div class="grid grid-cols-1 gap-2 p-4">
+      
+      <div class="grid grid-cols-1 gap-2">
+        <template v-for="(item, index) in localValue.value">
+          <v-card v-if="!codeEdit.includes(index)" class="pa-2 pt-4 bg-white" outlined>
+            <div class="flex items-center gap-4 mb-2">
+              <v-select
+                v-model="localValue.value[index].tag"
+                :items="['v-text-field', 'v-select', 'v-textarea', 'v-radio-group', 'v-checkbox', 'div']"
+                class="cus-v-input"
+                label="标签"
+                dense
+                outlined>
+              </v-select>
+              <v-text-field 
+                v-model="localValue.value[index].model" 
+                class="cus-v-input" 
+                label="字段"
+                dense 
+                outlined>
+              </v-text-field>
+              <div class="flex-none">
+                <v-btn color="primary" icon small @click="codeEdit.push(index)">
+                  <v-icon>mdi-code-tags</v-icon>
+                </v-btn>
+                <v-btn color="error" icon small @click="localValue.value.splice(index, 1)">
+                  <v-icon>mdi-trash-can</v-icon>
+                </v-btn>
+              </div>
+            </div>
+            <div>
+              <div class="text-gray-500 mb-1">其他属性</div>
+              <code-mirror v-model="editValue[index]"></code-mirror>
+            </div>
+          </v-card>
+
+          <v-card v-else class="pa-2 bg-white" outlined>
+            <div class="flex items-center gap-2">
+              <code-mirror v-model="localValue.value[index]" class="flex-grow"></code-mirror>
+              <div class="flex-none">
+                <v-btn color="primary" icon small @click="codeEdit.splice(codeEdit.indexOf(index), 1)">
+                  <v-icon>mdi-code-tags</v-icon>
+                </v-btn>  
+                <v-btn color="error" icon small @click="localValue.value.splice(index, 1)">
+                  <v-icon>mdi-trash-can</v-icon>
+                </v-btn>
+              </div>
+            </div>
+          </v-card>
+        </template>
+      </div>
+
+      <!-- 添加 -->
+      <div class="px-2 py-0 mb-2">
+        <div class="flex items-center">
+          <span>快捷操作：</span>
+          <v-btn text color="primary" class="px-1" small @click="addQuickAdd(item)" v-for="(item, index) in constantObj.quickAdd" :key="index">
+            添加{{ item.text }}
+          </v-btn>
+        </div>
+      </div>
+      <div v-if="version === 'v3'">
+        <code-mirror v-model="localValue.data" id="jhSearch-data" :mode="'javascript'"></code-mirror>
+      </div>
+    </div>
+  </v-navigation-drawer>
+</script>
+
+<script>
+  Vue.component("jhSearch", {
+    template: "#jhSearch",
+    vueComponent: 'jhSearch',
+    mixins: [ window.jianghuUiActionMixins || {} ],
+    vuetify: new Vuetify(),
+    props: {
+      value: {
+        type: Object,
+        default: () => ({
+          tag: 'jh-search', 
+          attrs: { cols: 12, sm: 6, md:8 },
+          value: [
+            { tag: "v-text-field", model: "keyword", colAttrs: { cols: 12, md: 3 }, attrs: {prefix: '标题', ':disabled': 'keywordFieldList.length == 0', ':placeholder': "!keywordFieldList.length ? '未设置搜索字段' : ''"} },
+          ], 
+          searchBtn: true,
+        })
+      },
+      version: {
+        type: String,
+        default: ''
+      },
+      id: {
+        type: String,
+        default: 'jhSearch'
+      },
+      show: {
+        type: Boolean,
+        default: false
+      },
+      title: {
+        type: String,
+        default: '搜索'
+      },
+      pageType: {
+        type: String,
+        default: 'jh-page'
+      }
+    },
+    data: () => ({
+      constantObj: {
+        quickAdd: [
+          { text: '输入框', value: {
+            tag: 'v-text-field',
+            model: 'keyword',
+            colAttrs: { cols: 12, md: 3 },
+            attrs: { }
+          } },
+          { text: '下拉框', value: {
+            tag: 'v-select',
+            model: 'select',
+            colAttrs: { cols: 12, md: 3 },
+            attrs: { ':items': 'xxxx' }
+          } },
+          { text: '日期', value: {
+            tag: 'v-date-picker',
+            model: 'date',
+            colAttrs: { cols: 12, md: 3 },
+            attrs: { }
+          } },
+          { text: '时间', value: {
+            tag: 'v-time-picker',
+            model: 'time',
+            colAttrs: { cols: 12, md: 3 },
+            attrs: { }
+          } },
+          { text: '自定义', value: {
+            tag: 'div',
+            attrs: { },
+            value: ''
+          } },
+        ]
+      },
+      localValue: {},
+      codeEdit: [],
+      editValue: []
+    }),
+    computed: {
+    },
+    watch: {
+      value: {
+        handler(val) {
+          this.localValue = _.cloneDeep(val);
+        },
+        immediate: true
+      },
+      show: {
+        handler(val) {
+          if (val) {
+            this.localValue = _.cloneDeep(this.value);
+            this.setEditValue()
+          }
+        },
+        immediate: true
+      }
+    },
+    mounted() {
+    },
+    methods: {
+      setEditValue() {
+        const key = this.pageType === 'jh-mobile-page' ? 'searchList' : 'value';
+        const editValue = _.cloneDeep(this.value)[key];
+        for (const [index, item] of editValue.entries()) {
+          delete editValue[index].tag;
+          delete editValue[index].model;
+        }
+        this.editValue = editValue;
+        console.log('editValue1', this.editValue)
+      },
+      async save() {
+        // 合并 editValue 到 localValue.value
+        for (const [index, item] of this.editValue.entries()) {
+          if (typeof item === 'object') {
+            this.localValue.value[index] = Object.assign(this.localValue.value[index], item);
+          } else {
+            this.localValue.value[index] = item;
+          }
+        }
+        this.$emit('input', this.localValue)
+        this.$emit('close')
+      },
+      addQuickAdd(item) {
+        this.localValue.value.push(item.value)
+        this.setEditValue()
+      }
+    },
+  })
+</script>
+<!--jhSearch.html end-->

@@ -1,0 +1,89 @@
+<!--jhPageTitle.html start-->
+<script type="text/x-template" id="jhPageTitle">
+  <v-navigation-drawer v-model="show" title="页面标题" width="70%" :permanent="show" fixed temporary right class="elevation-24" >
+    <!-- title -->
+    <div class="flex items-center justify-between px-4 py-2 border-b">
+      <span class="text-lg font-bold">{{ title }}</span>
+      <div class="inline-flex items-center gap-3">
+        <!-- 保存 -->
+        <v-btn color="success" small @click="save">
+          保存
+        </v-btn>
+        <v-btn color="error" icon @click="$emit('close')">
+          <v-icon>mdi-close</v-icon>
+        </v-btn>
+      </div>
+    </div>
+    <div class="grid grid-cols-3 gap-2 p-4">
+      <v-text-field class="" v-model="value.value" label="页面标题" outlined dense filled hide-details></v-text-field>
+      <!-- 是否显示帮助按钮 -->
+      <v-switch class="!mt-0" v-model="value.helpBtn" label="是否显示帮助按钮" outlined dense filled single-line></v-switch>
+    </div>
+
+  </v-navigation-drawer>
+</script>
+
+<script>
+  Vue.component("jhPageTitle", {
+    template: "#jhPageTitle",
+    vueComponent: 'jhPageTitle',
+    mixins: [ window.jianghuUiActionMixins || {} ],
+    vuetify: new Vuetify(),
+    props: {
+      value: {
+        type: Object,
+        default: () => ({
+          tag: "jh-page-title",
+          value: "标题",
+          attrs: {
+            cols: 12,
+            sm: 6,
+            md: 4,
+          },
+          helpBtn: true,
+          slot: [],
+        })
+      },
+      show: {
+        type: Boolean,
+        default: false
+      },
+      version: {
+        type: String,
+        default: ''
+      },
+      title: {
+        type: String,
+        default: ''
+      }
+    },
+    data: () => ({
+    }),
+    computed: {
+    },
+    watch: {
+      value: {
+        handler(newVal) {
+          console.log('value', newVal)
+        },
+        deep: true
+      },
+      show: {
+        handler(newVal) {
+          console.log('show', newVal)
+        },
+        deep: true
+      }
+    },
+    mounted() {
+      console.log('show', this.show)
+    },
+    methods: {
+      save() {
+        this.$emit('input', this.value);
+        this.$emit('close')
+      }
+    },
+  })
+</script>
+<!--codeMirror.html end-->

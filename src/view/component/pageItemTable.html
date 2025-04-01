@@ -6,12 +6,12 @@
         <th v-for="(header, i) in headers[type]" :key="i">{{ header.label }}</th>
       </tr>
       <tr v-for="(item, index) in tableData">
-        <td>
+        <td class="px-0.5">
           <v-icon small aria-hidden="false" @click="lineDel({ index })"
             color="red">
             mdi-delete</v-icon>
         </td>
-        <td v-for="(column, i) in headers[type]" :key="i"
+        <td class="px-0.5" v-for="(column, i) in headers[type]" :key="i"
           @click="inputFocus({ item, column, index, type })"
           :class="{'td-validate': error[index] && error[index].includes(column.value)}"
           :style="{ width: ['resourceHook', 'resourceData', 'uiActionConfig'].includes(column.value) ? 'auto' : '' }">
@@ -182,7 +182,6 @@
     color: #41434f;
     min-height: 52px;
     height: 52px;
-    padding: 0 16px;
     border-bottom: thin solid rgba(0, 0, 0, .06) !important;
   }
 

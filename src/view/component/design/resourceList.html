@@ -1,0 +1,262 @@
+<!--resourceList.html start-->
+<script type="text/x-template" id="resourceList">
+  <div class="grid grid-cols-1 gap-2">
+    <div class="bg-white">
+      <page-item-table class="pageItemTable" :table-data="value" type="resource" :page="pageId"
+        :json-detail="resourceJsonView" @edit-json="editJson" :error="resource.error">
+      </page-item-table>
+      <!-- <v-btn-toggle v-model="resourceJsonView" color="mr-2" group v-if="resource.list.length > 0">
+        <v-btn small :value="true">
+          JSON预览
+        </v-btn>
+      </v-btn-toggle> -->
+      <v-overlay :absulate="true" :value="resource.loading" style="position: absolute;">
+        <v-progress-circular indeterminate size="32"></v-progress-circular>
+      </v-overlay>
+    </div>
+    
+    <!-- 添加 -->
+    <div class="px-2 py-0 mb-2">
+      <div class="flex items-center">
+        <span>快捷操作：</span>
+        <v-btn text color="primary" class="px-1" small @click="addResourceLine(item)" v-for="(item, index) in resourceSampleListFilter" :key="index">
+          添加{{ item.text }}
+        </v-btn>
+      </div>
+    </div>
+    
+    <v-navigation-drawer v-model="editJsonDialog" fixed right width="80%" temporary>
+      <vue-json-editor v-model="jsonObj.json" :type="jsonObj.type" :show-btns="true" :mode="'code'" lang="zh" height="250px"
+        :title="getJsonEditTitle()"
+        @json-change="onJsonChange"
+        @json-save="onJsonSave" @has-error="onError" class="ma-4"></vue-json-editor>
+      <div class="grid grid-cols-2 gap-2 p-4">
+        <div v-for="(item, index) in sampleJson[jsonObj.type]" :key="index">
+          <v-subheader>{{item.label}}</v-subheader>
+          <div
+            class="pa-4"
+            style="border: 1px solid rgb(239, 242, 245);; border-radius: 6px; position: relative; background-color: #f7f7f7;
+            opacity: 0.8;">
+            <v-icon small style="position: absolute; right: 8px; top: 8px"
+              @click="copyCode(item.json)">
+              mdi-content-copy
+            </v-icon>
+            <pre>{{ JSON.stringify(item.json, null, 2) }}</pre>
+          </div>
+        </div>
+      </div>
+    </v-navigation-drawer>
+  </div>
+</script>
+
+<script>
+  Vue.component("resourceList", {
+    template: "#resourceList",
+    vueComponent: 'resourceList',
+    mixins: [ window.jianghuUiActionMixins || {} ],
+    vuetify: new Vuetify(),
+    props: {
+      value: {
+        type: Array,
+        default: () => []
+      },
+      pageId: {
+        type: String,
+        default: ''
+      }
+    },
+    data: () => {
+      const resourceTableSample = { table: "table_name", operation: "select|insert|update|delete" };
+      const resourceServiceSample = { service: "serviceName", serviceFunction: "functionName" };
+      const resourceHookSample = { before: [], after: [ { "service": "serviceName", "serviceFunction": "functionName" } ] };
+      const uiActionConfigSample = {
+              label: "Ui Function Sample",
+              json: {
+                before: [
+                  {
+                    "function": "functionName"
+                  }
+                ],
+                main: [
+                  {
+                    "function": "functionName"
+                  }
+                ],
+                after: [
+                  {
+                    "function": "functionName"
+                  }
+                ]
+              }
+            };
+      return {
+        resourceJsonView: false,
+        uiJsonView: false,
+        isFormValid: true,
+        pageIndex: 3,
+        pageList: [],
+        resource: {
+          list: [],
+          loading: false,
+          saving: false,
+          validate: ['actionId', 'desc', 'resourceType', 'resourceData'],
+          error: {}
+        },
+        ui: {
+          list: [],
+          loading: false,
+          saving: false,
+          validate: ['uiActionId', 'desc', 'uiActionType', 'uiActionConfig'],
+          error: {}
+        },
+        testCase: {
+          list: [],
+          loading: false,
+          saving: false,
+          validate: ['testId', 'testName', 'testOpeartion'],
+          error: {}
+        },
+        jsonObj: {
+          key: '',
+          json: {},
+          index: 0,
+          type: ''
+        },
+        editJsonDialog: false,
+        editor: null,
+        sampleJson: {
+          resource: [
+            {
+              label: "ResourceData Sql Sample",
+              json: resourceTableSample
+            },
+            {
+              label: "ResourceData Service Sample",
+              json: resourceServiceSample
+            },
+            {
+              label: "ResourceHook Sample",
+              json: resourceHookSample
+            }
+          ],
+          ui: [ uiActionConfigSample ],
+        },
+        resourceSampleList: [
+          {text: '查询', value: 'getItemList', data: {
+            pageId: "<$ pageId $>", actionId: 'getItemList', desc: '✅查询-查询列表', resourceType: 'sql', resourceData: { table: "table_name", operation: "select" }
+          }},
+          {text: '新增', value: 'insertItem', data: {
+            pageId: "<$ pageId $>", actionId: 'insertItem', desc: '✅新增-添加数据', resourceType: 'sql', resourceData: { table: "table_name", operation: "insert" }
+          }},
+          {text: '编辑', value: 'updateItem', data: {
+            pageId: "<$ pageId $>", actionId: 'updateItem', desc: '✅编辑-添加数据', resourceType: 'sql', resourceData: { table: "table_name", operation: "update" }
+          }},
+          {text: '删除', value: 'deleteItem', data: {
+            pageId: "<$ pageId $>", actionId: 'deleteItem', desc: '✅删除-删除数据', resourceType: 'sql', resourceData: { table: "table_name", operation: "delete" }
+          }},
+          {text: '空白', value: '', data: {
+            pageId: "<$ pageId $>",
+            actionId: '',
+            desc: '',
+            resourceType: 'sql',
+            resourceHook: null,
+            resourceData: null,
+          } }
+        ]
+        
+      };
+    },
+    computed: {
+      resourceSampleListFilter() {
+        return this.resourceSampleList.filter(e => !e.value || !this.value.find(c => e.value === c.actionId));
+      }
+    },
+    mounted() {
+    },
+    watch: {
+      value: {
+        handler(val) {
+          this.$emit('input', val);
+        },
+        deep: true
+      }
+    },
+    async created() {
+      console.log('created', this.pageId)
+    },
+    methods: {
+      async addResourceLine(item) {
+        const { actionId, data } = item;
+        if (data.resourceData) {
+          data.resourceData = data.resourceData;
+        }
+        this.value.push(data)
+      },
+      editJson(obj) {
+        console.log(obj)
+        // create the editor
+        // this.editor = new JSONEditor(this.$el.querySelector(".jsoneditor-vue"), options, obj)
+        this.jsonObj = obj;
+        this.editJsonDialog = true;
+
+      },
+      onJsonChange() {
+
+      },
+      onJsonSave(value) {
+        console.log(this.jsonObj.index, this.jsonObj.key, value)
+        this.value[this.jsonObj.index][this.jsonObj.key] = value;
+        this.editJsonDialog = false;
+      },
+      onError() {
+
+      },
+      validateField(fields, data, type) {
+        const error = {}
+        let res = true;
+        for (const [index, item] of data.entries()) {
+          for (const field of fields) {
+            if (!item[field]) {
+              error[index] = [...(error[index] || []), field];
+              if (res) {
+                res = false;
+              }
+            }
+          }
+        }
+        if (type === 'ui') {
+          this.ui.error = error;
+        } else if (type === 'resource') {
+          this.resource.error = error;
+        } else {
+          this.testCase.error = error;
+        }
+        return res;
+      },
+      getJsonEditTitle() {
+        if (!this.jsonObj.type || !this.editJsonDialog) return '';
+        let line;
+        let key;
+        if (this.jsonObj.type === 'ui') {
+          if (!this.ui.list.length) return ''
+          line = this.ui.list[this.jsonObj.index];
+          key = 'uiActionId';
+        } else if (this.jsonObj.type === 'resource') {
+          if (!this.value.length) return ''
+          line = this.value[this.jsonObj.index];
+          key = 'actionId';
+        } else if (this.jsonObj.type === 'testCase') {
+          if (!this.testCase.list.length) return ''
+          line = this.testCase.list[this.jsonObj.index];
+          key = 'testId';
+        }
+        return !line[key] && !line.desc ? '' : `${line[key]}: ${line.desc}`;
+      },
+      async copyCode(json) {
+        navigator.clipboard.writeText(JSON.stringify(json, null, 2));
+        await window.vtoast.success("已复制到剪切板");
+      }
+    }
+  })
+</script>
+<!--resourceList.html end-->

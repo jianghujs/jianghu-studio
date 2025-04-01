@@ -1,0 +1,51 @@
+<!-- Vuetify CSS 覆盖 >>>>>>>>>>>>> -->
+<style>
+  /* table 框线 */
+  td:not(.v-picker td),
+  th:not(.v-picker th) {
+    border-bottom: thin solid rgba(0, 0, 0, .06) !important;
+    border-right: thin solid rgba(0, 0, 0, .06) !important;
+  }
+
+  /* 每行第一列 td 添加左边框 */
+  table td:first-child,
+  table th:first-child {
+    border-left: thin solid rgba(0, 0, 0, .06) !important;
+  }
+
+  /* 顶部 header 第一行 th 添加顶部边框 */
+  table tr:first-child th {
+    border-top: thin solid rgba(0, 0, 0, .06) !important;
+  }
+
+  table>tbody>tr>td:nth-last-child(1),
+  table>thead>tr>th:nth-last-child(1) {
+    border-right: none !important;
+  }
+
+  .v-text-field--filled.v-input--dense.v-text-field--outlined.v-text-field--filled>.v-input__control>.v-input__slot,
+  .v-text-field--filled.v-input--dense.v-text-field--outlined>.v-input__control>.v-input__slot,
+  .v-text-field--filled.v-input--dense.v-text-field--single-line>.v-input__control>.v-input__slot,
+  .v-text-field--full-width.v-input--dense.v-text-field--outlined.v-text-field--filled>.v-input__control>.v-input__slot,
+  .v-text-field--full-width.v-input--dense.v-text-field--outlined>.v-input__control>.v-input__slot,
+  .v-text-field--full-width.v-input--dense.v-text-field--single-line>.v-input__control>.v-input__slot,
+  .v-text-field--outlined.v-input--dense.v-text-field--outlined.v-text-field--filled>.v-input__control>.v-input__slot,
+  .v-text-field--outlined.v-input--dense.v-text-field--outlined>.v-input__control>.v-input__slot,
+  .v-text-field--outlined.v-input--dense.v-text-field--single-line>.v-input__control>.v-input__slot {
+    min-height: 32px;
+  }
+
+  .v-text-field--outlined.v-input--dense .v-label {
+    top: 7px;
+  }
+
+  .v-text-field--enclosed.v-input--dense:not(.v-text-field--solo).v-text-field--outlined .v-input__append-inner, .v-text-field--enclosed.v-input--dense:not(.v-text-field--solo).v-text-field--outlined .v-input__append-outer, .v-text-field--enclosed.v-input--dense:not(.v-text-field--solo).v-text-field--outlined .v-input__prepend-inner, .v-text-field--enclosed.v-input--dense:not(.v-text-field--solo).v-text-field--outlined .v-input__prepend-outer, .v-text-field--full-width.v-input--dense:not(.v-text-field--solo).v-text-field--outlined .v-input__append-inner, .v-text-field--full-width.v-input--dense:not(.v-text-field--solo).v-text-field--outlined .v-input__append-outer, .v-text-field--full-width.v-input--dense:not(.v-text-field--solo).v-text-field--outlined .v-input__prepend-inner, .v-text-field--full-width.v-input--dense:not(.v-text-field--solo).v-text-field--outlined .v-input__prepend-outer {
+    margin-top: 6px;
+  }
+
+  .drawer-close-float-btn {
+    top: 120px !important;
+    left: -40px !important;
+  }
+</style>
+<!-- <<<<<<<<<<<<< Vuetify CSS 覆盖 -->

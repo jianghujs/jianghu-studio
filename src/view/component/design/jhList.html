@@ -1,0 +1,315 @@
+<!--jhPageTitle.html start-->
+<script type="text/x-template" id="jhList">
+  <v-navigation-drawer v-model="show" title="页面标题" width="70%" :permanent="show" fixed temporary right class="elevation-24 " >
+
+    <!-- 抽屉关闭按钮 -->
+    <!-- <v-btn elevation="0" color="success" fab absolute top left small tile class="drawer-close-float-btn" @click="closeUserListDrawerCheck">
+      <v-icon>mdi-close</v-icon>
+    </v-btn> -->
+    <!-- title -->
+    <div class="flex items-center justify-between px-4 py-2 border-b">
+      <span class="text-lg font-bold">{{ title }}</span>
+      <div class="inline-flex items-center gap-3">
+        <!-- 保存 -->
+        <v-btn color="success" small @click="save">
+          保存
+        </v-btn>
+        <v-btn color="error" icon @click="$emit('close')">
+          <v-icon>mdi-close</v-icon>
+        </v-btn>
+      </div>
+    </div>
+    <div class="grid grid-cols-1 gap-2 p-4" v-if="show">
+      <!-- 图形化列配置表格 value.headers -->
+      <div class="text-lg font-bold">自定义属性</div>
+      <code-mirror v-model="editObj" id="jhTable-editObj" :mode="'javascript'"></code-mirror>
+
+      <div class="text-lg font-bold">列配置</div>
+      <table>
+        <tr>
+          <th class="h-8">列名</th>
+          <th>格式化</th>
+          <th>字段</th>
+          <th>列宽</th>
+          <th>class</th>
+          <th>cellClass</th>
+          <th class="w-28">操作</th>
+        </tr>
+        <tr v-for="(item, index) in localValue.headers" :key="index">
+          <td><v-text-field v-model="item.text" class="cus-v-input" dense single-line outlined></v-text-field></td>
+          <td class="text-center">
+            <v-icon :color="item.formatter ? 'success' : 'default'" @click="editFormatter(item, index)">
+              mdi-code-braces
+            </v-icon>
+          </td>
+          <td><v-text-field v-model="item.value" class="cus-v-input" dense single-line outlined></v-text-field></td>
+          <td><v-text-field v-model="item.width" class="cus-v-input" dense single-line outlined></v-text-field></td>
+          <td><v-text-field v-model="item.class" class="cus-v-input" dense single-line outlined></v-text-field></td>
+          <td><v-text-field v-model="item.cellClass" class="cus-v-input" dense single-line outlined></v-text-field></td>
+          <td>
+            <!-- 排序 -->
+            <v-btn color="primary" icon small @click="upOrder(index)">
+              <v-icon>mdi-arrow-up</v-icon>
+            </v-btn>
+            <!-- 下移 -->
+            <v-btn color="primary" icon small @click="downOrder(index)">
+              <v-icon>mdi-arrow-down</v-icon>
+            </v-btn>
+            <!-- 删除 -->
+            <v-btn color="error" icon small @click="localValue.headers.splice(index, 1);">
+              <v-icon>mdi-trash-can</v-icon>
+            </v-btn>
+          </td>
+        </tr>
+        <tr>
+          <td colspan="7" class="!border-none pt-2">
+            <v-btn block color="primary" small @click="localValue.headers.push({})">
+              <v-icon>mdi-plus</v-icon>
+              添加列
+            </v-btn>
+          </td>
+        </tr>
+      </table>
+       
+
+      <!-- 操作 rowActionList -->
+      <div class="flex text-lg font-bold">操作按钮
+        <div class="inline-flex items-center gap-2 pl-2">
+          <v-btn text small color="primary" class="px-2" @click="localValue.rowActionList.push({text: '编辑', icon: 'mdi-pencil', color: 'primary', click: 'handleEdit'})">
+            添加编辑按钮
+          </v-btn>
+          <v-btn text small color="error" class="px-2" @click="localValue.rowActionList.push({text: '删除', icon: 'mdi-delete', color: 'error', click: 'handleDelete'})">
+            添加删除按钮
+          </v-btn>
+          <v-btn text small color="success" class="px-2" @click="localValue.rowActionList.push({text: '查看', icon: 'mdi-eye', color: 'success', click: 'handleView'})">
+            添加查看按钮
+          </v-btn>
+          <v-btn text small class="px-2" @click="localValue.rowActionList.push({tag: 'v-btn', value: '按钮', attrs: {}})">
+            自定义按钮
+          </v-btn>
+        </div>
+      </div>
+      <!-- <code-mirror v-model="localValue.rowActionList" id="jhTable-rowActionList" :mode="'javascript'"></code-mirror> -->
+      <div class="grid grid-cols-1 gap-2">
+        <template v-for="(item, index) in localValue.rowActionList">
+          <v-card v-if="!codeEdit.includes(index)" class="pa-2 pt-4 bg-white" outlined>
+            <div class="flex items-center justify-between w-full">
+              <div class="grid grid-cols-2 gap-2 mb-2 flex-1">
+                <v-text-field 
+                  v-model="item.text" 
+                  class="cus-v-input" 
+                  label="文本"
+                  dense 
+                  outlined>
+                </v-text-field>
+                <v-text-field 
+                  v-model="item.icon" 
+                  class="cus-v-input" 
+                  label="图标"
+                  dense 
+                  outlined>
+                </v-text-field>
+                <v-text-field 
+                  v-model="item.color" 
+                  class="cus-v-input" 
+                  label="颜色"
+                  dense 
+                  outlined>
+                </v-text-field>
+                <v-text-field 
+                  v-model="item.click" 
+                  class="cus-v-input" 
+                  label="点击事件"
+                  dense 
+                  outlined>
+                </v-text-field>
+
+              </div>
+
+              <div class="flex-none">
+                <v-btn color="primary" icon small @click="codeEdit.push(index)">
+                  <v-icon>mdi-code-tags</v-icon>
+                </v-btn>
+                <v-btn color="primary" icon small @click="upOrder(index)">
+                  <v-icon>mdi-arrow-up</v-icon>
+                </v-btn>
+                <v-btn color="primary" icon small @click="downOrder(index)">
+                  <v-icon>mdi-arrow-down</v-icon>
+                </v-btn>
+                <v-btn color="error" icon small @click="localValue.rowActionList.splice(index, 1)">
+                  <v-icon>mdi-trash-can</v-icon>
+                </v-btn>
+              </div>
+            </div>
+            <div>
+              <div class="text-gray-500 mb-1">其他属性 attrs</div>
+              <code-mirror v-model="item.attrs" :id="'jhTable-rowActionList-attrs-'+index"></code-mirror>
+            </div>
+          </v-card>
+
+          <v-card v-else class="pa-2 bg-white" outlined>
+            <div class="flex items-center gap-2">
+              <code-mirror v-model="localValue.rowActionList[index]" :id="'jhTable-rowActionList-'+index" class="flex-grow"></code-mirror>
+              <div class="flex-none">
+                <v-btn color="primary" icon small @click="codeEdit.splice(codeEdit.indexOf(index), 1)">
+                  <v-icon>mdi-code-tags</v-icon>
+                </v-btn>
+                <v-btn color="primary" icon small @click="upOrder(index)">
+                  <v-icon>mdi-arrow-up</v-icon>
+                </v-btn>
+                <v-btn color="primary" icon small @click="downOrder(index)">
+                  <v-icon>mdi-arrow-down</v-icon>
+                </v-btn>
+                <v-btn color="error" icon small @click="localValue.rowActionList.splice(index, 1)">
+                  <v-icon>mdi-trash-can</v-icon>
+                </v-btn>
+              </div>
+            </div>
+          </v-card>
+        </template>
+      </div>
+
+      <v-overlay :value="isEditFormatter" z-index="9999">
+        <v-dialog v-model="isEditFormatter" max-width="70vw" class="z-[9999]">
+          <v-card>
+            <v-card-title>
+              格式化
+            </v-card-title>
+            <v-card-text>
+              <code-mirror v-model="currentFormatter" id="jhTable-formatter" mode="htmlmixed"></code-mirror>
+            </v-card-text>
+            <v-card-actions>
+              <v-spacer></v-spacer>
+              <v-btn color="error" text @click="isEditFormatter = false">取消</v-btn>
+              <v-btn color="primary" text @click="saveFormatter">保存</v-btn>
+            </v-card-actions>
+          </v-card>
+        </v-dialog>
+      </v-overlay>
+      <!-- <table>
+        <tr>
+          <th>操作</th>
+          <th>按钮</th>
+          <th>class</th>
+          <th>操作</th>
+        </tr>
+        <template v-for="(item, index) in localValue.rowActionList">
+          <tr :key="'rowActionList-empty-' + index">
+            <td colspan="4">
+            </td>
+          </tr>
+        </template>
+      </table> -->
+    </div>
+
+  </v-navigation-drawer>
+</script>
+
+<script>
+  Vue.component("jhList", {
+    template: "#jhList",
+    vueComponent: 'jhList',
+    mixins: [ window.jianghuUiActionMixins || {} ],
+    vuetify: new Vuetify(),
+    props: {
+      value: {
+        type: Object,
+        default: () => ({})
+      },
+      show: {
+        type: Boolean,
+        default: false
+      },
+      version: {
+        type: String,
+        default: ''
+      },
+      title: {
+        type: String,
+        default: '分页列表'
+      }
+    },
+    data: () => ({
+      constantObj: {
+        tag: 'jh-table',
+        headers: [],
+        rowActionList: [],
+        value: '',
+      },
+      localValue: {},
+      currentFormatter: '',
+      currentFormatIndex: 0,
+      isEditFormatter: false,
+      editObj: {},
+      codeEdit: [],
+    }),
+    computed: {
+    },
+    watch: {
+      value: {
+        handler(val) {
+          this.localValue = _.cloneDeep(val);
+        },
+        immediate: true
+      },
+      show: {
+        handler(val) {
+          if (val) {
+            this.localValue = _.cloneDeep(this.value);
+            this.setEditValue()
+          }
+        },
+        immediate: true
+      },
+      
+    },
+    mounted() {
+      console.log('show', this.show)
+    },
+    methods: {
+      save() {
+        // editObj 合并到 localValue
+        this.localValue = _.merge(this.localValue, this.editObj);
+        this.$emit('input', _.cloneDeep(this.localValue));
+        this.$emit('close')
+      },
+      upOrder(index) {
+        this.localValue.headers.splice(index - 1, 0, this.localValue.headers.splice(index, 1)[0]);
+      },
+      downOrder(index) {
+        this.localValue.headers.splice(index + 1, 0, this.localValue.headers.splice(index, 1)[0]);
+      },
+      editFormatter(item, index) {
+        console.log('formatter', item.formatter)
+        this.currentFormatter = item.formatter;
+        this.currentFormatIndex = index;
+        this.isEditFormatter = true;
+      },
+      saveFormatter() {
+        this.localValue.headers[this.currentFormatIndex].formatter = this.currentFormatter;
+        this.isEditFormatter = false;
+      },
+      setEditValue() {
+        for (const key in this.localValue) {
+          if (!['tag', 'headers', 'rowActionList', 'value'].includes(key)) {
+            this.editObj[key] = _.cloneDeep(this.localValue[key]);
+          }
+        }
+        
+      },
+      isSimpleStyle(value) {
+        return _.isObject(value) && value.text && value.color && value.click;
+      },
+      isTagStyle(value) {
+        return _.isObject(value) && value.tag && !value.color && !value.click;
+      },
+      upOrder(index) {
+        this.localValue.rowActionList.splice(index - 1, 0, this.localValue.rowActionList.splice(index, 1)[0]);
+      },
+      downOrder(index) {
+        this.localValue.rowActionList.splice(index + 1, 0, this.localValue.rowActionList.splice(index, 1)[0]);
+      },
+    },
+  })
+</script>
+<!--codeMirror.html end-->

@@ -57,58 +57,6 @@
       <v-progress-circular indeterminate size="32"></v-progress-circular>
     </v-overlay>
   </v-card>
-
-  <v-card class="mt-4 pa-4 content-ui">
-    <div class="d-flex justify-space-between align-center">
-      <h3 style="font-size: 15px;">UiAction</h3>
-      <div>
-        <v-btn-toggle v-model="uiJsonView" color="mr-2" group v-if="ui.list.length > 0">
-          <v-btn small :value="true">
-            JSON预览
-          </v-btn>
-        </v-btn-toggle>
-        <v-btn small depressed  class="mr-2" @click="addUiLine">
-          <v-icon small>
-            mdi-plus
-          </v-icon>
-        </v-btn>
-        <v-btn small depressed @click="getUiList" :loading="ui.loading" class="mr-2">
-          刷新
-        </v-btn>
-        <v-btn small depressed color="success" @click="saveUi" :loading="ui.saving">保存uiAction</v-btn>
-      </div>
-    </div>
-    <page-item-table class="pageItemTable" :json-detail="uiJsonView" :table-data="ui.list" type="ui" :page="pageId"
-      @edit-json="editJson" :error="ui.error">
-    </page-item-table>
-    <v-overlay :absulate="true" light :value="ui.loading" style="position: absolute;">
-      <v-progress-circular indeterminate size="32"></v-progress-circular>
-    </v-overlay>
-  </v-card>
-       
-  <v-card class="mt-4 pa-4 content-text-case">
-    <div class="d-flex justify-space-between align-center">
-      <h3 style="font-size: 15px;">TestCase</h3>
-      <div>
-        <v-btn small depressed class="mr-2" @click="addTestCaseLine">
-          <v-icon small>
-            mdi-plus
-          </v-icon>
-        </v-btn>
-        <v-btn small depressed @click="getTestCaseList" :loading="testCase.loading" class="mr-2">
-          刷新
-        </v-btn>
-        <v-btn small depressed color="success" @click="saveTestCase" :loading="testCase.saving">保存TestCase</v-btn>
-      </div>
-    </div>
-    <page-item-table class="pageItemTable" :json-detail="uiJsonView" :table-data="testCase.list" type="testCase"
-      :page="pageId"
-      @edit-json="editJson" :error="testCase.error">
-    </page-item-table>
-    <v-overlay :absulate="true" light :value="testCase.loading" style="position: absolute;">
-      <v-progress-circular indeterminate size="32"></v-progress-circular>
-    </v-overlay>
-  </v-card>
   
   <v-navigation-drawer v-model="editJsonDialog" fixed left width="80%" temporary>
     <vue-json-editor v-model="jsonObj.json" :type="jsonObj.type" :show-btns="true" :mode="'code'" lang="zh"

@@ -28,9 +28,9 @@ export function activate(context: vscode.ExtensionContext) {
   htmlDiagnostic.activate(context, core);
 
   // 注册树视图
-  vscode.window.registerTreeDataProvider("constructionPlanView", new ConstructionPlanViewPagePlanList(core));
-  vscode.window.registerTreeDataProvider("constructionPlan", new ConstructionPlanPageList(core));
-  vscode.window.registerTreeDataProvider("constructionAdvanced", new ConstructionAdvancedPageList(core));
+  // vscode.window.registerTreeDataProvider("constructionPlanView", new ConstructionPlanViewPagePlanList(core));
+  // vscode.window.registerTreeDataProvider("constructionPlan", new ConstructionPlanPageList(core));
+  // vscode.window.registerTreeDataProvider("constructionAdvanced", new ConstructionAdvancedPageList(core));
   vscode.window.registerTreeDataProvider("projectList", new ProjectList(core));
 
   // 全局注册命令
@@ -44,8 +44,8 @@ export function activate(context: vscode.ExtensionContext) {
       // 一级标签操作刷新 / navigation
       vscode.commands.registerCommand("constructionPlan.refreshDb", () => {
         vscode.window.registerTreeDataProvider("projectList", new ProjectList(core));
-        vscode.window.registerTreeDataProvider("constructionPlan", new ConstructionPlanPageList(core));
-        vscode.window.registerTreeDataProvider("constructionAdvanced", new ConstructionAdvancedPageList(core));
+        // vscode.window.registerTreeDataProvider("constructionPlan", new ConstructionPlanPageList(core));
+        // vscode.window.registerTreeDataProvider("constructionAdvanced", new ConstructionAdvancedPageList(core));
       }),
       /**
        * init-json
@@ -55,17 +55,22 @@ export function activate(context: vscode.ExtensionContext) {
         const commonService = new CommonService();
         commonService.execute({ dir, execute: "jianghu-init page", name: "添加页面" });
       }),
+      vscode.commands.registerCommand("projectList.runDev", ({ currDatabase }: { currDatabase: any }) => {
+        const { dir } = currDatabase;
+        const commonService = new CommonService();
+        commonService.execute({ dir, execute: "jianghu-init json dev", name: "运行dev模式" });
+      }),
       // init-json add page / inline
       vscode.commands.registerCommand("projectList.addJsonPage", ({ currDatabase }: { currDatabase: any }) => {
         const { dir } = currDatabase;
         const commonService = new CommonService();
-        commonService.execute({ dir, execute: "jianghu-init page", name: "添加页面" });
+        commonService.execute({ dir, execute: "jianghu-init json", name: "添加页面" });
       }),
       // init-json add component / inline
       vscode.commands.registerCommand("projectList.addJsonComponent", ({ currDatabase }: { currDatabase: any }) => {
         const { dir } = currDatabase;
         const commonService = new CommonService();
-        commonService.execute({ dir, execute: "jianghu-init component", name: "添加组件" });
+        commonService.execute({ dir, execute: "jianghu-init json", name: "添加组件" });
       }),
       vscode.commands.registerCommand("constructionPlan.pageDelete", ({ label, pageId, currDatabase }: { label: string; pageId: string; currDatabase: Knex.MySqlConnectionConfig }) => {
         // eslint-disable-next-line @typescript-eslint/no-misused-promises
