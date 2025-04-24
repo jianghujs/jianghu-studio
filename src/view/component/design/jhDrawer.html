@@ -8,6 +8,9 @@
         <template v-for="(item, index) in localValue.headSlot">
           <!-- <component :is="item.tag" v-bind="item.attrs" :key="index"></component> -->
         </template>
+        <v-btn color="success" small @click="save">
+          保存
+        </v-btn>
         <v-btn color="error" icon @click="$emit('close')">
           <v-icon>mdi-close</v-icon>
         </v-btn>
@@ -281,7 +284,13 @@ Vue.component("jhDrawer", {
         label: '内容',
         value: ''
       });
-    }
+    },
+    save() {
+      // editObj 合并到 localValue
+      this.localValue = _.merge(this.localValue, this.editObj);
+      this.$emit('input', _.cloneDeep(this.localValue));
+      this.$emit('close')
+    },
   }
 });
 </script>

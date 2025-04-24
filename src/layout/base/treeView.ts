@@ -16,6 +16,7 @@ import constructionPlanCore from "../../core";
 import { PathUtil } from "../../util/pathUtil";
 import { EntryItem } from "../tree/entryItem";
 import { execSync } from "child_process";
+import Logger from "../../util/logger";
 
 // 树的内容组织管理
 export class BaseTreeView {
@@ -123,7 +124,7 @@ export class BaseTreeView {
 
     // 如果配置中仍包含 process.env 则说明配置文件中的配置不正确
     if (Object.values(setting).join("").includes("process.env")) {
-      this.core.error("请检查配置文件 config.local.js 中的数据库连接配置是否正确");
+      Logger.error("请检查配置文件 config.local.js 中的数据库连接配置是否正确");
       process.exit();
     }
     return setting;
